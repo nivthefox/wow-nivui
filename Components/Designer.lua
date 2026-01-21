@@ -214,7 +214,7 @@ local function CreateTextWidget(parent, config, textValue, widgetType)
     frame.text = frame:CreateFontString(nil, "OVERLAY")
     local fontPath = NivUI:GetFontPath(config.font)
     frame.text:SetFont(fontPath, config.fontSize, config.fontOutline or "")
-    frame.text:SetPoint("LEFT")
+    frame.text:SetPoint("CENTER")
     frame.text:SetText(textValue)
 
     -- Color
