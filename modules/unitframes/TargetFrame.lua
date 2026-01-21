@@ -71,7 +71,7 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorFrame = TargetFrame,
     anchorOffsetX = 24,
     anchorOffsetY = 0,
-    hideBlizzard = HideBlizzardTargetFrame,
+    hideBlizzard = nil,  -- HideBlizzardTargetFrame,  -- TEMP: testing Edit Mode
 
     shouldShow = function()
         return UnitExists("target")
