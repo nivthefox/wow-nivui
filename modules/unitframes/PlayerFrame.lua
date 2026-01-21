@@ -92,46 +92,37 @@ local function UpdateHealthText()
 
     local health = UnitHealth("player")
     local maxHealth = UnitHealthMax("player")
-    local text = ""
-
-    local pct = nil
-    if UnitHealthPercent then
-        local ok, result = pcall(UnitHealthPercent, "player")
-        if ok and result then
-            pct = result
-        end
-    end
+    local pct = UnitHealthPercent and UnitHealthPercent("player") or nil
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local healthStr = abbrev(health)
     local maxHealthStr = abbrev(maxHealth)
 
-    if config.format == "current" then
-        text = healthStr
-    elseif config.format == "percent" then
+    -- Use SetFormattedText for formats involving percent (handles secret values)
+    if config.format == "percent" then
         if pct then
-            text = string.format("%.0f%%", pct)
+            widget.text:SetFormattedText("%.0f%%", pct)
         else
-            text = healthStr
+            widget.text:SetText(healthStr)
         end
     elseif config.format == "current_percent" then
         if pct then
-            text = string.format("%s (%.0f%%)", healthStr, pct)
+            widget.text:SetFormattedText("%s (%.0f%%)", healthStr, pct)
         else
-            text = healthStr
+            widget.text:SetText(healthStr)
         end
+    elseif config.format == "current" then
+        widget.text:SetText(healthStr)
     elseif config.format == "current_max" then
-        text = healthStr .. " / " .. maxHealthStr
+        widget.text:SetText(healthStr .. " / " .. maxHealthStr)
     elseif config.format == "deficit" then
         local ok, deficit = pcall(function() return maxHealth - health end)
         if ok and deficit and deficit > 0 then
-            text = "-" .. abbrev(deficit)
+            widget.text:SetText("-" .. abbrev(deficit))
         else
-            text = ""
+            widget.text:SetText("")
         end
     end
-
-    widget.text:SetText(text)
 end
 
 local function UpdatePowerText()
@@ -142,39 +133,30 @@ local function UpdatePowerText()
     local powerType = UnitPowerType("player")
     local power = UnitPower("player", powerType)
     local maxPower = UnitPowerMax("player", powerType)
-    local text = ""
-
-    local pct = nil
-    if UnitPowerPercent then
-        local ok, result = pcall(UnitPowerPercent, "player", powerType)
-        if ok and result then
-            pct = result
-        end
-    end
+    local pct = UnitPowerPercent and UnitPowerPercent("player", powerType) or nil
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local powerStr = abbrev(power)
     local maxPowerStr = abbrev(maxPower)
 
-    if config.format == "current" then
-        text = powerStr
-    elseif config.format == "percent" then
+    -- Use SetFormattedText for formats involving percent (handles secret values)
+    if config.format == "percent" then
         if pct then
-            text = string.format("%.0f%%", pct)
+            widget.text:SetFormattedText("%.0f%%", pct)
         else
-            text = powerStr
+            widget.text:SetText(powerStr)
         end
     elseif config.format == "current_percent" then
         if pct then
-            text = string.format("%s (%.0f%%)", powerStr, pct)
+            widget.text:SetFormattedText("%s (%.0f%%)", powerStr, pct)
         else
-            text = powerStr
+            widget.text:SetText(powerStr)
         end
+    elseif config.format == "current" then
+        widget.text:SetText(powerStr)
     elseif config.format == "current_max" then
-        text = powerStr .. " / " .. maxPowerStr
+        widget.text:SetText(powerStr .. " / " .. maxPowerStr)
     end
-
-    widget.text:SetText(text)
 end
 
 local function UpdatePortrait()
