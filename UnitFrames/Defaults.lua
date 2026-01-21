@@ -96,6 +96,13 @@ NivUI.UnitFrames.BAR_ORIENTATIONS = {
     { value = "VERTICAL", name = "Vertical" },
 }
 
+-- Text alignments
+NivUI.UnitFrames.TEXT_ALIGNMENTS = {
+    { value = "LEFT", name = "Left" },
+    { value = "CENTER", name = "Center" },
+    { value = "RIGHT", name = "Right" },
+}
+
 -- Default anchor configuration
 local function DefaultAnchor(point, relativeTo, relativePoint, x, y)
     return {
@@ -171,6 +178,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         font = "Friz Quadrata",
         fontSize = 12,
         fontOutline = "OUTLINE",
+        alignment = "LEFT",
         colorByClass = true,
         customColor = { r = 1, g = 1, b = 1 },
         truncateLength = 20,
@@ -184,6 +192,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         font = "Friz Quadrata",
         fontSize = 11,
         fontOutline = "OUTLINE",
+        alignment = "RIGHT",
         colorByDifficulty = true,
         customColor = { r = 1, g = 0.82, b = 0 },
     },
@@ -196,6 +205,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         font = "Friz Quadrata",
         fontSize = 11,
         fontOutline = "OUTLINE",
+        alignment = "CENTER",
         format = "current_percent",
         color = { r = 1, g = 1, b = 1 },
     },
@@ -208,6 +218,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         font = "Friz Quadrata",
         fontSize = 10,
         fontOutline = "OUTLINE",
+        alignment = "CENTER",
         format = "current",
         color = { r = 1, g = 1, b = 1 },
     },

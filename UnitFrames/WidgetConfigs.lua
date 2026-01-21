@@ -154,6 +154,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "fontDropdown", key = "font", label = "Font" },
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+                { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
             },
         },
         {
@@ -192,6 +193,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "fontDropdown", key = "font", label = "Font" },
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+                { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
             },
         },
         {
@@ -224,6 +226,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "fontDropdown", key = "font", label = "Font" },
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+                { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
             },
         },
         {
@@ -256,6 +259,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "fontDropdown", key = "font", label = "Font" },
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+                { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
             },
         },
         {
@@ -523,6 +527,7 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         BAR_ORIENTATIONS = self.BAR_ORIENTATIONS,
         FONT_OUTLINES = self.FONT_OUTLINES,
         ANCHOR_POINTS = self.ANCHOR_POINTS,
+        TEXT_ALIGNMENTS = self.TEXT_ALIGNMENTS,
     }
     return lists[optionName] or {}
 end
