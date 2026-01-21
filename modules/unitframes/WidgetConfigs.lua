@@ -67,7 +67,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 10, max = 400, step = 5 },
-                { kind = "slider", key = "size.height", label = "Height", min = 10, max = 40, step = 1 },
+                { kind = "slider", key = "size.height", label = "Height", min = 2, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
@@ -300,7 +300,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 10, max = 400, step = 5 },
-                { kind = "slider", key = "size.height", label = "Height", min = 10, max = 40, step = 1 },
+                { kind = "slider", key = "size.height", label = "Height", min = 2, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
