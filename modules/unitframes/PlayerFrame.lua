@@ -14,13 +14,9 @@ local blizzardHidden = false
 local pendingHide = false
 local pendingRestore = false
 
--- Cached values for OnUpdate polling (avoids unnecessary updates)
--- Using percent values because raw health/power are secret values in combat
-local cachedHealthPct = nil
-local cachedMaxHealth = nil
-local cachedPowerPct = nil
-local cachedMaxPower = nil
-local cachedPowerType = nil
+-- Throttle interval for OnUpdate (health/power values are secret in combat, can't compare)
+local UPDATE_INTERVAL = 0.1
+local timeSinceLastUpdate = 0
 
 -- Helpers from shared factories
 local function SafeNumber(value, fallback)
@@ -460,11 +456,7 @@ local function DestroyCustomFrame()
         customFrame = nil
     end
     currentStyle = nil
-    cachedHealth = nil
-    cachedMaxHealth = nil
-    cachedPower = nil
-    cachedMaxPower = nil
-    cachedPowerType = nil
+    timeSinceLastUpdate = 0
 end
 
 local function BuildCustomFrame(styleName)
@@ -573,12 +565,9 @@ local function BuildCustomFrame(styleName)
 
     customFrame:SetScript("OnEvent", function(self, event, unit)
         if event == "UNIT_MAXHEALTH" then
-            cachedMaxHealth = nil
             UpdateHealthBar()
             UpdateHealthText()
         elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
-            cachedMaxPower = nil
-            cachedPowerType = nil
             UpdatePowerBar()
             UpdatePowerText()
         elseif event == "UNIT_MODEL_CHANGED" then
@@ -594,28 +583,17 @@ local function BuildCustomFrame(styleName)
         end
     end)
 
-    -- Frequent updates via OnUpdate (like Blizzard's frequentUpdates mode)
-    -- Use percent values for change detection since raw values are secret in combat
+    -- Throttled updates via OnUpdate
+    -- Health/power values are secret in combat and can't be compared for change detection
     customFrame:SetScript("OnUpdate", function(self, elapsed)
-        local healthPct = UnitHealthPercent("player")
-        local maxHealth = UnitHealthMax("player")
-        if healthPct ~= cachedHealthPct or maxHealth ~= cachedMaxHealth then
-            cachedHealthPct = healthPct
-            cachedMaxHealth = maxHealth
-            UpdateHealthBar()
-            UpdateHealthText()
-        end
+        timeSinceLastUpdate = timeSinceLastUpdate + elapsed
+        if timeSinceLastUpdate < UPDATE_INTERVAL then return end
+        timeSinceLastUpdate = 0
 
-        local powerType = UnitPowerType("player")
-        local powerPct = UnitPowerPercent("player")
-        local maxPower = UnitPowerMax("player", powerType)
-        if powerPct ~= cachedPowerPct or maxPower ~= cachedMaxPower or powerType ~= cachedPowerType then
-            cachedPowerPct = powerPct
-            cachedMaxPower = maxPower
-            cachedPowerType = powerType
-            UpdatePowerBar()
-            UpdatePowerText()
-        end
+        UpdateHealthBar()
+        UpdateHealthText()
+        UpdatePowerBar()
+        UpdatePowerText()
     end)
 
     customFrame:Show()
