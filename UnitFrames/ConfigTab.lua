@@ -243,11 +243,15 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             -- Build entries
             local yOffset = 0
             for _, entry in ipairs(tabConfig.entries) do
-                -- Check showIf condition
+                -- Check showIf/hideIf conditions
                 local show = true
                 if entry.showIf then
                     local checkValue = DeepGet(widgetData, entry.showIf.key)
                     show = (checkValue == entry.showIf.value)
+                end
+                if show and entry.hideIf then
+                    local checkValue = DeepGet(widgetData, entry.hideIf.key)
+                    show = (checkValue ~= entry.hideIf.value)
                 end
 
                 if show then

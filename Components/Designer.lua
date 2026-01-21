@@ -56,9 +56,10 @@ function WidgetFactories.healthBar(parent, config, style)
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
 
-    -- Background
+    -- Background (explicit anchoring - SetAllPoints behaves oddly on StatusBars)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.bg:SetAllPoints()
+    frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    frame.bg:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 
     -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)

@@ -30,7 +30,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "customColor", label = "Foreground Color", showIf = { key = "colorMode", value = "class_inverted" } },
                 { kind = "colorPicker", key = "gradientStart", label = "Gradient Start", showIf = { key = "colorMode", value = "health" } },
                 { kind = "colorPicker", key = "gradientEnd", label = "Gradient End", showIf = { key = "colorMode", value = "health" } },
-                { kind = "colorPicker", key = "backgroundColor", label = "Background", hasAlpha = true },
+                { kind = "colorPicker", key = "backgroundColor", label = "Background", hasAlpha = true, hideIf = { key = "colorMode", value = "class_inverted" } },
             },
         },
         {
