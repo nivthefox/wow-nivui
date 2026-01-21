@@ -14,6 +14,13 @@ local blizzardHidden = false
 local pendingHide = false
 local pendingRestore = false
 
+-- Cached values for OnUpdate polling (avoids unnecessary updates)
+local cachedHealth = nil
+local cachedMaxHealth = nil
+local cachedPower = nil
+local cachedMaxPower = nil
+local cachedPowerType = nil
+
 -- Helpers from shared factories
 local function SafeNumber(value, fallback)
     return NivUI.WidgetFactories.SafeNumber(value, fallback)
@@ -205,21 +212,20 @@ local function UpdateStatusIndicators()
     end
 end
 
+local castbarTicking = false
+
 local function UpdateCastbar()
     if not customFrame or not customFrame.widgets.castbar then return end
     local widget = customFrame.widgets.castbar
     local config = currentStyle.castbar
 
-    -- Check if player is casting or channeling
     local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID = UnitCastingInfo("player")
 
     if not name then
-        -- Check for channeling
         name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible, spellID = UnitChannelInfo("player")
     end
 
     if name then
-        -- Currently casting/channeling
         local duration = (endTimeMS - startTimeMS) / 1000
         local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
         local progress = elapsed / duration
@@ -241,9 +247,17 @@ local function UpdateCastbar()
         end
 
         widget:Show()
+
+        if not castbarTicking then
+            castbarTicking = true
+            widget:SetScript("OnUpdate", UpdateCastbar)
+        end
     else
-        -- Not casting
         widget:Hide()
+        if castbarTicking then
+            castbarTicking = false
+            widget:SetScript("OnUpdate", nil)
+        end
     end
 end
 
@@ -439,11 +453,17 @@ end
 local function DestroyCustomFrame()
     if customFrame then
         customFrame:UnregisterAllEvents()
+        customFrame:SetScript("OnUpdate", nil)
         customFrame:Hide()
         customFrame:SetParent(nil)
         customFrame = nil
     end
     currentStyle = nil
+    cachedHealth = nil
+    cachedMaxHealth = nil
+    cachedPower = nil
+    cachedMaxPower = nil
+    cachedPowerType = nil
 end
 
 local function BuildCustomFrame(styleName)
@@ -530,10 +550,8 @@ local function BuildCustomFrame(styleName)
         end
     end
 
-    -- Register for unit events
-    customFrame:RegisterUnitEvent("UNIT_HEALTH", "player")
+    -- Register for unit events (health/power polled via OnUpdate, but max values via events)
     customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", "player")
-    customFrame:RegisterUnitEvent("UNIT_POWER_UPDATE", "player")
     customFrame:RegisterUnitEvent("UNIT_MAXPOWER", "player")
     customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
     customFrame:RegisterUnitEvent("UNIT_MODEL_CHANGED", "player")
@@ -553,10 +571,13 @@ local function BuildCustomFrame(styleName)
     customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", "player")
 
     customFrame:SetScript("OnEvent", function(self, event, unit)
-        if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+        if event == "UNIT_MAXHEALTH" then
+            cachedMaxHealth = nil
             UpdateHealthBar()
             UpdateHealthText()
-        elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
+        elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
+            cachedMaxPower = nil
+            cachedPowerType = nil
             UpdatePowerBar()
             UpdatePowerText()
         elseif event == "UNIT_MODEL_CHANGED" then
@@ -569,6 +590,29 @@ local function BuildCustomFrame(styleName)
             UpdateStatusIndicators()
         elseif event:find("SPELLCAST") then
             UpdateCastbar()
+        end
+    end)
+
+    -- Frequent updates via OnUpdate (like Blizzard's frequentUpdates mode)
+    customFrame:SetScript("OnUpdate", function(self, elapsed)
+        local health = UnitHealth("player")
+        local maxHealth = UnitHealthMax("player")
+        if health ~= cachedHealth or maxHealth ~= cachedMaxHealth then
+            cachedHealth = health
+            cachedMaxHealth = maxHealth
+            UpdateHealthBar()
+            UpdateHealthText()
+        end
+
+        local powerType = UnitPowerType("player")
+        local power = UnitPower("player", powerType)
+        local maxPower = UnitPowerMax("player", powerType)
+        if power ~= cachedPower or maxPower ~= cachedMaxPower or powerType ~= cachedPowerType then
+            cachedPower = power
+            cachedMaxPower = maxPower
+            cachedPowerType = powerType
+            UpdatePowerBar()
+            UpdatePowerText()
         end
     end)
 

@@ -336,6 +336,13 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     end
 
     function frame:BuildForWidget(widgetType)
+        -- Save scroll positions before clearing
+        local savedScrollPositions = {}
+        for i, panel in ipairs(self.tabPanels) do
+            savedScrollPositions[i] = panel:GetVerticalScroll()
+        end
+        local savedTab = self.currentTab
+
         self.currentWidget = widgetType
 
         -- Clear existing tabs and panels
@@ -423,12 +430,21 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
 
         -- Restore previous tab if valid, otherwise select first
         if #self.tabButtons > 0 then
-            local tabToSelect = self.currentTab
+            local tabToSelect = savedTab
             if tabToSelect > #self.tabButtons then
                 tabToSelect = 1
             end
             self:SelectTab(tabToSelect)
         end
+
+        -- Restore scroll positions after frame layout settles
+        C_Timer.After(0, function()
+            for i, panel in ipairs(self.tabPanels) do
+                if savedScrollPositions[i] then
+                    panel:SetVerticalScroll(savedScrollPositions[i])
+                end
+            end
+        end)
     end
 
     function frame:CreateEntry(parent, entry, widgetType, widgetData, getStyle, saveStyle, refreshPreview)
