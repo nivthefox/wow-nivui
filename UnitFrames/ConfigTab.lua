@@ -26,7 +26,7 @@ StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
     button2 = "Cancel",
     hasEditBox = 1,
     OnAccept = function(dialog)
-        local name = dialog:GetText()
+        local name = dialog:GetEditBox():GetText()
         if name and name ~= "" then
             local success, err = NivUI:CreateStyle(name)
             if success then
@@ -66,7 +66,7 @@ StaticPopupDialogs["NIVUI_DUPLICATE_STYLE"] = {
     button2 = "Cancel",
     hasEditBox = 1,
     OnAccept = function(dialog)
-        local name = dialog:GetText()
+        local name = dialog:GetEditBox():GetText()
         if name and name ~= "" then
             local success, err = NivUI:DuplicateStyle(NivUI.UnitFrames.currentStyleName, name)
             if success then
@@ -106,7 +106,7 @@ StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
     button2 = "Cancel",
     hasEditBox = 1,
     OnAccept = function(dialog)
-        local newName = dialog:GetText()
+        local newName = dialog:GetEditBox():GetText()
         if newName and newName ~= "" then
             local success, err = NivUI:RenameStyle(NivUI.UnitFrames.currentStyleName, newName)
             if success then
