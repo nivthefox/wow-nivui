@@ -270,9 +270,10 @@ end
 -- Initialization
 --------------------------------------------------------------------------------
 
--- Ensure Default style exists
+-- Ensure at least one style exists (creates "Default" only if no styles exist)
 function NivUI:InitializeDefaultStyle()
-    if not self:StyleExists("Default") then
+    local names = self:GetStyleNames()
+    if #names == 0 then
         self:SaveStyle("Default", NivUI.UnitFrames.DEFAULT_STYLE)
     end
 end
