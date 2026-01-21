@@ -462,6 +462,16 @@ function NivUI.Designer:Create(parent)
     preview:SetPoint("CENTER")
     preview:SetScale(PREVIEW_SCALE)
     preview:SetFlattensRenderLayers(true)
+    preview:SetSize(200, 60)  -- Default size, will be updated by BuildPreview
+
+    -- Debug border around preview frame (so we can see where it is)
+    preview.debugBorder = CreateFrame("Frame", nil, preview, "BackdropTemplate")
+    preview.debugBorder:SetAllPoints()
+    preview.debugBorder:SetBackdrop({
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    preview.debugBorder:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.5)
 
     -- Background for preview area
     local bg = container:CreateTexture(nil, "BACKGROUND")
@@ -531,17 +541,27 @@ function NivUI.Designer:BuildPreview(container, styleName)
     wipe(container.widgets)
 
     local style = NivUI:GetStyleWithDefaults(styleName)
-    if not style then return end
+    if not style then
+        print("NivUI Designer: No style found for", styleName)
+        return
+    end
 
     -- Set preview frame size based on style
     container.preview:SetSize(style.width, style.height)
 
+    -- Check if WIDGET_ORDER exists
+    if not NivUI.UnitFrames or not NivUI.UnitFrames.WIDGET_ORDER then
+        print("NivUI Designer: WIDGET_ORDER not found!")
+        return
+    end
+
     -- Create each widget
+    local widgetCount = 0
     for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
         local config = style[widgetType]
         if config and config.enabled and WidgetFactories[widgetType] then
-            local widget = WidgetFactories[widgetType](container.preview, config, style)
-            if widget then
+            local success, widget = pcall(WidgetFactories[widgetType], container.preview, config, style)
+            if success and widget then
                 -- Position based on anchor (simplified for preview - just offset from frame)
                 local anchor = config.anchor
                 if anchor then
@@ -559,8 +579,15 @@ function NivUI.Designer:BuildPreview(container, styleName)
                 end)
 
                 container.widgets[widgetType] = widget
+                widgetCount = widgetCount + 1
+            elseif not success then
+                print("NivUI Designer: Error creating", widgetType, "-", widget)
             end
         end
+    end
+
+    if widgetCount == 0 then
+        print("NivUI Designer: No widgets created!")
     end
 end
 
@@ -571,5 +598,3 @@ function NivUI.Designer:RefreshPreview(container, styleName)
         container:SelectWidget(container.selectedWidget)
     end
 end
-
-return NivUI.Designer

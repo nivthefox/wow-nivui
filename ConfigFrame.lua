@@ -710,7 +710,7 @@ local unitFramesContainer = NivUI.UnitFrames:SetupConfigTab(ConfigFrame, Compone
 table.insert(tabContainers, unitFramesContainer)
 
 local unitFramesTab = Components.GetTab(ConfigFrame, "Unit Frames")
-unitFramesTab:SetPoint("TOPLEFT", staggerBarTab, "TOPRIGHT", -10, 0)
+unitFramesTab:SetPoint("LEFT", staggerBarTab, "RIGHT", -5, 0)
 unitFramesTab:SetScript("OnClick", function() SelectTab(2) end)
 table.insert(tabs, unitFramesTab)
 
@@ -719,7 +719,7 @@ local assignmentsContainer = NivUI.UnitFrames:SetupAssignmentsTab(ConfigFrame, C
 table.insert(tabContainers, assignmentsContainer)
 
 local assignmentsTab = Components.GetTab(ConfigFrame, "Assignments")
-assignmentsTab:SetPoint("TOPLEFT", unitFramesTab, "TOPRIGHT", -10, 0)
+assignmentsTab:SetPoint("LEFT", unitFramesTab, "RIGHT", -5, 0)
 assignmentsTab:SetScript("OnClick", function() SelectTab(3) end)
 table.insert(tabs, assignmentsTab)
 
