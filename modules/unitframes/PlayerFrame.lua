@@ -410,8 +410,7 @@ local function BuildCustomFrame(styleName)
     customFrame:SetAttribute("type2", "togglemenu")   -- Right click shows menu
     customFrame:RegisterForClicks("AnyUp")
 
-    -- Anchor TOPLEFT to Blizzard PlayerFrame's TOPLEFT
-    customFrame:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 0, 0)
+    customFrame:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 24, 0)
 
     -- Apply frame border if configured
     if frameConfig.showBorder then
