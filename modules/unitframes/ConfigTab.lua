@@ -723,6 +723,7 @@ local function CreateAssignmentsPanel(parent, Components)
         -- Enabled checkbox (left side)
         local checkbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
+        checkbox:SetText("")  -- Required for template to render
         checkbox:SetChecked(NivUI:IsFrameEnabled(frameInfo.value))
         checkbox:SetScript("OnClick", function(self)
             NivUI:SetFrameEnabled(frameInfo.value, self:GetChecked())
@@ -755,6 +756,7 @@ local function CreateAssignmentsPanel(parent, Components)
         -- Real-time updates checkbox
         local realtimeCheckbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         realtimeCheckbox:SetPoint("LEFT", dropdown, "RIGHT", 16, 0)
+        realtimeCheckbox:SetText("")  -- Required for template to render
         realtimeCheckbox:SetChecked(NivUI:IsRealTimeUpdates(frameInfo.value))
         realtimeCheckbox:SetScript("OnClick", function(self)
             NivUI:SetRealTimeUpdates(frameInfo.value, self:GetChecked())
