@@ -209,6 +209,8 @@ end
 
 -- Check if we should show the bar
 local function ShouldShow()
+    -- Always show when unlocked (for positioning)
+    if not NivUI_StaggerBarDB.locked then return true end
     if not isBrewmaster then return false end
     if not inCombat then return false end
     return true
@@ -350,10 +352,18 @@ SlashCmdList["NIVUI"] = function(msg)
         if cmd == "lock" then
             NivUI_StaggerBarDB.locked = true
             StaggerBar.resizeHandle:Hide()
+            UpdateVisibility()
             print("NivUI Stagger Bar: Locked")
         elseif cmd == "unlock" then
             NivUI_StaggerBarDB.locked = false
             StaggerBar.resizeHandle:Show()
+            -- Show preview with zero values
+            StaggerBar.bar:SetMinMaxValues(0, 1)
+            StaggerBar.bar:SetValue(0)
+            StaggerBar.bar:SetStatusBarColor(COLORS.light.r, COLORS.light.g, COLORS.light.b)
+            StaggerBar.bg:SetColorTexture(0, 0, 0, 0.8)
+            StaggerBar.text:SetText("0/s (0%)")
+            StaggerBar:Show()
             print("NivUI Stagger Bar: Unlocked - drag to move, corner to resize")
         elseif cmd == "show" then
             StaggerBar:Show()
