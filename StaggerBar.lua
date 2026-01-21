@@ -26,27 +26,66 @@ NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}
 local defaults = {
     updateInterval = 0.2,
     width = 394,
-    height = 4,
+    height = 20,
     point = "CENTER",
     x = 0,
     y = -200,
     locked = false,
 }
 
--- Create the main frame
+-- Create the main frame (includes padding for click area)
 local StaggerBar = CreateFrame("Frame", "NivUIStaggerBar", UIParent)
-StaggerBar:SetSize(394, 4)
+StaggerBar:SetSize(394, 20)  -- Taller for easier clicking
 StaggerBar:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
+StaggerBar:SetResizable(true)
+StaggerBar:SetResizeBounds(100, 16, 800, 60)  -- min/max sizes
 StaggerBar:Hide()
 
--- Background
-local bg = StaggerBar:CreateTexture(nil, "BACKGROUND")
+-- Background for the whole clickable area (transparent)
+local clickBg = StaggerBar:CreateTexture(nil, "BACKGROUND", nil, -1)
+clickBg:SetAllPoints()
+clickBg:SetColorTexture(0, 0, 0, 0)  -- Invisible but clickable
+
+-- The actual bar container (4px tall, at bottom of frame)
+local barContainer = CreateFrame("Frame", nil, StaggerBar)
+barContainer:SetHeight(4)
+barContainer:SetPoint("LEFT", StaggerBar, "LEFT", 0, 0)
+barContainer:SetPoint("RIGHT", StaggerBar, "RIGHT", 0, 0)
+barContainer:SetPoint("BOTTOM", StaggerBar, "BOTTOM", 0, 0)
+StaggerBar.barContainer = barContainer
+
+-- Resize handle (bottom-right corner)
+local resizeHandle = CreateFrame("Button", nil, StaggerBar)
+resizeHandle:SetSize(16, 16)
+resizeHandle:SetPoint("BOTTOMRIGHT", StaggerBar, "BOTTOMRIGHT", 0, 0)
+resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+resizeHandle:Hide()  -- Only show when unlocked
+StaggerBar.resizeHandle = resizeHandle
+
+resizeHandle:SetScript("OnMouseDown", function(self, button)
+    if button == "LeftButton" then
+        StaggerBar:StartSizing("BOTTOMRIGHT")
+    end
+end)
+
+resizeHandle:SetScript("OnMouseUp", function(self, button)
+    StaggerBar:StopMovingOrSizing()
+    -- Save size
+    local db = NivUI_StaggerBarDB
+    db.width = StaggerBar:GetWidth()
+    db.height = StaggerBar:GetHeight()
+end)
+
+-- Background for the bar
+local bg = barContainer:CreateTexture(nil, "BACKGROUND")
 bg:SetAllPoints()
 bg:SetColorTexture(0, 0, 0, 0.8)
 StaggerBar.bg = bg
 
 -- Status bar
-local bar = CreateFrame("StatusBar", nil, StaggerBar)
+local bar = CreateFrame("StatusBar", nil, barContainer)
 bar:SetAllPoints()
 bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 bar:SetMinMaxValues(0, 1)
@@ -61,15 +100,15 @@ spark:SetBlendMode("ADD")
 spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 StaggerBar.spark = spark
 
--- Text overlay
+-- Text overlay (above the bar)
 local text = StaggerBar:CreateFontString(nil, "OVERLAY")
 text:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-text:SetPoint("CENTER", StaggerBar, "CENTER", 0, 8)
+text:SetPoint("BOTTOM", barContainer, "TOP", 0, 2)
 text:SetTextColor(1, 1, 1, 1)
 StaggerBar.text = text
 
--- Border
-local border = CreateFrame("Frame", nil, StaggerBar, "BackdropTemplate")
+-- Border around the bar
+local border = CreateFrame("Frame", nil, barContainer, "BackdropTemplate")
 border:SetPoint("TOPLEFT", -1, 1)
 border:SetPoint("BOTTOMRIGHT", 1, -1)
 border:SetBackdrop({
@@ -97,16 +136,62 @@ local function FormatNumber(num)
     end
 end
 
+-- Debug mode
+local debugMode = false
+local lastDebugTime = 0
+
+-- Stagger decay rate: approximately 10% of pool per second, ticks every 0.5s
+local STAGGER_TICK_RATE = 0.5
+local STAGGER_DECAY_PER_SECOND = 0.10
+
+-- Helper to get table keys (for debug)
+local function GetKeysArray(t)
+    local keys = {}
+    for k in pairs(t) do
+        table.insert(keys, tostring(k))
+    end
+    return keys
+end
+
 -- Get tick damage from stagger debuff
 local function GetStaggerTickDamage()
+    local stagger = UnitStagger("player") or 0
+
+    -- Try to get from aura data first
     local auraData = C_UnitAuras.GetPlayerAuraBySpellID(STAGGER_HEAVY)
                   or C_UnitAuras.GetPlayerAuraBySpellID(STAGGER_MODERATE)
                   or C_UnitAuras.GetPlayerAuraBySpellID(STAGGER_LIGHT)
 
+    if debugMode then
+        local now = GetTime()
+        if now - lastDebugTime >= 1 then  -- Throttle debug output
+            lastDebugTime = now
+            if auraData then
+                print("NivUI Debug: Found aura, spellId=" .. tostring(auraData.spellId))
+                print("NivUI Debug: aura keys: " .. table.concat(GetKeysArray(auraData) or {}, ", "))
+                if auraData.points then
+                    print("NivUI Debug: points has " .. #auraData.points .. " entries")
+                    for i, v in ipairs(auraData.points) do
+                        print("NivUI Debug: points[" .. i .. "] = " .. tostring(v))
+                    end
+                else
+                    print("NivUI Debug: No points table")
+                end
+            else
+                print("NivUI Debug: No stagger aura found via GetPlayerAuraBySpellID")
+            end
+            print("NivUI Debug: UnitStagger = " .. tostring(stagger))
+        end
+    end
+
+    -- If API gives us the value, use it
     if auraData and auraData.points and auraData.points[1] then
         return auraData.points[1]
     end
-    return 0
+
+    -- Fallback: calculate from stagger pool
+    -- Tick damage = pool * decay_per_second * tick_interval
+    return stagger * STAGGER_DECAY_PER_SECOND * STAGGER_TICK_RATE
 end
 
 -- Get color based on stagger percentage
@@ -243,6 +328,12 @@ local function LoadPosition()
         db.width or defaults.width,
         db.height or defaults.height
     )
+    -- Show resize handle if unlocked
+    if db.locked then
+        StaggerBar.resizeHandle:Hide()
+    else
+        StaggerBar.resizeHandle:Show()
+    end
 end
 
 -- Event handler
@@ -298,10 +389,12 @@ SlashCmdList["NIVUI"] = function(msg)
     if module == "stagger" then
         if cmd == "lock" then
             NivUI_StaggerBarDB.locked = true
+            StaggerBar.resizeHandle:Hide()
             print("NivUI Stagger Bar: Locked")
         elseif cmd == "unlock" then
             NivUI_StaggerBarDB.locked = false
-            print("NivUI Stagger Bar: Unlocked - drag to reposition")
+            StaggerBar.resizeHandle:Show()
+            print("NivUI Stagger Bar: Unlocked - drag to move, corner to resize")
         elseif cmd == "show" then
             StaggerBar:Show()
             print("NivUI Stagger Bar: Forced visible (will hide on combat end)")
@@ -312,12 +405,19 @@ SlashCmdList["NIVUI"] = function(msg)
             end
             LoadPosition()
             print("NivUI Stagger Bar: Reset to defaults")
+        elseif cmd == "debug" then
+            debugMode = not debugMode
+            print("NivUI Stagger Bar: Debug mode " .. (debugMode and "ON" or "OFF"))
+            if debugMode then
+                print("  Watch chat for API output (throttled to 1/sec)")
+            end
         else
             print("NivUI Stagger Bar commands:")
             print("  /nivui stagger lock - Lock position")
             print("  /nivui stagger unlock - Unlock for repositioning")
             print("  /nivui stagger show - Force show (for testing)")
             print("  /nivui stagger reset - Reset to defaults")
+            print("  /nivui stagger debug - Toggle debug output")
         end
     else
         print("NivUI commands:")
