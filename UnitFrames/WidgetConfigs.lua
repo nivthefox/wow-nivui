@@ -45,6 +45,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             },
         },
         {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
+        {
             label = "Appearance",
             entries = {
                 { kind = "textureDropdown", key = "texture", label = "Texture" },
@@ -80,6 +90,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             },
         },
         {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
+        {
             label = "Appearance",
             entries = {
                 { kind = "textureDropdown", key = "texture", label = "Texture" },
@@ -100,6 +120,16 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 16, max = 128, step = 4 },
                 { kind = "slider", key = "size.height", label = "Height", min = 16, max = 128, step = 4 },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
         {
@@ -124,6 +154,16 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "fontDropdown", key = "font", label = "Font" },
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
         {
@@ -155,6 +195,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             },
         },
         {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
+        {
             label = "Color",
             entries = {
                 { kind = "checkbox", key = "colorByDifficulty", label = "Color by Difficulty" },
@@ -174,6 +224,16 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "fontDropdown", key = "font", label = "Font" },
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
         {
@@ -199,6 +259,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             },
         },
         {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
+        {
             label = "Display",
             entries = {
                 { kind = "dropdown", key = "format", label = "Format", options = "TEXT_FORMATS" },
@@ -216,6 +286,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "iconSize", label = "Icon Size", min = 8, max = 32, step = 1 },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
         {
@@ -243,6 +323,16 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "size", label = "Size", min = 8, max = 32, step = 1 },
             },
         },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -254,6 +344,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size", label = "Size", min = 8, max = 48, step = 1 },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
     },
@@ -270,6 +370,16 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "size.height", label = "Height", min = 8, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
         {
@@ -311,6 +421,16 @@ NivUI.UnitFrames.WidgetConfigs = {
             },
         },
         {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
+        {
             label = "Layout",
             entries = {
                 { kind = "slider", key = "perRow", label = "Icons Per Row", min = 1, max = 16, step = 1 },
@@ -338,6 +458,16 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "iconSize", label = "Icon Size", min = 12, max = 40, step = 1 },
                 { kind = "slider", key = "spacing", label = "Spacing", min = 0, max = 8, step = 1 },
+            },
+        },
+        {
+            label = "Position",
+            entries = {
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
         {
@@ -375,7 +505,14 @@ NivUI.UnitFrames.FONT_OUTLINES = {
 }
 
 -- Helper to resolve option lists
-function NivUI.UnitFrames:GetOptionList(optionName)
+-- context: optional table with additional info (e.g., { widgetType = "healthBar" })
+function NivUI.UnitFrames:GetOptionList(optionName, context)
+    -- Handle dynamic option lists
+    if optionName == "WIDGET_PARENTS" then
+        local excludeWidget = context and context.widgetType or nil
+        return self:GetWidgetParentOptions(excludeWidget)
+    end
+
     local lists = {
         HEALTH_COLOR_MODES = self.HEALTH_COLOR_MODES,
         POWER_COLOR_MODES = self.POWER_COLOR_MODES,

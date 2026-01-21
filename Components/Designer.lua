@@ -590,7 +590,7 @@ function NivUI.Designer:BuildPreview(container, styleName)
         return
     end
 
-    -- Create each widget
+    -- Pass 1: Create all widgets (without positioning)
     local widgetCount = 0
     for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
         -- Skip "frame" - it's not a widget, just config for the container
@@ -599,16 +599,6 @@ function NivUI.Designer:BuildPreview(container, styleName)
             if config and config.enabled and WidgetFactories[widgetType] then
                 local success, widget = pcall(WidgetFactories[widgetType], container.preview, config, style)
                 if success and widget then
-                    -- Position based on anchor (simplified for preview - just offset from frame)
-                    local anchor = config.anchor
-                    if anchor then
-                        widget:ClearAllPoints()
-                        -- For preview, we simplify and anchor to the preview frame
-                        widget:SetPoint(anchor.point, container.preview, anchor.relativePoint or anchor.point, anchor.x, anchor.y)
-                    else
-                        widget:SetPoint("CENTER")
-                    end
-
                     -- Click handler for selection
                     widget:EnableMouse(true)
                     widget:SetScript("OnMouseDown", function()
@@ -621,6 +611,31 @@ function NivUI.Designer:BuildPreview(container, styleName)
                     print("NivUI Designer: Error creating", widgetType, "-", widget)
                 end
             end
+        end
+    end
+
+    -- Pass 2: Apply anchors (now all widgets exist for cross-referencing)
+    for widgetType, widget in pairs(container.widgets) do
+        local config = style[widgetType]
+        local anchor = config and config.anchor
+        if anchor then
+            widget:ClearAllPoints()
+
+            -- Resolve the anchor target
+            local anchorTarget
+            if anchor.relativeTo == "frame" or anchor.relativeTo == nil then
+                anchorTarget = container.preview
+            else
+                anchorTarget = container.widgets[anchor.relativeTo]
+                -- Fallback to frame if target widget doesn't exist or isn't enabled
+                if not anchorTarget then
+                    anchorTarget = container.preview
+                end
+            end
+
+            widget:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
+        else
+            widget:SetPoint("CENTER", container.preview, "CENTER", 0, 0)
         end
     end
 

@@ -372,7 +372,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             dropdown:SetWidth(150)
             dropdown:SetPoint("LEFT", holder, "CENTER", -15, 0)
 
-            local options = type(entry.options) == "string" and NivUI.UnitFrames:GetOptionList(entry.options) or entry.options or {}
+            local options = type(entry.options) == "string" and NivUI.UnitFrames:GetOptionList(entry.options, { widgetType = widgetType }) or entry.options or {}
 
             dropdown:SetupMenu(function(_, rootDescription)
                 for _, opt in ipairs(options) do

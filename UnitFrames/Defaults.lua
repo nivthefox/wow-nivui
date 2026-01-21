@@ -4,11 +4,32 @@
 NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
--- Anchor point options
+-- Generate parent options for anchor dropdown
+-- excludeWidget: the widget type to exclude from the list (the one being edited)
+function NivUI.UnitFrames:GetWidgetParentOptions(excludeWidget)
+    local options = {
+        { value = "frame", name = "Frame" },
+    }
+    for _, widgetType in ipairs(self.WIDGET_ORDER) do
+        if widgetType ~= "frame" and widgetType ~= excludeWidget then
+            local name = self.WIDGET_NAMES[widgetType] or widgetType
+            table.insert(options, { value = widgetType, name = name })
+        end
+    end
+    return options
+end
+
+-- Anchor point options (dropdown-compatible format)
 NivUI.UnitFrames.ANCHOR_POINTS = {
-    "TOPLEFT", "TOP", "TOPRIGHT",
-    "LEFT", "CENTER", "RIGHT",
-    "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT",
+    { value = "TOPLEFT", name = "Top Left" },
+    { value = "TOP", name = "Top" },
+    { value = "TOPRIGHT", name = "Top Right" },
+    { value = "LEFT", name = "Left" },
+    { value = "CENTER", name = "Center" },
+    { value = "RIGHT", name = "Right" },
+    { value = "BOTTOMLEFT", name = "Bottom Left" },
+    { value = "BOTTOM", name = "Bottom" },
+    { value = "BOTTOMRIGHT", name = "Bottom Right" },
 }
 
 -- Frame types that can have styles assigned
