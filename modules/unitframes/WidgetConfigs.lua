@@ -1,17 +1,7 @@
--- NivUI Unit Frames: Widget Configuration Schemas
--- Declarative config definitions for each widget type
-
 NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
--- Configuration schema per widget type
--- Each widget has tabs, each tab has entries
--- Entry kinds: slider, dropdown, checkbox, colorPicker, spacer, header
-
 NivUI.UnitFrames.WidgetConfigs = {
-    ----------------------------------------------------------------------------
-    -- Frame
-    ----------------------------------------------------------------------------
     frame = {
         {
             label = "General",
@@ -32,9 +22,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Health Bar
-    ----------------------------------------------------------------------------
     healthBar = {
         {
             label = "General",
@@ -74,9 +61,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Power Bar
-    ----------------------------------------------------------------------------
     powerBar = {
         {
             label = "General",
@@ -106,9 +90,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Portrait
-    ----------------------------------------------------------------------------
     portrait = {
         {
             label = "General",
@@ -136,9 +117,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Name Text
-    ----------------------------------------------------------------------------
     nameText = {
         {
             label = "General",
@@ -172,9 +150,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Level Text
-    ----------------------------------------------------------------------------
     levelText = {
         {
             label = "General",
@@ -202,9 +177,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Health Text
-    ----------------------------------------------------------------------------
     healthText = {
         {
             label = "General",
@@ -232,9 +204,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Power Text
-    ----------------------------------------------------------------------------
     powerText = {
         {
             label = "General",
@@ -262,9 +231,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Status Indicators
-    ----------------------------------------------------------------------------
     statusIndicators = {
         {
             label = "General",
@@ -294,9 +260,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Leader Icon
-    ----------------------------------------------------------------------------
     leaderIcon = {
         {
             label = "General",
@@ -314,9 +277,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Raid Marker
-    ----------------------------------------------------------------------------
     raidMarker = {
         {
             label = "General",
@@ -334,9 +294,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Castbar
-    ----------------------------------------------------------------------------
     castbar = {
         {
             label = "General",
@@ -381,9 +338,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Buffs
-    ----------------------------------------------------------------------------
     buffs = {
         {
             label = "General",
@@ -418,9 +372,6 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
-    ----------------------------------------------------------------------------
-    -- Debuffs
-    ----------------------------------------------------------------------------
     debuffs = {
         {
             label = "General",
@@ -463,7 +414,6 @@ NivUI.UnitFrames.WidgetConfigs = {
     },
 }
 
--- Font outline options
 NivUI.UnitFrames.FONT_OUTLINES = {
     { value = "", name = "None" },
     { value = "OUTLINE", name = "Outline" },
@@ -471,10 +421,7 @@ NivUI.UnitFrames.FONT_OUTLINES = {
     { value = "MONOCHROME", name = "Monochrome" },
 }
 
--- Helper to resolve option lists
--- context: optional table with additional info (e.g., { widgetType = "healthBar" })
 function NivUI.UnitFrames:GetOptionList(optionName, context)
-    -- Handle dynamic option lists
     if optionName == "WIDGET_PARENTS" then
         local excludeWidget = context and context.widgetType or nil
         return self:GetWidgetParentOptions(excludeWidget)

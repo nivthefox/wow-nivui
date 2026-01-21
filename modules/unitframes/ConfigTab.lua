@@ -1,6 +1,3 @@
--- NivUI Unit Frames: Configuration Tab
--- Style designer and frame assignments UI
-
 NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
@@ -8,17 +5,8 @@ local ROW_HEIGHT = 32
 local SECTION_SPACING = 20
 local WIDGET_LIST_WIDTH = 140
 
---------------------------------------------------------------------------------
--- Module-level state for dialogs
---------------------------------------------------------------------------------
-
--- These get set by the config UI and used by the dialogs
 NivUI.UnitFrames.currentStyleName = "Default"
 NivUI.UnitFrames.refreshCallback = nil
-
---------------------------------------------------------------------------------
--- Static Popup Dialogs (must be at top level)
---------------------------------------------------------------------------------
 
 StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
     text = "Enter name for new style:",
@@ -162,11 +150,6 @@ StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
     showAlert = 1,
 }
 
---------------------------------------------------------------------------------
--- Local Helpers
---------------------------------------------------------------------------------
-
--- Deep get a nested value from a table using a dot-separated key
 local function DeepGet(tbl, key)
     local parts = { strsplit(".", key) }
     local current = tbl
@@ -177,7 +160,6 @@ local function DeepGet(tbl, key)
     return current
 end
 
--- Deep set a nested value in a table using a dot-separated key
 local function DeepSet(tbl, key, value)
     local parts = { strsplit(".", key) }
     local current = tbl
@@ -191,7 +173,6 @@ local function DeepSet(tbl, key, value)
     current[parts[#parts]] = value
 end
 
--- Deep copy helper
 local function DeepCopy(src)
     if type(src) ~= "table" then return src end
     local copy = {}
@@ -200,10 +181,6 @@ local function DeepCopy(src)
     end
     return copy
 end
-
---------------------------------------------------------------------------------
--- Widget List Component
---------------------------------------------------------------------------------
 
 local function CreateWidgetList(parent, onSelect)
     local frame = CreateFrame("Frame", nil, parent)
@@ -287,10 +264,6 @@ local function CreateWidgetList(parent, onSelect)
 
     return frame
 end
-
---------------------------------------------------------------------------------
--- Widget Settings Panel
---------------------------------------------------------------------------------
 
 local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPreview)
     local frame = CreateFrame("Frame", nil, parent)
@@ -690,10 +663,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     return frame
 end
 
---------------------------------------------------------------------------------
--- Frame Assignments Panel
---------------------------------------------------------------------------------
-
 local function CreateAssignmentsPanel(parent, Components)
     local frame = CreateFrame("Frame", nil, parent)
 
@@ -798,10 +767,6 @@ local function CreateAssignmentsPanel(parent, Components)
 
     return frame
 end
-
---------------------------------------------------------------------------------
--- Main Setup Function
---------------------------------------------------------------------------------
 
 function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
@@ -974,10 +939,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     return container
 end
 
---------------------------------------------------------------------------------
--- Assignments Tab Setup
---------------------------------------------------------------------------------
-
 function NivUI.UnitFrames:SetupAssignmentsTab(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
     container:SetPoint("TOPLEFT", 8, -60)
@@ -990,10 +951,6 @@ function NivUI.UnitFrames:SetupAssignmentsTab(parent, Components)
 
     return container
 end
-
---------------------------------------------------------------------------------
--- Combined Setup with Sub-tabs (Designer + Assignments)
---------------------------------------------------------------------------------
 
 function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
@@ -1051,10 +1008,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
 
     return container
 end
-
---------------------------------------------------------------------------------
--- Designer Content (extracted from SetupConfigTab)
---------------------------------------------------------------------------------
 
 function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     local container = CreateFrame("Frame", nil, parent)

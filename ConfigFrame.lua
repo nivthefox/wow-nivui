@@ -1,19 +1,11 @@
--- NivUI Config Frame
--- Modern configuration UI using Platynator-style components
-
 local FRAME_WIDTH = 680
 local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
 local SECTION_SPACING = 20
 local SIDEBAR_WIDTH = 100
 
---------------------------------------------------------------------------------
--- Component Helpers (Platynator-style)
---------------------------------------------------------------------------------
-
 local Components = {}
 
--- Create a checkbox with label
 function Components.GetCheckbox(parent, label, callback)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetHeight(ROW_HEIGHT)
@@ -55,7 +47,6 @@ function Components.GetCheckbox(parent, label, callback)
     return holder
 end
 
--- Create a basic dropdown
 function Components.GetBasicDropdown(parent, labelText, getItems, isSelectedCallback, onSelectionCallback)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetHeight(ROW_HEIGHT)

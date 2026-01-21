@@ -1,23 +1,17 @@
--- NivUI Unit Frames: Player Frame
--- Runtime player unit frame that replaces Blizzard's PlayerFrame
-
 NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local PlayerFrameModule = {}
 NivUI.UnitFrames.PlayerFrame = PlayerFrameModule
 
--- State
 local customFrame = nil
 local currentStyle = nil
 local blizzardHidden = false
 local pendingHide = false
 
--- Throttle interval for OnUpdate (health/power values are secret in combat, can't compare)
 local UPDATE_INTERVAL = 0.1
 local timeSinceLastUpdate = 0
 
--- Helpers from shared factories
 local function SafeNumber(value, fallback)
     return NivUI.WidgetFactories.SafeNumber(value, fallback)
 end
@@ -29,10 +23,6 @@ end
 local function GetPowerColor(unit)
     return NivUI.WidgetFactories.GetPowerColor(unit)
 end
-
---------------------------------------------------------------------------------
--- Widget Update Functions
---------------------------------------------------------------------------------
 
 local function UpdateHealthBar()
     if not customFrame or not customFrame.widgets.healthBar then return end
@@ -270,10 +260,6 @@ local function UpdateLevelText()
     end
 end
 
---------------------------------------------------------------------------------
--- Blizzard Frame Management
---------------------------------------------------------------------------------
-
 local function HideRegions(frame)
     if not frame then return end
     local regions = { frame:GetRegions() }
@@ -360,10 +346,6 @@ local function SoftHideBlizzardPlayerFrame()
         end)
     end
 end
-
---------------------------------------------------------------------------------
--- Custom Frame Creation
---------------------------------------------------------------------------------
 
 local function DestroyCustomFrame()
     if customFrame then
@@ -532,10 +514,6 @@ local function BuildCustomFrame(styleName)
     UpdateCastbar()  -- Hide if not casting
 end
 
---------------------------------------------------------------------------------
--- Enable/Disable Logic
---------------------------------------------------------------------------------
-
 local function EnablePlayerFrame()
     local styleName = NivUI:GetAssignment("player")
     BuildCustomFrame(styleName)
@@ -555,10 +533,6 @@ local function RefreshPlayerFrame()
     end
 end
 
---------------------------------------------------------------------------------
--- Event Handling
---------------------------------------------------------------------------------
-
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -576,7 +550,6 @@ eventFrame:SetScript("OnEvent", function(self, event)
     end
 end)
 
--- Listen for enabled state changes
 NivUI:RegisterCallback("FrameEnabledChanged", function(data)
     if data.frameType == "player" then
         if data.enabled then
@@ -587,14 +560,12 @@ NivUI:RegisterCallback("FrameEnabledChanged", function(data)
     end
 end)
 
--- Listen for style assignment changes
 NivUI:RegisterCallback("AssignmentChanged", function(data)
     if data.frameType == "player" and NivUI:IsFrameEnabled("player") then
         RefreshPlayerFrame()
     end
 end)
 
--- Listen for style changes (in case the assigned style is modified)
 NivUI:RegisterCallback("StyleChanged", function(data)
     if NivUI:IsFrameEnabled("player") then
         local assignedStyle = NivUI:GetAssignment("player")

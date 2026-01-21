@@ -1,13 +1,8 @@
--- NivUI: Core namespace and shared configuration
--- This file loads first and sets up the global namespace
-
 NivUI = NivUI or {}
 
--- Saved variables (initialized on ADDON_LOADED)
 NivUI_DB = NivUI_DB or {}
 NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}  -- Legacy, kept for migration
 
--- Default settings for the stagger bar (will be stored in NivUI_DB.staggerBar)
 NivUI.staggerBarDefaults = {
     -- General
     visibility = "combat",  -- "always", "combat", "never"
@@ -44,13 +39,9 @@ NivUI.staggerBarDefaults = {
     },
 }
 
--- Legacy alias for backwards compatibility
-NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture
+NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture  -- Legacy alias
+NivUI.defaults = NivUI.staggerBarDefaults  -- Legacy alias
 
--- Alias for backwards compatibility with existing code
-NivUI.defaults = NivUI.staggerBarDefaults
-
--- Fallback bar textures (used if SharedMedia unavailable)
 local BUILTIN_TEXTURES = {
     { value = "Default", name = "Default", path = "Interface\\TargetingFrame\\UI-StatusBar" },
     { value = "Target Frame", name = "Target Frame", path = "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill" },
@@ -58,7 +49,6 @@ local BUILTIN_TEXTURES = {
     { value = "Skills Bar", name = "Skills Bar", path = "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar" },
 }
 
--- Fallback fonts (used if SharedMedia unavailable)
 local BUILTIN_FONTS = {
     { value = "Friz Quadrata", name = "Friz Quadrata", path = "Fonts\\FRIZQT__.TTF" },
     { value = "Arial Narrow", name = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
@@ -66,14 +56,12 @@ local BUILTIN_FONTS = {
     { value = "Skurri", name = "Skurri", path = "Fonts\\SKURRI.TTF" },
 }
 
--- Border styles
 local BUILTIN_BORDERS = {
     { value = "none", name = "None" },
     { value = "thin", name = "Thin (1px)" },
     { value = "thick", name = "Thick (2px)" },
 }
 
--- Get SharedMedia if available
 function NivUI:GetSharedMedia()
     if self.LSM == nil then
         self.LSM = LibStub and LibStub("LibSharedMedia-3.0", true) or false
@@ -81,8 +69,6 @@ function NivUI:GetSharedMedia()
     return self.LSM
 end
 
--- Get available bar textures (from SharedMedia or fallback)
--- Returns items with 'value', 'name', and 'path' (for texture preview)
 function NivUI:GetBarTextures()
     local LSM = self:GetSharedMedia()
     if LSM then
@@ -101,8 +87,6 @@ function NivUI:GetBarTextures()
     return BUILTIN_TEXTURES
 end
 
--- Get available fonts (from SharedMedia or fallback)
--- Returns items with 'value', 'name', and 'path'
 function NivUI:GetFonts()
     local LSM = self:GetSharedMedia()
     if LSM then
@@ -121,12 +105,10 @@ function NivUI:GetFonts()
     return BUILTIN_FONTS
 end
 
--- Get available border styles
 function NivUI:GetBorders()
     return BUILTIN_BORDERS
 end
 
--- Visibility options for the bar
 local VISIBILITY_OPTIONS = {
     { value = "always", name = "Always" },
     { value = "combat", name = "In Combat" },
@@ -137,7 +119,6 @@ function NivUI:GetVisibilityOptions()
     return VISIBILITY_OPTIONS
 end
 
--- Resolve a texture name to its path (handles both SharedMedia names and raw paths)
 function NivUI:GetTexturePath(nameOrPath)
     local LSM = self:GetSharedMedia()
     if LSM then
@@ -151,7 +132,6 @@ function NivUI:GetTexturePath(nameOrPath)
     return nameOrPath  -- Assume it's a raw path
 end
 
--- Resolve a font name to its path (handles both SharedMedia names and raw paths)
 function NivUI:GetFontPath(nameOrPath)
     local LSM = self:GetSharedMedia()
     if LSM then
@@ -165,11 +145,9 @@ function NivUI:GetFontPath(nameOrPath)
     return nameOrPath  -- Assume it's a raw path
 end
 
--- For backwards compat, these are populated on first access
-NivUI.barTextures = nil
-NivUI.fonts = nil
+NivUI.barTextures = nil  -- Legacy
+NivUI.fonts = nil  -- Legacy
 
--- Registry for apply callbacks (modules register here, config calls them)
 NivUI.applyCallbacks = {}
 
 function NivUI:RegisterApplyCallback(name, callback)
@@ -189,7 +167,6 @@ function NivUI:ApplySettings(settingName)
     end
 end
 
--- Helper to get a saved value with fallback to default (stagger bar)
 function NivUI:GetSetting(key)
     local db = NivUI_DB.staggerBar or {}
     if db[key] ~= nil then
@@ -198,7 +175,6 @@ function NivUI:GetSetting(key)
     return self.staggerBarDefaults[key]
 end
 
--- Helper to get stagger colors specifically (nested table)
 function NivUI:GetColors()
     local db = NivUI_DB.staggerBar or {}
     if db.colors then
@@ -207,7 +183,6 @@ function NivUI:GetColors()
     return self.staggerBarDefaults.colors
 end
 
--- Deep copy helper
 local function DeepCopy(src)
     if type(src) ~= "table" then return src end
     local copy = {}
@@ -217,7 +192,6 @@ local function DeepCopy(src)
     return copy
 end
 
--- Initialize saved variables with defaults (call on ADDON_LOADED)
 function NivUI:InitializeDB()
     -- Initialize NivUI_DB structure
     NivUI_DB.version = NivUI_DB.version or 1

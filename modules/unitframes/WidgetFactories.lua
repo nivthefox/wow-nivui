@@ -1,6 +1,3 @@
--- NivUI Unit Frames: Widget Factories
--- Shared widget creation functions for Designer preview and runtime frames
-
 NivUI = NivUI or {}
 NivUI.WidgetFactories = {}
 

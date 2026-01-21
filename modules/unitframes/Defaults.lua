@@ -1,11 +1,6 @@
--- NivUI Unit Frames: Default Style Schema
--- Defines the complete structure for a unit frame style
-
 NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
--- Generate parent options for anchor dropdown
--- excludeWidget: the widget type to exclude from the list (the one being edited)
 function NivUI.UnitFrames:GetWidgetParentOptions(excludeWidget)
     local options = {
         { value = "frame", name = "Frame" },
@@ -19,7 +14,6 @@ function NivUI.UnitFrames:GetWidgetParentOptions(excludeWidget)
     return options
 end
 
--- Anchor point options (dropdown-compatible format)
 NivUI.UnitFrames.ANCHOR_POINTS = {
     { value = "TOPLEFT", name = "Top Left" },
     { value = "TOP", name = "Top" },
@@ -32,7 +26,6 @@ NivUI.UnitFrames.ANCHOR_POINTS = {
     { value = "BOTTOMRIGHT", name = "Bottom Right" },
 }
 
--- Frame types that can have styles assigned
 NivUI.UnitFrames.FRAME_TYPES = {
     { value = "player", name = "Player" },
     { value = "target", name = "Target" },
@@ -43,7 +36,6 @@ NivUI.UnitFrames.FRAME_TYPES = {
     { value = "targettarget", name = "Target of Target" },
 }
 
--- Health bar color modes
 NivUI.UnitFrames.HEALTH_COLOR_MODES = {
     { value = "class", name = "Class Color" },
     { value = "class_inverted", name = "Class Color (Inverted)" },
@@ -52,27 +44,23 @@ NivUI.UnitFrames.HEALTH_COLOR_MODES = {
     { value = "custom", name = "Custom" },
 }
 
--- Power bar color modes
 NivUI.UnitFrames.POWER_COLOR_MODES = {
     { value = "power", name = "Power Type" },
     { value = "class", name = "Class Color" },
     { value = "custom", name = "Custom" },
 }
 
--- Portrait modes
 NivUI.UnitFrames.PORTRAIT_MODES = {
     { value = "3D", name = "3D Model" },
     { value = "2D", name = "2D Texture" },
     { value = "class", name = "Class Icon" },
 }
 
--- Portrait shapes
 NivUI.UnitFrames.PORTRAIT_SHAPES = {
     { value = "square", name = "Square" },
     { value = "circle", name = "Circle" },
 }
 
--- Text formats for health/power
 NivUI.UnitFrames.TEXT_FORMATS = {
     { value = "none", name = "None" },
     { value = "current", name = "Current" },
@@ -82,7 +70,6 @@ NivUI.UnitFrames.TEXT_FORMATS = {
     { value = "deficit", name = "Deficit" },
 }
 
--- Aura growth directions
 NivUI.UnitFrames.AURA_GROWTH = {
     { value = "RIGHT", name = "Right" },
     { value = "LEFT", name = "Left" },
@@ -90,13 +77,11 @@ NivUI.UnitFrames.AURA_GROWTH = {
     { value = "DOWN", name = "Down" },
 }
 
--- Bar orientations
 NivUI.UnitFrames.BAR_ORIENTATIONS = {
     { value = "HORIZONTAL", name = "Horizontal" },
     { value = "VERTICAL", name = "Vertical" },
 }
 
--- Frame strata options
 NivUI.UnitFrames.FRAME_STRATA = {
     { value = "BACKGROUND", name = "Background" },
     { value = "LOW", name = "Low" },
@@ -108,28 +93,23 @@ NivUI.UnitFrames.FRAME_STRATA = {
     { value = "TOOLTIP", name = "Tooltip" },
 }
 
--- Text alignments
 NivUI.UnitFrames.TEXT_ALIGNMENTS = {
     { value = "LEFT", name = "Left" },
     { value = "CENTER", name = "Center" },
     { value = "RIGHT", name = "Right" },
 }
 
--- Default anchor configuration
 local function DefaultAnchor(point, relativeTo, relativePoint, x, y)
     return {
         point = point or "CENTER",
-        relativeTo = relativeTo or "frame",  -- "frame" means parent unit frame
+        relativeTo = relativeTo or "frame",
         relativePoint = relativePoint or "CENTER",
         x = x or 0,
         y = y or 0,
     }
 end
 
--- Default style definition
--- This is what a new style starts with
 NivUI.UnitFrames.DEFAULT_STYLE = {
-    -- Frame settings
     frame = {
         width = 200,
         height = 60,
@@ -140,7 +120,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         borderSize = 1,
     },
 
-    -- Health Bar
     healthBar = {
         enabled = true,
         anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", 0, 0),
@@ -159,7 +138,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
     },
 
-    -- Power Bar
     powerBar = {
         enabled = true,
         anchor = DefaultAnchor("TOPLEFT", "healthBar", "BOTTOMLEFT", 0, -2),
@@ -174,7 +152,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
     },
 
-    -- Portrait
     portrait = {
         enabled = true,
         anchor = DefaultAnchor("RIGHT", "frame", "LEFT", -4, 0),
@@ -187,7 +164,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         borderWidth = 1,
     },
 
-    -- Name Text
     nameText = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMLEFT", "healthBar", "TOPLEFT", 2, 2),
@@ -202,7 +178,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         truncateLength = 20,
     },
 
-    -- Level Text
     levelText = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMRIGHT", "healthBar", "TOPRIGHT", -2, 2),
@@ -216,7 +191,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         customColor = { r = 1, g = 0.82, b = 0 },
     },
 
-    -- Health Text
     healthText = {
         enabled = true,
         anchor = DefaultAnchor("CENTER", "healthBar", "CENTER", 0, 0),
@@ -230,7 +204,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         color = { r = 1, g = 1, b = 1 },
     },
 
-    -- Power Text
     powerText = {
         enabled = true,
         anchor = DefaultAnchor("CENTER", "powerBar", "CENTER", 0, 0),
@@ -244,7 +217,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         color = { r = 1, g = 1, b = 1 },
     },
 
-    -- Status Indicators
     statusIndicators = {
         enabled = true,
         strata = "MEDIUM",
@@ -260,7 +232,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         anchor = DefaultAnchor("TOPRIGHT", "frame", "TOPRIGHT", 0, 0),
     },
 
-    -- Leader/Assistant Icon
     leaderIcon = {
         enabled = true,
         anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", -4, 4),
@@ -269,7 +240,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         size = 16,
     },
 
-    -- Raid Marker
     raidMarker = {
         enabled = true,
         anchor = DefaultAnchor("TOP", "frame", "TOP", 0, 8),
@@ -278,7 +248,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         size = 20,
     },
 
-    -- Castbar
     castbar = {
         enabled = true,
         anchor = DefaultAnchor("TOP", "powerBar", "BOTTOM", 0, 0),
@@ -298,7 +267,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         nonInterruptibleColor = { r = 0.7, g = 0, b = 0 },
     },
 
-    -- Buffs
     buffs = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMLEFT", "frame", "TOPLEFT", 0, 4),
@@ -311,10 +279,9 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         growth = "RIGHT",
         showDuration = true,
         showStacks = true,
-        filterPlayer = false,  -- Only show player-cast buffs
+        filterPlayer = false,
     },
 
-    -- Debuffs
     debuffs = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMLEFT", "buffs", "TOPLEFT", 0, 2),
@@ -329,11 +296,10 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         showStacks = true,
         highlightDispellable = true,
         dispellableColor = { r = 0, g = 1, b = 0, a = 1 },
-        filterPlayer = false,  -- Only show player-cast debuffs
+        filterPlayer = false,
     },
 }
 
--- Widget list for iteration (order matters for UI)
 NivUI.UnitFrames.WIDGET_ORDER = {
     "frame",
     "healthBar",
@@ -351,7 +317,6 @@ NivUI.UnitFrames.WIDGET_ORDER = {
     "debuffs",
 }
 
--- Human-readable widget names
 NivUI.UnitFrames.WIDGET_NAMES = {
     frame = "Frame",
     healthBar = "Health Bar",
