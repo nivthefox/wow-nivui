@@ -213,16 +213,17 @@ end
 local function CreateTextWidget(parent, config, textValue, widgetType, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(100, config.fontSize + 4)
+    frame:SetSize(200, config.fontSize + 4)
 
     frame.text = frame:CreateFontString(nil, "OVERLAY")
+    frame.text:SetAllPoints(frame)
     local fontPath = NivUI:GetFontPath(config.font)
     frame.text:SetFont(fontPath, config.fontSize, config.fontOutline or "")
 
     -- Apply alignment
     local alignment = config.alignment or "CENTER"
-    frame.text:SetPoint(alignment)
     frame.text:SetJustifyH(alignment)
+    frame.text:SetJustifyV("MIDDLE")
     frame.text:SetText(textValue)
 
     -- Color

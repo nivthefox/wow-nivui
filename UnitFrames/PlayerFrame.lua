@@ -173,6 +173,48 @@ local function UpdateStatusIndicators()
     end
 end
 
+local function UpdateCastbar()
+    if not customFrame or not customFrame.widgets.castbar then return end
+    local widget = customFrame.widgets.castbar
+    local config = currentStyle.castbar
+
+    -- Check if player is casting or channeling
+    local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID = UnitCastingInfo("player")
+
+    if not name then
+        -- Check for channeling
+        name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible, spellID = UnitChannelInfo("player")
+    end
+
+    if name then
+        -- Currently casting/channeling
+        local duration = (endTimeMS - startTimeMS) / 1000
+        local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
+        local progress = elapsed / duration
+
+        widget:SetMinMaxValues(0, 1)
+        widget:SetValue(progress)
+
+        if widget.spellName and config.showSpellName then
+            widget.spellName:SetText(name)
+        end
+
+        if widget.icon and config.showIcon then
+            widget.icon:SetTexture(texture)
+        end
+
+        if widget.timer and config.showTimer then
+            local remaining = duration - elapsed
+            widget.timer:SetText(string.format("%.1fs", remaining))
+        end
+
+        widget:Show()
+    else
+        -- Not casting
+        widget:Hide()
+    end
+end
+
 local function UpdateNameText()
     if not customFrame or not customFrame.widgets.nameText then return end
     local widget = customFrame.widgets.nameText
@@ -466,6 +508,16 @@ local function BuildCustomFrame(styleName)
     customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 
+    -- Castbar events
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", "player")
+
     customFrame:SetScript("OnEvent", function(self, event, unit)
         if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
             UpdateHealthBar()
@@ -481,6 +533,8 @@ local function BuildCustomFrame(styleName)
             UpdateLevelText()
         elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
             UpdateStatusIndicators()
+        elseif event:find("SPELLCAST") then
+            UpdateCastbar()
         end
     end)
 
@@ -492,6 +546,7 @@ local function BuildCustomFrame(styleName)
     UpdatePowerBar()
     UpdatePowerText()
     UpdateStatusIndicators()
+    UpdateCastbar()  -- Hide if not casting
 end
 
 --------------------------------------------------------------------------------
