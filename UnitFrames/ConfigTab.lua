@@ -742,13 +742,21 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
         button2 = "Cancel",
         hasEditBox = true,
         OnAccept = function(self)
-            local name = self.editBox:GetText()
-            local success, err = NivUI:CreateStyle(name)
-            if success then
-                currentStyleName = name
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to create style"))
+            print("DEBUG: OnAccept called for NEW_STYLE")
+            local ok, result = pcall(function()
+                local name = self.editBox:GetText()
+                print("DEBUG: name =", name)
+                local success, err = NivUI:CreateStyle(name)
+                print("DEBUG: CreateStyle returned", success, err)
+                if success then
+                    currentStyleName = name
+                    container:RefreshAll()
+                else
+                    print("NivUI: " .. (err or "Failed to create style"))
+                end
+            end)
+            if not ok then
+                print("NivUI ERROR:", result)
             end
         end,
         EditBoxOnEnterPressed = function(self)
@@ -1093,13 +1101,21 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
         button2 = "Cancel",
         hasEditBox = true,
         OnAccept = function(self)
-            local name = self.editBox:GetText()
-            local success, err = NivUI:CreateStyle(name)
-            if success then
-                currentStyleName = name
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to create style"))
+            print("DEBUG: OnAccept called for NEW_STYLE_2")
+            local ok, result = pcall(function()
+                local name = self.editBox:GetText()
+                print("DEBUG: name =", name)
+                local success, err = NivUI:CreateStyle(name)
+                print("DEBUG: CreateStyle returned", success, err)
+                if success then
+                    currentStyleName = name
+                    container:RefreshAll()
+                else
+                    print("NivUI: " .. (err or "Failed to create style"))
+                end
+            end)
+            if not ok then
+                print("NivUI ERROR:", result)
             end
         end,
         EditBoxOnEnterPressed = function(self)
