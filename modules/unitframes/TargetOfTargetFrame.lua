@@ -14,12 +14,15 @@ local function HideBlizzardToTFrame(state)
 
     state.pendingHide = false
 
-    -- Hide visuals but keep frame alive for Edit Mode
-    if totFrame.UnregisterAllEvents then
-        totFrame:UnregisterAllEvents()
-    end
+    -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
     if totFrame.EnableMouse then
         totFrame:EnableMouse(false)
+    end
+    if totFrame.SetMouseClickEnabled then
+        totFrame:SetMouseClickEnabled(false)
+    end
+    if totFrame.SetMouseMotionEnabled then
+        totFrame:SetMouseMotionEnabled(false)
     end
     if totFrame.SetHitRectInsets then
         totFrame:SetHitRectInsets(10000, 10000, 10000, 10000)

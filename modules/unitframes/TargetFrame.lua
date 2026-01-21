@@ -13,46 +13,27 @@ local function HideBlizzardTargetFrame(state)
 
     state.pendingHide = false
 
-    -- TEMP: Testing which part breaks Edit Mode
-    -- Comment out blocks one at a time to find the culprit
-
-    -- BLOCK A: Event/mouse disabling (testing one at a time)
-    -- A1: UnregisterAllEvents
-    if TargetFrame.UnregisterAllEvents then
-        TargetFrame:UnregisterAllEvents()
-    end
-    --[[ A2: EnableMouse
+    -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
     if TargetFrame.EnableMouse then
         TargetFrame:EnableMouse(false)
     end
-    --]]
-    --[[ A3: SetMouseClickEnabled
     if TargetFrame.SetMouseClickEnabled then
         TargetFrame:SetMouseClickEnabled(false)
     end
-    --]]
-    --[[ A4: SetMouseMotionEnabled
     if TargetFrame.SetMouseMotionEnabled then
         TargetFrame:SetMouseMotionEnabled(false)
     end
-    --]]
-    --[[ A5: SetHitRectInsets
     if TargetFrame.SetHitRectInsets then
         TargetFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
     end
-    --]]
 
-    --[[ BLOCK B: Hide regions
     Base.HideRegions(TargetFrame)
-    --]]
 
-    -- BLOCK C: KillVisual on specific children (leaving enabled for now)
     Base.KillVisual(TargetFrame.TargetFrameContainer)
     Base.KillVisual(TargetFrame.TargetFrameContent)
     Base.KillVisual(TargetFrame.healthbar)
     Base.KillVisual(TargetFrame.manabar)
 
-    --[[ BLOCK D: Aura pools
     if TargetFrame.auraPools then
         TargetFrame.auraPools:ReleaseAll()
         if not TargetFrame.NivUI_AurasDisabled then
@@ -60,9 +41,7 @@ local function HideBlizzardTargetFrame(state)
             TargetFrame.UpdateAuras = function() end
         end
     end
-    --]]
 
-    --[[ BLOCK E: Children loop
     local children = { TargetFrame:GetChildren() }
     for _, child in ipairs(children) do
         local name = child:GetName()
@@ -70,11 +49,9 @@ local function HideBlizzardTargetFrame(state)
             Base.KillVisual(child)
         end
     end
-    --]]
 
     state.blizzardHidden = true
 
-    --[[ BLOCK F: OnShow hook
     if not TargetFrame.NivUI_SoftHideHooked then
         TargetFrame.NivUI_SoftHideHooked = true
         TargetFrame:HookScript("OnShow", function()
@@ -83,7 +60,6 @@ local function HideBlizzardTargetFrame(state)
             end
         end)
     end
-    --]]
 end
 
 NivUI.UnitFrames.TargetFrame = Base.CreateModule({
