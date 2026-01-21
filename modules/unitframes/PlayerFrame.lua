@@ -12,7 +12,6 @@ local customFrame = nil
 local currentStyle = nil
 local blizzardHidden = false
 local pendingHide = false
-local pendingRestore = false
 
 -- Throttle interval for OnUpdate (health/power values are secret in combat, can't compare)
 local UPDATE_INTERVAL = 0.1
@@ -362,71 +361,6 @@ local function SoftHideBlizzardPlayerFrame()
     end
 end
 
-local function RestoreBlizzardPlayerFrame()
-    if not PlayerFrame then return end
-
-    -- Don't touch protected UI while in combat; retry once we're out.
-    if InCombatLockdown and InCombatLockdown() then
-        pendingRestore = true
-        return
-    end
-
-    pendingRestore = false
-    blizzardHidden = false
-
-    -- Re-enable mouse interaction
-    if PlayerFrame.EnableMouse then
-        PlayerFrame:EnableMouse(true)
-    end
-    if PlayerFrame.SetMouseClickEnabled then
-        PlayerFrame:SetMouseClickEnabled(true)
-    end
-    if PlayerFrame.SetMouseMotionEnabled then
-        PlayerFrame:SetMouseMotionEnabled(true)
-    end
-    if PlayerFrame.SetHitRectInsets then
-        PlayerFrame:SetHitRectInsets(0, 0, 0, 0)
-    end
-
-    -- Restore alpha on regions
-    local regions = { PlayerFrame:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region and region.SetAlpha then
-            region:SetAlpha(1)
-            region:Show()
-        end
-    end
-
-    -- Show visual containers
-    local function RestoreVisual(frame)
-        if not frame then return end
-        if frame.SetAlpha then frame:SetAlpha(1) end
-        if frame.Show then frame:Show() end
-        if frame.SetScript then
-            frame:SetScript("OnShow", nil)
-        end
-    end
-
-    RestoreVisual(PlayerFrame.PlayerFrameContainer)
-    RestoreVisual(PlayerFrame.PlayerFrameContent)
-    RestoreVisual(PlayerFrame.healthbar)
-    RestoreVisual(PlayerFrame.manabar)
-
-    -- Re-register events by calling Blizzard's initialization
-    if PlayerFrame_ToPlayerArt then
-        PlayerFrame_ToPlayerArt(PlayerFrame)
-    end
-
-    -- Show children
-    local children = { PlayerFrame:GetChildren() }
-    for _, child in ipairs(children) do
-        local name = child:GetName()
-        if name and name:find("^PlayerFrame") then
-            RestoreVisual(child)
-        end
-    end
-end
-
 --------------------------------------------------------------------------------
 -- Custom Frame Creation
 --------------------------------------------------------------------------------
@@ -605,7 +539,9 @@ end
 
 local function DisablePlayerFrame()
     DestroyCustomFrame()
-    RestoreBlizzardPlayerFrame()
+    -- Restoring Blizzard's PlayerFrame cleanly is fragile due to secret value API changes.
+    -- A reload is the safest way to restore the default UI.
+    ReloadUI()
 end
 
 local function RefreshPlayerFrame()
@@ -631,9 +567,6 @@ eventFrame:SetScript("OnEvent", function(self, event)
         -- Handle pending operations after combat
         if pendingHide then
             SoftHideBlizzardPlayerFrame()
-        end
-        if pendingRestore then
-            RestoreBlizzardPlayerFrame()
         end
     end
 end)
