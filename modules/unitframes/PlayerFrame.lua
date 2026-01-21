@@ -92,13 +92,14 @@ local function UpdateHealthText()
 
     local health = UnitHealth("player")
     local maxHealth = UnitHealthMax("player")
-    local pct = UnitHealthPercent and UnitHealthPercent("player") or nil
+    local pct = UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100
+        and UnitHealthPercent("player", true, CurveConstants.ScaleTo100) or nil
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local healthStr = abbrev(health)
     local maxHealthStr = abbrev(maxHealth)
 
-    -- Use SetFormattedText for formats involving percent (handles secret values)
+    -- pct is secret but scaled to 0-100 via CurveConstants; SetFormattedText handles it
     if config.format == "percent" then
         if pct then
             widget.text:SetFormattedText("%.0f%%", pct)
@@ -133,13 +134,14 @@ local function UpdatePowerText()
     local powerType = UnitPowerType("player")
     local power = UnitPower("player", powerType)
     local maxPower = UnitPowerMax("player", powerType)
-    local pct = UnitPowerPercent and UnitPowerPercent("player", powerType) or nil
+    local pct = UnitPowerPercent and CurveConstants and CurveConstants.ScaleTo100
+        and UnitPowerPercent("player", powerType, false, CurveConstants.ScaleTo100) or nil
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local powerStr = abbrev(power)
     local maxPowerStr = abbrev(maxPower)
 
-    -- Use SetFormattedText for formats involving percent (handles secret values)
+    -- pct is secret but scaled to 0-100 via CurveConstants; SetFormattedText handles it
     if config.format == "percent" then
         if pct then
             widget.text:SetFormattedText("%.0f%%", pct)
