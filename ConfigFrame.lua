@@ -4,7 +4,7 @@
 local FRAME_WIDTH = 480
 local FRAME_HEIGHT = 620
 local ROW_HEIGHT = 32
-local SECTION_SPACING = 12
+local SECTION_SPACING = 20
 
 --------------------------------------------------------------------------------
 -- Component Helpers (Platynator-style)
@@ -138,8 +138,8 @@ function Components.GetTextureDropdown(parent, labelText, getTextures, getValue,
     return frame
 end
 
--- Create a slider with +/- steppers
-function Components.GetSlider(parent, labelText, min, max, step, formatter, callback)
+-- Create a slider with +/- steppers AND an input box
+function Components.GetSliderWithInput(parent, labelText, min, max, step, isDecimal, callback)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetHeight(ROW_HEIGHT)
     holder:SetPoint("LEFT", 20, 0)
@@ -151,24 +151,62 @@ function Components.GetSlider(parent, labelText, min, max, step, formatter, call
     holder.Label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
     holder.Label:SetText(labelText)
 
+    -- Input box on the right
+    local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
+    editBox:SetSize(50, 20)
+    editBox:SetPoint("RIGHT", -5, 0)
+    editBox:SetAutoFocus(false)
+    editBox:SetNumeric(not isDecimal)
+    editBox:SetMaxLetters(6)
+
+    -- Slider in the middle
     holder.Slider = CreateFrame("Slider", nil, holder, "MinimalSliderWithSteppersTemplate")
     holder.Slider:SetPoint("LEFT", holder, "CENTER", -20, 0)
-    holder.Slider:SetPoint("RIGHT", -20, 0)
+    holder.Slider:SetPoint("RIGHT", editBox, "LEFT", -10, 0)
     holder.Slider:SetHeight(20)
 
     local numSteps = math.floor((max - min) / step)
-    holder.Slider:Init(min, min, max, numSteps, {
-        [MinimalSliderWithSteppersMixin.Label.Right] = CreateMinimalSliderFormatter(
-            MinimalSliderWithSteppersMixin.Label.Right,
-            function(value)
-                local formatted = formatter and formatter(value) or tostring(value)
-                return WHITE_FONT_COLOR:WrapTextInColorCode(formatted)
-            end
-        )
-    })
+    holder.Slider:Init(min, min, max, numSteps, {})
+
+    local updatingFromSlider = false
+    local updatingFromInput = false
 
     holder.Slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+        if updatingFromInput then return end
+        updatingFromSlider = true
+        if isDecimal then
+            editBox:SetText(string.format("%.2f", value))
+        else
+            editBox:SetText(tostring(math.floor(value)))
+        end
+        updatingFromSlider = false
         if callback then callback(value) end
+    end)
+
+    local function ApplyInputValue()
+        if updatingFromSlider then return end
+        local text = editBox:GetText()
+        local value = tonumber(text)
+        if value then
+            value = math.max(min, math.min(max, value))
+            updatingFromInput = true
+            holder.Slider:SetValue(value)
+            updatingFromInput = false
+            if callback then callback(value) end
+        end
+    end
+
+    editBox:SetScript("OnEnterPressed", function(self)
+        ApplyInputValue()
+        self:ClearFocus()
+    end)
+
+    editBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+
+    editBox:SetScript("OnEditFocusLost", function()
+        ApplyInputValue()
     end)
 
     function holder:GetValue()
@@ -176,7 +214,14 @@ function Components.GetSlider(parent, labelText, min, max, step, formatter, call
     end
 
     function holder:SetValue(value)
+        updatingFromSlider = true
         holder.Slider:SetValue(value)
+        if isDecimal then
+            editBox:SetText(string.format("%.2f", value))
+        else
+            editBox:SetText(tostring(math.floor(value)))
+        end
+        updatingFromSlider = false
     end
 
     holder:SetScript("OnMouseWheel", function(_, delta)
@@ -184,6 +229,8 @@ function Components.GetSlider(parent, labelText, min, max, step, formatter, call
             holder.Slider:SetValue(holder.Slider.Slider:GetValue() + delta * step)
         end
     end)
+
+    holder.EditBox = editBox
 
     return holder
 end
@@ -203,8 +250,6 @@ function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
 
     local swatch = CreateFrame("Button", nil, holder, "ColorSwatchTemplate")
     swatch:SetPoint("LEFT", holder, "CENTER", -15, 0)
-
-    local colorMonitor = CreateFrame("Frame", nil, holder)
 
     function holder:SetValue(color)
         swatch.currentColor = CopyTable(color)
@@ -273,12 +318,6 @@ function Components.GetHeader(parent, text)
     holder.text:SetPoint("LEFT", 10, 0)
 
     return holder
-end
-
--- Create a section inset frame
-function Components.GetInset(parent)
-    local inset = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-    return inset
 end
 
 -- Create a tab button
@@ -363,27 +402,19 @@ local function SetupStaggerBarTab()
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(FRAME_WIDTH - 50, 800)
+    content:SetSize(FRAME_WIDTH - 50, 900)
     scrollFrame:SetScrollChild(content)
 
     local allFrames = {}
-    local currentY = 0
 
-    local function AddFrame(frame)
+    local function AddFrame(frame, spacing)
+        spacing = spacing or 0
         if #allFrames == 0 then
-            frame:SetPoint("TOP", content, "TOP", 0, currentY)
+            frame:SetPoint("TOP", content, "TOP", 0, 0)
         else
-            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -2)
+            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
         end
         table.insert(allFrames, frame)
-    end
-
-    local function AddSpacer(height)
-        local spacer = CreateFrame("Frame", nil, content)
-        spacer:SetHeight(height or SECTION_SPACING)
-        spacer:SetPoint("LEFT", 0, 0)
-        spacer:SetPoint("RIGHT", 0, 0)
-        AddFrame(spacer)
     end
 
     ----------------------------------------------------------------------------
@@ -392,14 +423,8 @@ local function SetupStaggerBarTab()
     local generalHeader = Components.GetHeader(content, "General")
     AddFrame(generalHeader)
 
-    local generalInset = Components.GetInset(content)
-    generalInset:SetHeight(50)
-    generalInset:SetPoint("LEFT", 10, 0)
-    generalInset:SetPoint("RIGHT", -10, 0)
-    AddFrame(generalInset)
-
     local visibilityDropdown = Components.GetBasicDropdown(
-        generalInset,
+        content,
         "Bar Visible:",
         function() return NivUI:GetVisibilityOptions() end,
         function(value) return NivUI:GetSetting("visibility") == value end,
@@ -408,28 +433,16 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("visibility")
         end
     )
-    visibilityDropdown:SetParent(generalInset)
-    visibilityDropdown:SetPoint("TOP", generalInset, "TOP", 0, -10)
-    visibilityDropdown.inset = generalInset
-
-    AddSpacer()
+    AddFrame(visibilityDropdown)
 
     ----------------------------------------------------------------------------
     -- Appearance Section
     ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
-    AddFrame(appearanceHeader)
-
-    local appearanceInset = Components.GetInset(content)
-    appearanceInset:SetHeight(190)
-    appearanceInset:SetPoint("LEFT", 10, 0)
-    appearanceInset:SetPoint("RIGHT", -10, 0)
-    AddFrame(appearanceInset)
-
-    local appearanceFrames = {}
+    AddFrame(appearanceHeader, SECTION_SPACING)
 
     local fgTextureDropdown = Components.GetTextureDropdown(
-        appearanceInset,
+        content,
         "Foreground:",
         function() return NivUI:GetBarTextures() end,
         function() return NivUI:GetSetting("foregroundTexture") end,
@@ -438,12 +451,10 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("barTexture")
         end
     )
-    fgTextureDropdown:SetParent(appearanceInset)
-    fgTextureDropdown:SetPoint("TOP", appearanceInset, "TOP", 0, -10)
-    table.insert(appearanceFrames, fgTextureDropdown)
+    AddFrame(fgTextureDropdown)
 
     local bgTextureDropdown = Components.GetTextureDropdown(
-        appearanceInset,
+        content,
         "Background:",
         function() return NivUI:GetBarTextures() end,
         function() return NivUI:GetSetting("backgroundTexture") end,
@@ -452,12 +463,10 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("background")
         end
     )
-    bgTextureDropdown:SetParent(appearanceInset)
-    bgTextureDropdown:SetPoint("TOP", fgTextureDropdown, "BOTTOM", 0, -2)
-    table.insert(appearanceFrames, bgTextureDropdown)
+    AddFrame(bgTextureDropdown)
 
     local bgColorPicker = Components.GetColorPicker(
-        appearanceInset,
+        content,
         "Background Color:",
         true,
         function(color)
@@ -465,12 +474,10 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("background")
         end
     )
-    bgColorPicker:SetParent(appearanceInset)
-    bgColorPicker:SetPoint("TOP", bgTextureDropdown, "BOTTOM", 0, -2)
-    table.insert(appearanceFrames, bgColorPicker)
+    AddFrame(bgColorPicker)
 
     local borderDropdown = Components.GetBasicDropdown(
-        appearanceInset,
+        content,
         "Border Style:",
         function() return NivUI:GetBorders() end,
         function(value) return NivUI:GetSetting("borderStyle") == value end,
@@ -479,12 +486,10 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("border")
         end
     )
-    borderDropdown:SetParent(appearanceInset)
-    borderDropdown:SetPoint("TOP", bgColorPicker, "BOTTOM", 0, -2)
-    table.insert(appearanceFrames, borderDropdown)
+    AddFrame(borderDropdown)
 
     local borderColorPicker = Components.GetColorPicker(
-        appearanceInset,
+        content,
         "Border Color:",
         true,
         function(color)
@@ -492,27 +497,23 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("border")
         end
     )
-    borderColorPicker:SetParent(appearanceInset)
-    borderColorPicker:SetPoint("TOP", borderDropdown, "BOTTOM", 0, -2)
-    table.insert(appearanceFrames, borderColorPicker)
-
-    AddSpacer()
+    AddFrame(borderColorPicker)
 
     ----------------------------------------------------------------------------
     -- Stagger Colors Section
     ----------------------------------------------------------------------------
     local colorsHeader = Components.GetHeader(content, "Stagger Colors")
-    AddFrame(colorsHeader)
+    AddFrame(colorsHeader, SECTION_SPACING)
 
-    local colorsInset = Components.GetInset(content)
-    colorsInset:SetHeight(80)
-    colorsInset:SetPoint("LEFT", 10, 0)
-    colorsInset:SetPoint("RIGHT", -10, 0)
-    AddFrame(colorsInset)
+    -- Row 1: Light and Moderate
+    local colorRow1 = CreateFrame("Frame", nil, content)
+    colorRow1:SetHeight(ROW_HEIGHT)
+    colorRow1:SetPoint("LEFT", 20, 0)
+    colorRow1:SetPoint("RIGHT", -20, 0)
+    AddFrame(colorRow1)
 
-    -- Two rows of two color pickers each
     local lightColorPicker = Components.GetColorPicker(
-        colorsInset,
+        colorRow1,
         "Light:",
         false,
         function(color)
@@ -520,12 +521,12 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.light = color
         end
     )
-    lightColorPicker:SetParent(colorsInset)
-    lightColorPicker:SetPoint("TOPLEFT", colorsInset, "TOPLEFT", 10, -10)
-    lightColorPicker:SetPoint("RIGHT", colorsInset, "CENTER", -10, 0)
+    lightColorPicker:ClearAllPoints()
+    lightColorPicker:SetPoint("LEFT", colorRow1, "LEFT", 0, 0)
+    lightColorPicker:SetPoint("RIGHT", colorRow1, "CENTER", -10, 0)
 
     local moderateColorPicker = Components.GetColorPicker(
-        colorsInset,
+        colorRow1,
         "Moderate:",
         false,
         function(color)
@@ -533,12 +534,19 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.moderate = color
         end
     )
-    moderateColorPicker:SetParent(colorsInset)
-    moderateColorPicker:SetPoint("TOPLEFT", colorsInset, "TOP", 10, -10)
-    moderateColorPicker:SetPoint("RIGHT", colorsInset, "RIGHT", -20, 0)
+    moderateColorPicker:ClearAllPoints()
+    moderateColorPicker:SetPoint("LEFT", colorRow1, "CENTER", 10, 0)
+    moderateColorPicker:SetPoint("RIGHT", colorRow1, "RIGHT", 0, 0)
+
+    -- Row 2: Heavy and Extreme
+    local colorRow2 = CreateFrame("Frame", nil, content)
+    colorRow2:SetHeight(ROW_HEIGHT)
+    colorRow2:SetPoint("LEFT", 20, 0)
+    colorRow2:SetPoint("RIGHT", -20, 0)
+    AddFrame(colorRow2)
 
     local heavyColorPicker = Components.GetColorPicker(
-        colorsInset,
+        colorRow2,
         "Heavy:",
         false,
         function(color)
@@ -546,12 +554,12 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.heavy = color
         end
     )
-    heavyColorPicker:SetParent(colorsInset)
-    heavyColorPicker:SetPoint("TOPLEFT", lightColorPicker, "BOTTOMLEFT", 0, -2)
-    heavyColorPicker:SetPoint("RIGHT", colorsInset, "CENTER", -10, 0)
+    heavyColorPicker:ClearAllPoints()
+    heavyColorPicker:SetPoint("LEFT", colorRow2, "LEFT", 0, 0)
+    heavyColorPicker:SetPoint("RIGHT", colorRow2, "CENTER", -10, 0)
 
     local extremeColorPicker = Components.GetColorPicker(
-        colorsInset,
+        colorRow2,
         "Extreme:",
         false,
         function(color)
@@ -559,28 +567,18 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.extreme = color
         end
     )
-    extremeColorPicker:SetParent(colorsInset)
-    extremeColorPicker:SetPoint("TOPLEFT", moderateColorPicker, "BOTTOMLEFT", 0, -2)
-    extremeColorPicker:SetPoint("RIGHT", colorsInset, "RIGHT", -20, 0)
-
-    AddSpacer()
+    extremeColorPicker:ClearAllPoints()
+    extremeColorPicker:SetPoint("LEFT", colorRow2, "CENTER", 10, 0)
+    extremeColorPicker:SetPoint("RIGHT", colorRow2, "RIGHT", 0, 0)
 
     ----------------------------------------------------------------------------
     -- Text Section
     ----------------------------------------------------------------------------
     local textHeader = Components.GetHeader(content, "Text")
-    AddFrame(textHeader)
-
-    local textInset = Components.GetInset(content)
-    textInset:SetHeight(145)
-    textInset:SetPoint("LEFT", 10, 0)
-    textInset:SetPoint("RIGHT", -10, 0)
-    AddFrame(textInset)
-
-    local textFrames = {}
+    AddFrame(textHeader, SECTION_SPACING)
 
     local fontDropdown = Components.GetBasicDropdown(
-        textInset,
+        content,
         "Font:",
         function() return NivUI:GetFonts() end,
         function(value) return NivUI:GetSetting("font") == value end,
@@ -589,26 +587,21 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("font")
         end
     )
-    fontDropdown:SetParent(textInset)
-    fontDropdown:SetPoint("TOP", textInset, "TOP", 0, -10)
-    table.insert(textFrames, fontDropdown)
+    AddFrame(fontDropdown)
 
-    local fontSizeSlider = Components.GetSlider(
-        textInset,
+    local fontSizeSlider = Components.GetSliderWithInput(
+        content,
         "Font Size:",
-        8, 24, 1,
-        function(val) return tostring(math.floor(val)) end,
+        8, 24, 1, false,
         function(value)
             NivUI_StaggerBarDB.fontSize = value
             NivUI:ApplySettings("font")
         end
     )
-    fontSizeSlider:SetParent(textInset)
-    fontSizeSlider:SetPoint("TOP", fontDropdown, "BOTTOM", 0, -2)
-    table.insert(textFrames, fontSizeSlider)
+    AddFrame(fontSizeSlider)
 
     local fontColorPicker = Components.GetColorPicker(
-        textInset,
+        content,
         "Font Color:",
         false,
         function(color)
@@ -616,90 +609,65 @@ local function SetupStaggerBarTab()
             NivUI:ApplySettings("font")
         end
     )
-    fontColorPicker:SetParent(textInset)
-    fontColorPicker:SetPoint("TOP", fontSizeSlider, "BOTTOM", 0, -2)
-    table.insert(textFrames, fontColorPicker)
+    AddFrame(fontColorPicker)
 
     local fontShadowCheck = Components.GetCheckbox(
-        textInset,
+        content,
         "Text Shadow",
         function(checked)
             NivUI_StaggerBarDB.fontShadow = checked
             NivUI:ApplySettings("font")
         end
     )
-    fontShadowCheck:SetParent(textInset)
-    fontShadowCheck:SetPoint("TOP", fontColorPicker, "BOTTOM", 0, -2)
-    table.insert(textFrames, fontShadowCheck)
-
-    AddSpacer()
+    AddFrame(fontShadowCheck)
 
     ----------------------------------------------------------------------------
     -- Position Section
     ----------------------------------------------------------------------------
     local positionHeader = Components.GetHeader(content, "Position")
-    AddFrame(positionHeader)
-
-    local positionInset = Components.GetInset(content)
-    positionInset:SetHeight(145)
-    positionInset:SetPoint("LEFT", 10, 0)
-    positionInset:SetPoint("RIGHT", -10, 0)
-    AddFrame(positionInset)
-
-    local positionFrames = {}
+    AddFrame(positionHeader, SECTION_SPACING)
 
     local lockedCheck = Components.GetCheckbox(
-        positionInset,
+        content,
         "Locked",
         function(checked)
             NivUI_StaggerBarDB.locked = checked
             NivUI:ApplySettings("locked")
         end
     )
-    lockedCheck:SetParent(positionInset)
-    lockedCheck:SetPoint("TOP", positionInset, "TOP", 0, -10)
-    table.insert(positionFrames, lockedCheck)
+    AddFrame(lockedCheck)
 
-    local widthSlider = Components.GetSlider(
-        positionInset,
+    local widthSlider = Components.GetSliderWithInput(
+        content,
         "Width:",
-        100, 600, 10,
-        function(val) return tostring(math.floor(val)) end,
+        100, 600, 10, false,
         function(value)
             NivUI_StaggerBarDB.width = value
             NivUI:ApplySettings("position")
         end
     )
-    widthSlider:SetParent(positionInset)
-    widthSlider:SetPoint("TOP", lockedCheck, "BOTTOM", 0, -2)
-    table.insert(positionFrames, widthSlider)
+    AddFrame(widthSlider)
 
-    local heightSlider = Components.GetSlider(
-        positionInset,
+    local heightSlider = Components.GetSliderWithInput(
+        content,
         "Height:",
-        5, 60, 1,
-        function(val) return tostring(math.floor(val)) end,
+        5, 60, 1, false,
         function(value)
             NivUI_StaggerBarDB.height = value
             NivUI:ApplySettings("position")
         end
     )
-    heightSlider:SetParent(positionInset)
-    heightSlider:SetPoint("TOP", widthSlider, "BOTTOM", 0, -2)
-    table.insert(positionFrames, heightSlider)
+    AddFrame(heightSlider)
 
-    local intervalSlider = Components.GetSlider(
-        positionInset,
+    local intervalSlider = Components.GetSliderWithInput(
+        content,
         "Update Interval:",
-        0.05, 1.0, 0.05,
-        function(val) return string.format("%.2f sec", val) end,
+        0.05, 1.0, 0.05, true,
         function(value)
             NivUI_StaggerBarDB.updateInterval = value
         end
     )
-    intervalSlider:SetParent(positionInset)
-    intervalSlider:SetPoint("TOP", heightSlider, "BOTTOM", 0, -2)
-    table.insert(positionFrames, intervalSlider)
+    AddFrame(intervalSlider)
 
     ----------------------------------------------------------------------------
     -- Refresh on show
