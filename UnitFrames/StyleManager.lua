@@ -80,12 +80,27 @@ function NivUI:DeleteStyle(name)
         return false, "Style name cannot be empty"
     end
 
-    if name == "Default" then
-        return false, "Cannot delete the Default style"
-    end
-
     if not self:StyleExists(name) then
         return false, "Style '" .. name .. "' does not exist"
+    end
+
+    -- Check if this is the last style
+    local styleCount = 0
+    for _ in pairs(NivUI_DB.unitFrameStyles) do
+        styleCount = styleCount + 1
+    end
+
+    if styleCount <= 1 then
+        return false, "Cannot delete the last style"
+    end
+
+    -- Find another style to reassign to
+    local fallbackStyle = nil
+    for styleName in pairs(NivUI_DB.unitFrameStyles) do
+        if styleName ~= name then
+            fallbackStyle = styleName
+            break
+        end
     end
 
     -- Check if any frame types are using this style
@@ -98,15 +113,15 @@ function NivUI:DeleteStyle(name)
         end
     end
 
-    -- Reassign frames using this style to Default
+    -- Reassign frames using this style to fallback
     for _, frameType in ipairs(inUse) do
-        NivUI_DB.unitFrameAssignments[frameType] = "Default"
+        NivUI_DB.unitFrameAssignments[frameType] = fallbackStyle
     end
 
     NivUI_DB.unitFrameStyles[name] = nil
 
     -- Trigger event for listeners
-    self:TriggerEvent("StyleDeleted", { styleName = name, reassigned = inUse })
+    self:TriggerEvent("StyleDeleted", { styleName = name, reassigned = inUse, fallback = fallbackStyle })
 
     return true
 end
@@ -143,10 +158,6 @@ function NivUI:RenameStyle(oldName, newName)
 
     if not newName or newName == "" then
         return false, "New style name cannot be empty"
-    end
-
-    if oldName == "Default" then
-        return false, "Cannot rename the Default style"
     end
 
     if self:StyleExists(newName) then
