@@ -283,8 +283,9 @@ end
 
 -- Apply bar texture from saved settings
 local function ApplyBarTexture()
-    local texture = NivUI:GetSetting("barTexture")
-    StaggerBar.bar:SetStatusBarTexture(texture)
+    local textureName = NivUI:GetSetting("barTexture")
+    local texturePath = NivUI:GetTexturePath(textureName)
+    StaggerBar.bar:SetStatusBarTexture(texturePath)
     -- Re-anchor spark to the new texture
     StaggerBar.spark:ClearAllPoints()
     StaggerBar.spark:SetPoint("CENTER", StaggerBar.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
@@ -295,7 +296,8 @@ local function ApplyFontSettings()
     local db = NivUI_StaggerBarDB
     local defaults = NivUI.defaults
 
-    local fontPath = db.font or defaults.font
+    local fontName = db.font or defaults.font
+    local fontPath = NivUI:GetFontPath(fontName)
     local fontSize = db.fontSize or defaults.fontSize
     local fontShadow = db.fontShadow
     if fontShadow == nil then fontShadow = defaults.fontShadow end

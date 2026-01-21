@@ -60,6 +60,7 @@ function NivUI:GetSharedMedia()
 end
 
 -- Get available bar textures (from SharedMedia or fallback)
+-- Returns items with 'value' (the name to store) and 'name' (display name)
 function NivUI:GetBarTextures()
     local LSM = self:GetSharedMedia()
     if LSM then
@@ -67,7 +68,7 @@ function NivUI:GetBarTextures()
         local textures = {}
         for _, name in ipairs(list) do
             table.insert(textures, {
-                path = LSM:Fetch("statusbar", name),
+                value = name,  -- Store the SharedMedia name, not the path
                 name = name,
             })
         end
@@ -77,6 +78,7 @@ function NivUI:GetBarTextures()
 end
 
 -- Get available fonts (from SharedMedia or fallback)
+-- Returns items with 'value' (the name to store) and 'name' (display name)
 function NivUI:GetFonts()
     local LSM = self:GetSharedMedia()
     if LSM then
@@ -84,13 +86,41 @@ function NivUI:GetFonts()
         local fonts = {}
         for _, name in ipairs(list) do
             table.insert(fonts, {
-                path = LSM:Fetch("font", name),
+                value = name,  -- Store the SharedMedia name, not the path
                 name = name,
             })
         end
         return fonts
     end
     return BUILTIN_FONTS
+end
+
+-- Resolve a texture name to its path (handles both SharedMedia names and raw paths)
+function NivUI:GetTexturePath(nameOrPath)
+    local LSM = self:GetSharedMedia()
+    if LSM then
+        local path = LSM:Fetch("statusbar", nameOrPath)
+        if path then return path end
+    end
+    -- Fallback: check builtin textures or assume it's already a path
+    for _, item in ipairs(BUILTIN_TEXTURES) do
+        if item.name == nameOrPath then return item.path end
+    end
+    return nameOrPath  -- Assume it's a raw path
+end
+
+-- Resolve a font name to its path (handles both SharedMedia names and raw paths)
+function NivUI:GetFontPath(nameOrPath)
+    local LSM = self:GetSharedMedia()
+    if LSM then
+        local path = LSM:Fetch("font", nameOrPath)
+        if path then return path end
+    end
+    -- Fallback: check builtin fonts or assume it's already a path
+    for _, item in ipairs(BUILTIN_FONTS) do
+        if item.name == nameOrPath then return item.path end
+    end
+    return nameOrPath  -- Assume it's a raw path
 end
 
 -- For backwards compat, these are populated on first access
