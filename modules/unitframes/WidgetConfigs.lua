@@ -6,8 +6,8 @@ NivUI.UnitFrames.WidgetConfigs = {
         {
             label = "General",
             entries = {
-                { kind = "slider", key = "width", label = "Width", min = 100, max = 400, step = 5 },
-                { kind = "slider", key = "height", label = "Height", min = 30, max = 200, step = 5 },
+                { kind = "slider", key = "width", label = "Width", min = 10, max = 400, step = 5 },
+                { kind = "slider", key = "height", label = "Height", min = 10, max = 200, step = 5 },
                 { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
                 { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
@@ -27,8 +27,8 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "General",
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
-                { kind = "slider", key = "size.width", label = "Width", min = 50, max = 400, step = 5 },
-                { kind = "slider", key = "size.height", label = "Height", min = 8, max = 60, step = 1 },
+                { kind = "slider", key = "size.width", label = "Width", min = 10, max = 400, step = 5 },
+                { kind = "slider", key = "size.height", label = "Height", min = 10, max = 60, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
@@ -66,8 +66,8 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "General",
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
-                { kind = "slider", key = "size.width", label = "Width", min = 50, max = 400, step = 5 },
-                { kind = "slider", key = "size.height", label = "Height", min = 4, max = 40, step = 1 },
+                { kind = "slider", key = "size.width", label = "Width", min = 10, max = 400, step = 5 },
+                { kind = "slider", key = "size.height", label = "Height", min = 10, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
@@ -95,8 +95,8 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "General",
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
-                { kind = "slider", key = "size.width", label = "Width", min = 16, max = 128, step = 4 },
-                { kind = "slider", key = "size.height", label = "Height", min = 16, max = 128, step = 4 },
+                { kind = "slider", key = "size.width", label = "Width", min = 10, max = 128, step = 4 },
+                { kind = "slider", key = "size.height", label = "Height", min = 10, max = 128, step = 4 },
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
@@ -299,8 +299,8 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "General",
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
-                { kind = "slider", key = "size.width", label = "Width", min = 50, max = 400, step = 5 },
-                { kind = "slider", key = "size.height", label = "Height", min = 8, max = 40, step = 1 },
+                { kind = "slider", key = "size.width", label = "Width", min = 10, max = 400, step = 5 },
+                { kind = "slider", key = "size.height", label = "Height", min = 10, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },

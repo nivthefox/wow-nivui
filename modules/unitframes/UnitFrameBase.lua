@@ -464,8 +464,12 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:RegisterForClicks("AnyUp")
 
     -- Position relative to anchor if provided
-    if state.anchorFrame then
-        customFrame:SetPoint("TOPLEFT", state.anchorFrame, "TOPLEFT", state.anchorOffsetX or 24, state.anchorOffsetY or 0)
+    local anchorFrame = state.anchorFrame
+    if type(anchorFrame) == "function" then
+        anchorFrame = anchorFrame()
+    end
+    if anchorFrame then
+        customFrame:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", state.anchorOffsetX or 0, state.anchorOffsetY or 0)
     else
         customFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     end

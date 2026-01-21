@@ -52,12 +52,6 @@ local function HideBlizzardTargetFrame(state)
         end
     end
 
-    for _, child in ipairs(children) do
-        if not child:GetName() then
-            Base.KillVisual(child)
-        end
-    end
-
     state.blizzardHidden = true
 
     if not TargetFrame.NivUI_SoftHideHooked then

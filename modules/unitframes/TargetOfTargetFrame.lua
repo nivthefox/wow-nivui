@@ -4,7 +4,8 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 local Base = NivUI.UnitFrames.Base
 
 local function HideBlizzardToTFrame(state)
-    if not TargetFrame or not TargetFrame.totFrame then return end
+    local totFrame = TargetFrame and TargetFrame.totFrame
+    if not totFrame then return end
 
     if InCombatLockdown and InCombatLockdown() then
         state.pendingHide = true
@@ -13,18 +14,47 @@ local function HideBlizzardToTFrame(state)
 
     state.pendingHide = false
 
-    Base.KillVisual(TargetFrame.totFrame)
+    -- Hide visuals but keep frame alive for Edit Mode
+    if totFrame.UnregisterAllEvents then
+        totFrame:UnregisterAllEvents()
+    end
+    if totFrame.EnableMouse then
+        totFrame:EnableMouse(false)
+    end
+    if totFrame.SetHitRectInsets then
+        totFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
+    end
+
+    Base.HideRegions(totFrame)
+
+    -- Kill named children starting with TargetFrameToT
+    local children = { totFrame:GetChildren() }
+    for _, child in ipairs(children) do
+        local name = child:GetName()
+        if name and name:find("^TargetFrameToT") then
+            Base.KillVisual(child)
+        end
+    end
 
     state.blizzardHidden = true
+
+    if not totFrame.NivUI_SoftHideHooked then
+        totFrame.NivUI_SoftHideHooked = true
+        totFrame:HookScript("OnShow", function()
+            if state.blizzardHidden then
+                HideBlizzardToTFrame(state)
+            end
+        end)
+    end
 end
 
 NivUI.UnitFrames.TargetOfTargetFrame = Base.CreateModule({
     unit = "targettarget",
     frameType = "targettarget",
     defaultName = "Target of Target",
-    anchorFrame = TargetFrame,
-    anchorOffsetX = 150,
-    anchorOffsetY = -20,
+    anchorFrame = function() return TargetFrame and TargetFrame.totFrame or TargetFrame end,
+    anchorOffsetX = 0,
+    anchorOffsetY = 0,
     hideBlizzard = HideBlizzardToTFrame,
 
     shouldShow = function()
