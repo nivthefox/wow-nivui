@@ -394,15 +394,21 @@ local function BuildCustomFrame(styleName)
         return
     end
 
-    -- Create container frame
+    -- Create container frame with secure click handling
     local frameConfig = style.frame or {}
     local frameWidth = frameConfig.width or 200
     local frameHeight = frameConfig.height or 60
 
-    customFrame = CreateFrame("Frame", "NivUI_PlayerFrame", UIParent)
+    customFrame = CreateFrame("Button", "NivUI_PlayerFrame", UIParent, "SecureUnitButtonTemplate")
     customFrame:SetSize(frameWidth, frameHeight)
     if frameConfig.strata then customFrame:SetFrameStrata(frameConfig.strata) end
     if frameConfig.frameLevel then customFrame:SetFrameLevel(frameConfig.frameLevel) end
+
+    -- Set up secure unit targeting
+    customFrame:SetAttribute("unit", "player")
+    customFrame:SetAttribute("type1", "target")       -- Left click targets
+    customFrame:SetAttribute("type2", "togglemenu")   -- Right click shows menu
+    customFrame:RegisterForClicks("AnyUp")
 
     -- Anchor TOPLEFT to Blizzard PlayerFrame's TOPLEFT
     customFrame:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 0, 0)
