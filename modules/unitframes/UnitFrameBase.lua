@@ -463,15 +463,19 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:SetAttribute("type2", "togglemenu")
     customFrame:RegisterForClicks("AnyUp")
 
-    -- Position relative to anchor if provided
-    local anchorFrame = state.anchorFrame
-    if type(anchorFrame) == "function" then
-        anchorFrame = anchorFrame()
-    end
-    if anchorFrame then
-        customFrame:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", state.anchorOffsetX or 0, state.anchorOffsetY or 0)
-    else
-        customFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    -- Position: use saved Edit Mode position or default anchor
+    local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition(state.frameType, customFrame)
+
+    if not positionApplied then
+        local anchorFrame = state.anchorFrame
+        if type(anchorFrame) == "function" then
+            anchorFrame = anchorFrame()
+        end
+        if anchorFrame then
+            customFrame:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", state.anchorOffsetX or 0, state.anchorOffsetY or 0)
+        else
+            customFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        end
     end
 
     if frameConfig.showBorder then
@@ -561,6 +565,14 @@ function UnitFrameBase.BuildCustomFrame(state)
         UnitFrameBase.UpdatePowerText(state)
         UnitFrameBase.UpdateCastbar(state)
     end)
+
+    -- Create Edit Mode Selection frame
+    if NivUI.EditMode then
+        NivUI.EditMode:CreateSelectionFrame(state.frameType, customFrame)
+        if NivUI.EditMode:IsActive() then
+            NivUI.EditMode:ShowSelection(state.frameType)
+        end
+    end
 
     -- Initial visibility check
     if state.shouldShow then

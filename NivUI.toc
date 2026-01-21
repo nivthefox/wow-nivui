@@ -14,6 +14,7 @@ modules/unitframes/WidgetFactories.lua
 modules/unitframes/ConfigTab.lua
 modules/unitframes/Designer.lua
 modules/unitframes/UnitFrameBase.lua
+modules/unitframes/EditModeSupport.lua
 modules/unitframes/PlayerFrame.lua
 modules/unitframes/TargetFrame.lua
 modules/unitframes/TargetOfTargetFrame.lua
