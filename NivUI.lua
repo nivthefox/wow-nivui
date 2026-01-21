@@ -8,6 +8,9 @@ NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}
 
 -- Default settings for the stagger bar
 NivUI.defaults = {
+    -- General
+    visibility = "combat",  -- "always", "combat", "never"
+
     -- Position and size
     updateInterval = 0.2,
     width = 394,
@@ -18,10 +21,15 @@ NivUI.defaults = {
     locked = false,
 
     -- Bar appearance
-    barTexture = "Interface\\TargetingFrame\\UI-StatusBar",
+    foregroundTexture = "Default",
+    backgroundTexture = "Default",
+    backgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
+    borderStyle = "thin",
+    borderColor = { r = 0, g = 0, b = 0, a = 1 },
+    borderWidth = 1,
 
     -- Font settings
-    font = "Fonts\\FRIZQT__.TTF",
+    font = "Friz Quadrata",
     fontSize = 12,
     fontColor = { r = 1, g = 1, b = 1 },
     fontShadow = true,
@@ -35,20 +43,30 @@ NivUI.defaults = {
     },
 }
 
+-- Legacy alias for backwards compatibility
+NivUI.defaults.barTexture = NivUI.defaults.foregroundTexture
+
 -- Fallback bar textures (used if SharedMedia unavailable)
 local BUILTIN_TEXTURES = {
-    { path = "Interface\\TargetingFrame\\UI-StatusBar", name = "Default" },
-    { path = "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill", name = "Target Frame" },
-    { path = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill", name = "Raid Frame" },
-    { path = "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar", name = "Skills Bar" },
+    { value = "Default", name = "Default", path = "Interface\\TargetingFrame\\UI-StatusBar" },
+    { value = "Target Frame", name = "Target Frame", path = "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill" },
+    { value = "Raid Frame", name = "Raid Frame", path = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" },
+    { value = "Skills Bar", name = "Skills Bar", path = "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar" },
 }
 
 -- Fallback fonts (used if SharedMedia unavailable)
 local BUILTIN_FONTS = {
-    { path = "Fonts\\FRIZQT__.TTF", name = "Friz Quadrata" },
-    { path = "Fonts\\ARIALN.TTF", name = "Arial Narrow" },
-    { path = "Fonts\\MORPHEUS.TTF", name = "Morpheus" },
-    { path = "Fonts\\SKURRI.TTF", name = "Skurri" },
+    { value = "Friz Quadrata", name = "Friz Quadrata", path = "Fonts\\FRIZQT__.TTF" },
+    { value = "Arial Narrow", name = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
+    { value = "Morpheus", name = "Morpheus", path = "Fonts\\MORPHEUS.TTF" },
+    { value = "Skurri", name = "Skurri", path = "Fonts\\SKURRI.TTF" },
+}
+
+-- Border styles
+local BUILTIN_BORDERS = {
+    { value = "none", name = "None" },
+    { value = "thin", name = "Thin (1px)" },
+    { value = "thick", name = "Thick (2px)" },
 }
 
 -- Get SharedMedia if available
@@ -60,16 +78,18 @@ function NivUI:GetSharedMedia()
 end
 
 -- Get available bar textures (from SharedMedia or fallback)
--- Returns items with 'value' (the name to store) and 'name' (display name)
+-- Returns items with 'value', 'name', and 'path' (for texture preview)
 function NivUI:GetBarTextures()
     local LSM = self:GetSharedMedia()
     if LSM then
         local list = LSM:List("statusbar")
         local textures = {}
         for _, name in ipairs(list) do
+            local path = LSM:Fetch("statusbar", name)
             table.insert(textures, {
-                value = name,  -- Store the SharedMedia name, not the path
+                value = name,
                 name = name,
+                path = path,
             })
         end
         return textures
@@ -78,21 +98,39 @@ function NivUI:GetBarTextures()
 end
 
 -- Get available fonts (from SharedMedia or fallback)
--- Returns items with 'value' (the name to store) and 'name' (display name)
+-- Returns items with 'value', 'name', and 'path'
 function NivUI:GetFonts()
     local LSM = self:GetSharedMedia()
     if LSM then
         local list = LSM:List("font")
         local fonts = {}
         for _, name in ipairs(list) do
+            local path = LSM:Fetch("font", name)
             table.insert(fonts, {
-                value = name,  -- Store the SharedMedia name, not the path
+                value = name,
                 name = name,
+                path = path,
             })
         end
         return fonts
     end
     return BUILTIN_FONTS
+end
+
+-- Get available border styles
+function NivUI:GetBorders()
+    return BUILTIN_BORDERS
+end
+
+-- Visibility options for the bar
+local VISIBILITY_OPTIONS = {
+    { value = "always", name = "Always" },
+    { value = "combat", name = "In Combat" },
+    { value = "never", name = "Never" },
+}
+
+function NivUI:GetVisibilityOptions()
+    return VISIBILITY_OPTIONS
 end
 
 -- Resolve a texture name to its path (handles both SharedMedia names and raw paths)

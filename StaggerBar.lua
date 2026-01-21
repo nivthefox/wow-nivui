@@ -211,9 +211,21 @@ end
 
 -- Check if we should show the bar
 local function ShouldShow()
+    local visibility = NivUI:GetSetting("visibility")
+
+    -- "never" always hides
+    if visibility == "never" then return false end
+
+    -- When unlocked, always show for positioning
     if not NivUI:GetSetting("locked") then return true end
+
+    -- Must be brewmaster to show when locked
     if not isBrewmaster then return false end
 
+    -- "always" shows whenever we're a brewmaster
+    if visibility == "always" then return true end
+
+    -- "combat" mode: show in combat or with active stagger
     if inCombat then return true end
     local stagger = UnitStagger("player")
     if stagger and stagger > 0 then return true end
@@ -304,14 +316,49 @@ local function LoadPosition()
     end
 end
 
--- Apply bar texture from saved settings
+-- Apply bar texture from saved settings (foreground)
 local function ApplyBarTexture()
-    local textureName = NivUI:GetSetting("barTexture")
+    local textureName = NivUI:GetSetting("foregroundTexture") or NivUI:GetSetting("barTexture")
     local texturePath = NivUI:GetTexturePath(textureName)
     StaggerBar.bar:SetStatusBarTexture(texturePath)
     -- Re-anchor spark to the new texture
     StaggerBar.spark:ClearAllPoints()
     StaggerBar.spark:SetPoint("CENTER", StaggerBar.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
+end
+
+-- Apply background texture and color
+local function ApplyBackground()
+    local bgColor = NivUI:GetSetting("backgroundColor")
+    if bgColor then
+        StaggerBar.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
+    end
+end
+
+-- Apply border settings
+local function ApplyBorder()
+    local borderStyle = NivUI:GetSetting("borderStyle")
+    local borderColor = NivUI:GetSetting("borderColor")
+    local borderWidth = NivUI:GetSetting("borderWidth") or 1
+
+    if borderStyle == "none" then
+        StaggerBar.border:SetBackdrop(nil)
+    else
+        local width = borderStyle == "thick" and 2 or 1
+        StaggerBar.border:SetBackdrop({
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = width,
+        })
+        if borderColor then
+            StaggerBar.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+        else
+            StaggerBar.border:SetBackdropBorderColor(0, 0, 0, 1)
+        end
+    end
+end
+
+-- Apply visibility setting
+local function ApplyVisibility()
+    UpdateVisibility()
 end
 
 -- Apply font settings from saved settings
@@ -362,6 +409,9 @@ end
 
 -- Register apply callbacks with NivUI
 NivUI:RegisterApplyCallback("barTexture", ApplyBarTexture)
+NivUI:RegisterApplyCallback("background", ApplyBackground)
+NivUI:RegisterApplyCallback("border", ApplyBorder)
+NivUI:RegisterApplyCallback("visibility", ApplyVisibility)
 NivUI:RegisterApplyCallback("font", ApplyFontSettings)
 NivUI:RegisterApplyCallback("locked", ApplyLockState)
 NivUI:RegisterApplyCallback("position", LoadPosition)
@@ -378,6 +428,8 @@ local function OnEvent(self, event, ...)
             NivUI:InitializeDB()
             LoadPosition()
             ApplyBarTexture()
+            ApplyBackground()
+            ApplyBorder()
             ApplyFontSettings()
             EnableDragging()
             CheckSpec()
