@@ -79,12 +79,11 @@ spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 StaggerBar.spark = spark
 
 -- Text overlay (centered on bar)
-local text = StaggerBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+local text = bar:CreateFontString(nil, "OVERLAY")
 text:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-text:SetPoint("CENTER", barContainer, "CENTER", 0, 0)
+text:SetPoint("CENTER", bar, "CENTER", 0, 0)
 text:SetTextColor(1, 1, 1, 1)
-text:SetShadowOffset(0, 0)  -- Disable default shadow
-text:SetDrawLayer("OVERLAY", 7)  -- Ensure it's on top
+text:SetShadowOffset(0, 0)
 StaggerBar.text = text
 
 -- Border around the bar
