@@ -698,6 +698,7 @@ local function CreateAssignmentsPanel(parent, Components)
     local frame = CreateFrame("Frame", nil, parent)
 
     local allFrames = {}
+    local checkboxes = {}  -- Store checkbox references for OnShow refresh
 
     local function AddRow(row, spacing)
         spacing = spacing or 0
@@ -724,10 +725,12 @@ local function CreateAssignmentsPanel(parent, Components)
         local checkbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
         checkbox:SetText("")  -- Required for template to render
-        checkbox:SetChecked(NivUI:IsFrameEnabled(frameInfo.value))
         checkbox:SetScript("OnClick", function(self)
             NivUI:SetFrameEnabled(frameInfo.value, self:GetChecked())
         end)
+
+        -- Store reference for OnShow refresh
+        table.insert(checkboxes, { checkbox = checkbox, frameType = frameInfo.value, kind = "enabled" })
 
         -- Frame type label
         local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -757,10 +760,12 @@ local function CreateAssignmentsPanel(parent, Components)
         local realtimeCheckbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         realtimeCheckbox:SetPoint("LEFT", dropdown, "RIGHT", 16, 0)
         realtimeCheckbox:SetText("")  -- Required for template to render
-        realtimeCheckbox:SetChecked(NivUI:IsRealTimeUpdates(frameInfo.value))
         realtimeCheckbox:SetScript("OnClick", function(self)
             NivUI:SetRealTimeUpdates(frameInfo.value, self:GetChecked())
         end)
+
+        -- Store reference for OnShow refresh
+        table.insert(checkboxes, { checkbox = realtimeCheckbox, frameType = frameInfo.value, kind = "realtime" })
 
         local realtimeLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         realtimeLabel:SetPoint("LEFT", realtimeCheckbox, "RIGHT", 2, 0)
@@ -779,6 +784,17 @@ local function CreateAssignmentsPanel(parent, Components)
 
         AddRow(row, 4)
     end
+
+    -- Refresh checkbox states from DB when shown (SavedVariables may not be loaded at creation time)
+    frame:SetScript("OnShow", function()
+        for _, entry in ipairs(checkboxes) do
+            if entry.kind == "enabled" then
+                entry.checkbox:SetChecked(NivUI:IsFrameEnabled(entry.frameType))
+            elseif entry.kind == "realtime" then
+                entry.checkbox:SetChecked(NivUI:IsRealTimeUpdates(entry.frameType))
+            end
+        end
+    end)
 
     return frame
 end
