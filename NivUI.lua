@@ -4,10 +4,11 @@
 NivUI = NivUI or {}
 
 -- Saved variables (initialized on ADDON_LOADED)
-NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}
+NivUI_DB = NivUI_DB or {}
+NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}  -- Legacy, kept for migration
 
--- Default settings for the stagger bar
-NivUI.defaults = {
+-- Default settings for the stagger bar (will be stored in NivUI_DB.staggerBar)
+NivUI.staggerBarDefaults = {
     -- General
     visibility = "combat",  -- "always", "combat", "never"
 
@@ -44,7 +45,10 @@ NivUI.defaults = {
 }
 
 -- Legacy alias for backwards compatibility
-NivUI.defaults.barTexture = NivUI.defaults.foregroundTexture
+NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture
+
+-- Alias for backwards compatibility with existing code
+NivUI.defaults = NivUI.staggerBarDefaults
 
 -- Fallback bar textures (used if SharedMedia unavailable)
 local BUILTIN_TEXTURES = {
@@ -185,43 +189,70 @@ function NivUI:ApplySettings(settingName)
     end
 end
 
--- Helper to get a saved value with fallback to default
+-- Helper to get a saved value with fallback to default (stagger bar)
 function NivUI:GetSetting(key)
-    local db = NivUI_StaggerBarDB
+    local db = NivUI_DB.staggerBar or {}
     if db[key] ~= nil then
         return db[key]
     end
-    return self.defaults[key]
+    return self.staggerBarDefaults[key]
 end
 
 -- Helper to get stagger colors specifically (nested table)
 function NivUI:GetColors()
-    local db = NivUI_StaggerBarDB
+    local db = NivUI_DB.staggerBar or {}
     if db.colors then
         return db.colors
     end
-    return self.defaults.colors
+    return self.staggerBarDefaults.colors
+end
+
+-- Deep copy helper
+local function DeepCopy(src)
+    if type(src) ~= "table" then return src end
+    local copy = {}
+    for k, v in pairs(src) do
+        copy[k] = DeepCopy(v)
+    end
+    return copy
 end
 
 -- Initialize saved variables with defaults (call on ADDON_LOADED)
 function NivUI:InitializeDB()
-    for k, v in pairs(self.defaults) do
-        if NivUI_StaggerBarDB[k] == nil then
-            if type(v) == "table" then
-                NivUI_StaggerBarDB[k] = {}
-                for k2, v2 in pairs(v) do
-                    if type(v2) == "table" then
-                        NivUI_StaggerBarDB[k][k2] = {}
-                        for k3, v3 in pairs(v2) do
-                            NivUI_StaggerBarDB[k][k2][k3] = v3
-                        end
-                    else
-                        NivUI_StaggerBarDB[k][k2] = v2
-                    end
-                end
-            else
-                NivUI_StaggerBarDB[k] = v
-            end
+    -- Initialize NivUI_DB structure
+    NivUI_DB.version = NivUI_DB.version or 1
+
+    -- Migrate from legacy NivUI_StaggerBarDB if needed
+    if not NivUI_DB.staggerBar then
+        if next(NivUI_StaggerBarDB) then
+            -- Migration: copy old data to new location
+            NivUI_DB.staggerBar = DeepCopy(NivUI_StaggerBarDB)
+        else
+            NivUI_DB.staggerBar = {}
         end
+    end
+
+    -- Initialize stagger bar defaults
+    for k, v in pairs(self.staggerBarDefaults) do
+        if NivUI_DB.staggerBar[k] == nil then
+            NivUI_DB.staggerBar[k] = DeepCopy(v)
+        end
+    end
+
+    -- Initialize unit frame structures
+    if not NivUI_DB.unitFrameStyles then
+        NivUI_DB.unitFrameStyles = {}
+    end
+
+    if not NivUI_DB.unitFrameAssignments then
+        NivUI_DB.unitFrameAssignments = {
+            player = "Default",
+            target = "Default",
+            focus = "Default",
+            pet = "Default",
+            party = "Default",
+            boss = "Default",
+            targettarget = "Default",
+        }
     end
 end

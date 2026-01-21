@@ -49,7 +49,7 @@ end)
 
 resizeHandle:SetScript("OnMouseUp", function(self, button)
     StaggerBar:StopMovingOrSizing()
-    local db = NivUI_StaggerBarDB
+    local db = NivUI_DB.staggerBar
     db.width = StaggerBar:GetWidth()
     db.height = StaggerBar:GetHeight()
     -- Notify config frame if it's listening
@@ -281,7 +281,7 @@ local function EnableDragging()
 
     StaggerBar:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        local db = NivUI_StaggerBarDB
+        local db = NivUI_DB.staggerBar
         local point, _, _, x, y = self:GetPoint()
         db.point = point
         db.x = x
@@ -293,7 +293,7 @@ end
 
 -- Load saved position and size
 local function LoadPosition()
-    local db = NivUI_StaggerBarDB
+    local db = NivUI_DB.staggerBar
     local defaults = NivUI.defaults
 
     StaggerBar:ClearAllPoints()
@@ -363,7 +363,7 @@ end
 
 -- Apply font settings from saved settings
 local function ApplyFontSettings()
-    local db = NivUI_StaggerBarDB
+    local db = NivUI_DB.staggerBar
     local defaults = NivUI.defaults
 
     local fontName = db.font or defaults.font
@@ -426,6 +426,10 @@ local function OnEvent(self, event, ...)
         local addon = ...
         if addon == "NivUI" then
             NivUI:InitializeDB()
+            -- Initialize default unit frame style if it exists
+            if NivUI.InitializeDefaultStyle then
+                NivUI:InitializeDefaultStyle()
+            end
             LoadPosition()
             ApplyBarTexture()
             ApplyBackground()
@@ -482,18 +486,18 @@ SlashCmdList["NIVUI"] = function(msg)
         end
     elseif module == "stagger" then
         if cmd == "lock" then
-            NivUI_StaggerBarDB.locked = true
+            NivUI_DB.staggerBar.locked = true
             ApplyLockState()
             print("NivUI Stagger Bar: Locked")
         elseif cmd == "unlock" then
-            NivUI_StaggerBarDB.locked = false
+            NivUI_DB.staggerBar.locked = false
             ApplyLockState()
             print("NivUI Stagger Bar: Unlocked - drag to move, corner to resize")
         elseif cmd == "show" then
             StaggerBar:Show()
             print("NivUI Stagger Bar: Forced visible (will hide on combat end)")
         elseif cmd == "reset" then
-            NivUI_StaggerBarDB = {}
+            NivUI_DB.staggerBar = {}
             NivUI:InitializeDB()
             LoadPosition()
             ApplyBarTexture()

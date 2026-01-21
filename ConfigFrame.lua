@@ -429,7 +429,7 @@ local function SetupStaggerBarTab()
         function() return NivUI:GetVisibilityOptions() end,
         function(value) return NivUI:GetSetting("visibility") == value end,
         function(value)
-            NivUI_StaggerBarDB.visibility = value
+            NivUI_DB.staggerBar.visibility = value
             NivUI:ApplySettings("visibility")
         end
     )
@@ -447,7 +447,7 @@ local function SetupStaggerBarTab()
         function() return NivUI:GetBarTextures() end,
         function() return NivUI:GetSetting("foregroundTexture") end,
         function(value)
-            NivUI_StaggerBarDB.foregroundTexture = value
+            NivUI_DB.staggerBar.foregroundTexture = value
             NivUI:ApplySettings("barTexture")
         end
     )
@@ -459,7 +459,7 @@ local function SetupStaggerBarTab()
         function() return NivUI:GetBarTextures() end,
         function() return NivUI:GetSetting("backgroundTexture") end,
         function(value)
-            NivUI_StaggerBarDB.backgroundTexture = value
+            NivUI_DB.staggerBar.backgroundTexture = value
             NivUI:ApplySettings("background")
         end
     )
@@ -470,7 +470,7 @@ local function SetupStaggerBarTab()
         "Background Color:",
         true,
         function(color)
-            NivUI_StaggerBarDB.backgroundColor = color
+            NivUI_DB.staggerBar.backgroundColor = color
             NivUI:ApplySettings("background")
         end
     )
@@ -482,7 +482,7 @@ local function SetupStaggerBarTab()
         function() return NivUI:GetBorders() end,
         function(value) return NivUI:GetSetting("borderStyle") == value end,
         function(value)
-            NivUI_StaggerBarDB.borderStyle = value
+            NivUI_DB.staggerBar.borderStyle = value
             NivUI:ApplySettings("border")
         end
     )
@@ -493,7 +493,7 @@ local function SetupStaggerBarTab()
         "Border Color:",
         true,
         function(color)
-            NivUI_StaggerBarDB.borderColor = color
+            NivUI_DB.staggerBar.borderColor = color
             NivUI:ApplySettings("border")
         end
     )
@@ -510,8 +510,8 @@ local function SetupStaggerBarTab()
         "Light:",
         false,
         function(color)
-            NivUI_StaggerBarDB.colors = NivUI_StaggerBarDB.colors or {}
-            NivUI_StaggerBarDB.colors.light = color
+            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
+            NivUI_DB.staggerBar.colors.light = color
         end
     )
     AddFrame(lightColorPicker)
@@ -521,8 +521,8 @@ local function SetupStaggerBarTab()
         "Moderate:",
         false,
         function(color)
-            NivUI_StaggerBarDB.colors = NivUI_StaggerBarDB.colors or {}
-            NivUI_StaggerBarDB.colors.moderate = color
+            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
+            NivUI_DB.staggerBar.colors.moderate = color
         end
     )
     AddFrame(moderateColorPicker)
@@ -532,8 +532,8 @@ local function SetupStaggerBarTab()
         "Heavy:",
         false,
         function(color)
-            NivUI_StaggerBarDB.colors = NivUI_StaggerBarDB.colors or {}
-            NivUI_StaggerBarDB.colors.heavy = color
+            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
+            NivUI_DB.staggerBar.colors.heavy = color
         end
     )
     AddFrame(heavyColorPicker)
@@ -543,8 +543,8 @@ local function SetupStaggerBarTab()
         "Extreme:",
         false,
         function(color)
-            NivUI_StaggerBarDB.colors = NivUI_StaggerBarDB.colors or {}
-            NivUI_StaggerBarDB.colors.extreme = color
+            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
+            NivUI_DB.staggerBar.colors.extreme = color
         end
     )
     AddFrame(extremeColorPicker)
@@ -561,7 +561,7 @@ local function SetupStaggerBarTab()
         function() return NivUI:GetFonts() end,
         function(value) return NivUI:GetSetting("font") == value end,
         function(value)
-            NivUI_StaggerBarDB.font = value
+            NivUI_DB.staggerBar.font = value
             NivUI:ApplySettings("font")
         end
     )
@@ -572,7 +572,7 @@ local function SetupStaggerBarTab()
         "Font Size:",
         8, 24, 1, false,
         function(value)
-            NivUI_StaggerBarDB.fontSize = value
+            NivUI_DB.staggerBar.fontSize = value
             NivUI:ApplySettings("font")
         end
     )
@@ -583,7 +583,7 @@ local function SetupStaggerBarTab()
         "Font Color:",
         false,
         function(color)
-            NivUI_StaggerBarDB.fontColor = color
+            NivUI_DB.staggerBar.fontColor = color
             NivUI:ApplySettings("font")
         end
     )
@@ -593,7 +593,7 @@ local function SetupStaggerBarTab()
         content,
         "Text Shadow",
         function(checked)
-            NivUI_StaggerBarDB.fontShadow = checked
+            NivUI_DB.staggerBar.fontShadow = checked
             NivUI:ApplySettings("font")
         end
     )
@@ -609,7 +609,7 @@ local function SetupStaggerBarTab()
         content,
         "Locked",
         function(checked)
-            NivUI_StaggerBarDB.locked = checked
+            NivUI_DB.staggerBar.locked = checked
             NivUI:ApplySettings("locked")
         end
     )
@@ -620,7 +620,7 @@ local function SetupStaggerBarTab()
         "Width:",
         100, 600, 10, false,
         function(value)
-            NivUI_StaggerBarDB.width = value
+            NivUI_DB.staggerBar.width = value
             NivUI:ApplySettings("position")
         end
     )
@@ -631,7 +631,7 @@ local function SetupStaggerBarTab()
         "Height:",
         5, 60, 1, false,
         function(value)
-            NivUI_StaggerBarDB.height = value
+            NivUI_DB.staggerBar.height = value
             NivUI:ApplySettings("position")
         end
     )
@@ -642,7 +642,7 @@ local function SetupStaggerBarTab()
         "Update Interval:",
         0.05, 1.0, 0.05, true,
         function(value)
-            NivUI_StaggerBarDB.updateInterval = value
+            NivUI_DB.staggerBar.updateInterval = value
         end
     )
     AddFrame(intervalSlider)
@@ -651,7 +651,7 @@ local function SetupStaggerBarTab()
     -- Refresh on show
     ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
-        local db = NivUI_StaggerBarDB
+        local db = NivUI_DB.staggerBar
         local defaults = NivUI.defaults
 
         -- General
@@ -705,6 +705,24 @@ staggerBarTab:SetPoint("TOPLEFT", ConfigFrame, "TOPLEFT", 10, -25)
 staggerBarTab:SetScript("OnClick", function() SelectTab(1) end)
 table.insert(tabs, staggerBarTab)
 
+-- Unit Frames tab (Style Designer)
+local unitFramesContainer = NivUI.UnitFrames:SetupConfigTab(ConfigFrame, Components)
+table.insert(tabContainers, unitFramesContainer)
+
+local unitFramesTab = Components.GetTab(ConfigFrame, "Unit Frames")
+unitFramesTab:SetPoint("TOPLEFT", staggerBarTab, "TOPRIGHT", -10, 0)
+unitFramesTab:SetScript("OnClick", function() SelectTab(2) end)
+table.insert(tabs, unitFramesTab)
+
+-- Frame Assignments tab
+local assignmentsContainer = NivUI.UnitFrames:SetupAssignmentsTab(ConfigFrame, Components)
+table.insert(tabContainers, assignmentsContainer)
+
+local assignmentsTab = Components.GetTab(ConfigFrame, "Assignments")
+assignmentsTab:SetPoint("TOPLEFT", unitFramesTab, "TOPRIGHT", -10, 0)
+assignmentsTab:SetScript("OnClick", function() SelectTab(3) end)
+table.insert(tabs, assignmentsTab)
+
 -- Select first tab by default
 ConfigFrame:SetScript("OnShow", function()
     SelectTab(currentTab)
@@ -715,7 +733,7 @@ end)
 --------------------------------------------------------------------------------
 
 NivUI.OnBarMoved = function()
-    local db = NivUI_StaggerBarDB
+    local db = NivUI_DB.staggerBar
     if staggerBarContainer.widthSlider then
         staggerBarContainer.widthSlider:SetValue(db.width or 394)
     end

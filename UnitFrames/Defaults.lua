@@ -1,0 +1,288 @@
+-- NivUI Unit Frames: Default Style Schema
+-- Defines the complete structure for a unit frame style
+
+NivUI = NivUI or {}
+NivUI.UnitFrames = NivUI.UnitFrames or {}
+
+-- Anchor point options
+NivUI.UnitFrames.ANCHOR_POINTS = {
+    "TOPLEFT", "TOP", "TOPRIGHT",
+    "LEFT", "CENTER", "RIGHT",
+    "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT",
+}
+
+-- Frame types that can have styles assigned
+NivUI.UnitFrames.FRAME_TYPES = {
+    { value = "player", name = "Player" },
+    { value = "target", name = "Target" },
+    { value = "focus", name = "Focus" },
+    { value = "pet", name = "Pet" },
+    { value = "party", name = "Party" },
+    { value = "boss", name = "Boss" },
+    { value = "targettarget", name = "Target of Target" },
+}
+
+-- Health bar color modes
+NivUI.UnitFrames.HEALTH_COLOR_MODES = {
+    { value = "class", name = "Class Color" },
+    { value = "health", name = "Health Gradient" },
+    { value = "reaction", name = "Reaction" },
+    { value = "custom", name = "Custom" },
+}
+
+-- Power bar color modes
+NivUI.UnitFrames.POWER_COLOR_MODES = {
+    { value = "power", name = "Power Type" },
+    { value = "class", name = "Class Color" },
+    { value = "custom", name = "Custom" },
+}
+
+-- Portrait modes
+NivUI.UnitFrames.PORTRAIT_MODES = {
+    { value = "3D", name = "3D Model" },
+    { value = "2D", name = "2D Texture" },
+    { value = "class", name = "Class Icon" },
+}
+
+-- Portrait shapes
+NivUI.UnitFrames.PORTRAIT_SHAPES = {
+    { value = "square", name = "Square" },
+    { value = "circle", name = "Circle" },
+}
+
+-- Text formats for health/power
+NivUI.UnitFrames.TEXT_FORMATS = {
+    { value = "none", name = "None" },
+    { value = "current", name = "Current" },
+    { value = "percent", name = "Percent" },
+    { value = "current_percent", name = "Current / Percent" },
+    { value = "current_max", name = "Current / Max" },
+    { value = "deficit", name = "Deficit" },
+}
+
+-- Aura growth directions
+NivUI.UnitFrames.AURA_GROWTH = {
+    { value = "RIGHT", name = "Right" },
+    { value = "LEFT", name = "Left" },
+    { value = "UP", name = "Up" },
+    { value = "DOWN", name = "Down" },
+}
+
+-- Default anchor configuration
+local function DefaultAnchor(point, relativeTo, relativePoint, x, y)
+    return {
+        point = point or "CENTER",
+        relativeTo = relativeTo or "frame",  -- "frame" means parent unit frame
+        relativePoint = relativePoint or "CENTER",
+        x = x or 0,
+        y = y or 0,
+    }
+end
+
+-- Default style definition
+-- This is what a new style starts with
+NivUI.UnitFrames.DEFAULT_STYLE = {
+    -- Frame dimensions
+    width = 200,
+    height = 60,
+
+    -- Health Bar
+    healthBar = {
+        enabled = true,
+        anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", 0, 0),
+        size = { width = 180, height = 24 },
+        layer = 1,
+        texture = "Default",
+        colorMode = "class",
+        customColor = { r = 0.2, g = 0.8, b = 0.2 },
+        gradientStart = { r = 1, g = 0, b = 0 },
+        gradientEnd = { r = 0, g = 1, b = 0 },
+        showAbsorb = true,
+        absorbColor = { r = 0.8, g = 0.8, b = 0.2, a = 0.5 },
+        backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
+    },
+
+    -- Power Bar
+    powerBar = {
+        enabled = true,
+        anchor = DefaultAnchor("TOPLEFT", "healthBar", "BOTTOMLEFT", 0, -2),
+        size = { width = 180, height = 12 },
+        layer = 1,
+        texture = "Default",
+        colorMode = "power",
+        customColor = { r = 0.2, g = 0.2, b = 0.8 },
+        backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
+    },
+
+    -- Portrait
+    portrait = {
+        enabled = true,
+        anchor = DefaultAnchor("RIGHT", "frame", "LEFT", -4, 0),
+        size = { width = 48, height = 48 },
+        layer = 0,
+        mode = "3D",
+        shape = "square",
+        borderColor = { r = 0, g = 0, b = 0, a = 1 },
+        borderWidth = 1,
+    },
+
+    -- Name Text
+    nameText = {
+        enabled = true,
+        anchor = DefaultAnchor("BOTTOMLEFT", "healthBar", "TOPLEFT", 2, 2),
+        layer = 10,
+        font = "Friz Quadrata",
+        fontSize = 12,
+        fontOutline = "OUTLINE",
+        colorByClass = true,
+        customColor = { r = 1, g = 1, b = 1 },
+        truncateLength = 20,
+    },
+
+    -- Level Text
+    levelText = {
+        enabled = true,
+        anchor = DefaultAnchor("BOTTOMRIGHT", "healthBar", "TOPRIGHT", -2, 2),
+        layer = 10,
+        font = "Friz Quadrata",
+        fontSize = 11,
+        fontOutline = "OUTLINE",
+        colorByDifficulty = true,
+        customColor = { r = 1, g = 0.82, b = 0 },
+    },
+
+    -- Health Text
+    healthText = {
+        enabled = true,
+        anchor = DefaultAnchor("CENTER", "healthBar", "CENTER", 0, 0),
+        layer = 10,
+        font = "Friz Quadrata",
+        fontSize = 11,
+        fontOutline = "OUTLINE",
+        format = "current_percent",
+        color = { r = 1, g = 1, b = 1 },
+    },
+
+    -- Power Text
+    powerText = {
+        enabled = true,
+        anchor = DefaultAnchor("CENTER", "powerBar", "CENTER", 0, 0),
+        layer = 10,
+        font = "Friz Quadrata",
+        fontSize = 10,
+        fontOutline = "OUTLINE",
+        format = "current",
+        color = { r = 1, g = 1, b = 1 },
+    },
+
+    -- Status Indicators
+    statusIndicators = {
+        enabled = true,
+        showCombat = true,
+        showResting = true,
+        showDead = true,
+        showGhost = true,
+        showAFK = true,
+        showDND = true,
+        showOffline = true,
+        iconSize = 16,
+        anchor = DefaultAnchor("TOPRIGHT", "frame", "TOPRIGHT", 0, 0),
+    },
+
+    -- Leader/Assistant Icon
+    leaderIcon = {
+        enabled = true,
+        anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", -4, 4),
+        size = 16,
+    },
+
+    -- Raid Marker
+    raidMarker = {
+        enabled = true,
+        anchor = DefaultAnchor("TOP", "frame", "TOP", 0, 8),
+        size = 20,
+    },
+
+    -- Castbar
+    castbar = {
+        enabled = true,
+        anchor = DefaultAnchor("TOP", "powerBar", "BOTTOM", 0, -8),
+        size = { width = 180, height = 16 },
+        layer = 2,
+        texture = "Default",
+        showIcon = true,
+        showTimer = true,
+        showSpellName = true,
+        backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
+        castingColor = { r = 1, g = 0.7, b = 0 },
+        channelingColor = { r = 0, g = 0.7, b = 1 },
+        interruptibleColor = { r = 0.7, g = 0.7, b = 0.7 },
+        nonInterruptibleColor = { r = 0.7, g = 0, b = 0 },
+    },
+
+    -- Buffs
+    buffs = {
+        enabled = true,
+        anchor = DefaultAnchor("BOTTOMLEFT", "frame", "TOPLEFT", 0, 4),
+        layer = 5,
+        iconSize = 20,
+        spacing = 2,
+        perRow = 8,
+        maxIcons = 16,
+        growth = "RIGHT",
+        showDuration = true,
+        showStacks = true,
+        filterPlayer = false,  -- Only show player-cast buffs
+    },
+
+    -- Debuffs
+    debuffs = {
+        enabled = true,
+        anchor = DefaultAnchor("BOTTOMLEFT", "buffs", "TOPLEFT", 0, 2),
+        layer = 5,
+        iconSize = 22,
+        spacing = 2,
+        perRow = 8,
+        maxIcons = 16,
+        growth = "RIGHT",
+        showDuration = true,
+        showStacks = true,
+        highlightDispellable = true,
+        dispellableColor = { r = 0, g = 1, b = 0, a = 1 },
+        filterPlayer = false,  -- Only show player-cast debuffs
+    },
+}
+
+-- Widget list for iteration (order matters for UI)
+NivUI.UnitFrames.WIDGET_ORDER = {
+    "healthBar",
+    "powerBar",
+    "portrait",
+    "nameText",
+    "levelText",
+    "healthText",
+    "powerText",
+    "statusIndicators",
+    "leaderIcon",
+    "raidMarker",
+    "castbar",
+    "buffs",
+    "debuffs",
+}
+
+-- Human-readable widget names
+NivUI.UnitFrames.WIDGET_NAMES = {
+    healthBar = "Health Bar",
+    powerBar = "Power Bar",
+    portrait = "Portrait",
+    nameText = "Name Text",
+    levelText = "Level Text",
+    healthText = "Health Text",
+    powerText = "Power Text",
+    statusIndicators = "Status Indicators",
+    leaderIcon = "Leader Icon",
+    raidMarker = "Raid Marker",
+    castbar = "Castbar",
+    buffs = "Buffs",
+    debuffs = "Debuffs",
+}
