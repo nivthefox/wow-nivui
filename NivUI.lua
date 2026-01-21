@@ -1,0 +1,2 @@
+-- NivUI: Entry point
+-- This file intentionally left minimal
