@@ -24,9 +24,9 @@ StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
     text = "Enter name for new style:",
     button1 = "Create",
     button2 = "Cancel",
-    hasEditBox = true,
-    OnAccept = function(self)
-        local name = self.editBox:GetText()
+    hasEditBox = 1,
+    OnAccept = function(dialog)
+        local name = dialog:GetText()
         if name and name ~= "" then
             local success, err = NivUI:CreateStyle(name)
             if success then
@@ -39,9 +39,9 @@ StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
             end
         end
     end,
-    EditBoxOnEnterPressed = function(self)
-        local parent = self:GetParent()
-        local name = self:GetText()
+    EditBoxOnEnterPressed = function(editBox)
+        local dialog = editBox:GetParent()
+        local name = editBox:GetText()
         if name and name ~= "" then
             local success, err = NivUI:CreateStyle(name)
             if success then
@@ -53,20 +53,20 @@ StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
                 print("NivUI: " .. (err or "Failed to create style"))
             end
         end
-        parent:Hide()
+        dialog:Hide()
     end,
     timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
+    whileDead = 1,
+    hideOnEscape = 1,
 }
 
 StaticPopupDialogs["NIVUI_DUPLICATE_STYLE"] = {
     text = "Enter name for duplicate of '%s':",
     button1 = "Duplicate",
     button2 = "Cancel",
-    hasEditBox = true,
-    OnAccept = function(self)
-        local name = self.editBox:GetText()
+    hasEditBox = 1,
+    OnAccept = function(dialog)
+        local name = dialog:GetText()
         if name and name ~= "" then
             local success, err = NivUI:DuplicateStyle(NivUI.UnitFrames.currentStyleName, name)
             if success then
@@ -79,9 +79,9 @@ StaticPopupDialogs["NIVUI_DUPLICATE_STYLE"] = {
             end
         end
     end,
-    EditBoxOnEnterPressed = function(self)
-        local parent = self:GetParent()
-        local name = self:GetText()
+    EditBoxOnEnterPressed = function(editBox)
+        local dialog = editBox:GetParent()
+        local name = editBox:GetText()
         if name and name ~= "" then
             local success, err = NivUI:DuplicateStyle(NivUI.UnitFrames.currentStyleName, name)
             if success then
@@ -93,20 +93,20 @@ StaticPopupDialogs["NIVUI_DUPLICATE_STYLE"] = {
                 print("NivUI: " .. (err or "Failed to duplicate style"))
             end
         end
-        parent:Hide()
+        dialog:Hide()
     end,
     timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
+    whileDead = 1,
+    hideOnEscape = 1,
 }
 
 StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
     text = "Enter new name for '%s':",
     button1 = "Rename",
     button2 = "Cancel",
-    hasEditBox = true,
-    OnAccept = function(self)
-        local newName = self.editBox:GetText()
+    hasEditBox = 1,
+    OnAccept = function(dialog)
+        local newName = dialog:GetText()
         if newName and newName ~= "" then
             local success, err = NivUI:RenameStyle(NivUI.UnitFrames.currentStyleName, newName)
             if success then
@@ -119,9 +119,9 @@ StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
             end
         end
     end,
-    EditBoxOnEnterPressed = function(self)
-        local parent = self:GetParent()
-        local newName = self:GetText()
+    EditBoxOnEnterPressed = function(editBox)
+        local dialog = editBox:GetParent()
+        local newName = editBox:GetText()
         if newName and newName ~= "" then
             local success, err = NivUI:RenameStyle(NivUI.UnitFrames.currentStyleName, newName)
             if success then
@@ -133,11 +133,11 @@ StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
                 print("NivUI: " .. (err or "Failed to rename style"))
             end
         end
-        parent:Hide()
+        dialog:Hide()
     end,
     timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
+    whileDead = 1,
+    hideOnEscape = 1,
 }
 
 StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
@@ -157,9 +157,9 @@ StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
         end
     end,
     timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    showAlert = true,
+    whileDead = 1,
+    hideOnEscape = 1,
+    showAlert = 1,
 }
 
 --------------------------------------------------------------------------------
