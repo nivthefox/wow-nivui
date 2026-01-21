@@ -11,3 +11,7 @@ Thumbs.db
 
 # Lua
 *.luac
+
+# Claude
+.claude/
+CLAUDE.md

@@ -3,5 +3,7 @@
 ## Notes: Niv's UI customizations
 ## Author: Niv
 ## Version: 1.0.0
+## SavedVariables: NivUI_StaggerBarDB
 
 NivUI.lua
+StaggerBar.lua
