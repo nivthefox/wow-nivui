@@ -78,13 +78,30 @@ spark:SetBlendMode("ADD")
 spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 StaggerBar.spark = spark
 
--- Text overlay (centered on bar)
-local text = bar:CreateFontString(nil, "OVERLAY")
-text:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-text:SetPoint("CENTER", bar, "CENTER", 0, 0)
-text:SetTextColor(1, 1, 1, 1)
-text:SetShadowOffset(0, 0)
-StaggerBar.text = text
+-- Text overlays: left (total), center (dps), right (percent)
+local textLeft = bar:CreateFontString(nil, "OVERLAY")
+textLeft:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+textLeft:SetPoint("LEFT", bar, "LEFT", 4, 0)
+textLeft:SetTextColor(1, 1, 1, 1)
+textLeft:SetShadowOffset(0, 0)
+StaggerBar.textLeft = textLeft
+
+local textCenter = bar:CreateFontString(nil, "OVERLAY")
+textCenter:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+textCenter:SetPoint("CENTER", bar, "CENTER", 0, 0)
+textCenter:SetTextColor(1, 1, 1, 1)
+textCenter:SetShadowOffset(0, 0)
+StaggerBar.textCenter = textCenter
+
+local textRight = bar:CreateFontString(nil, "OVERLAY")
+textRight:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+textRight:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+textRight:SetTextColor(1, 1, 1, 1)
+textRight:SetShadowOffset(0, 0)
+StaggerBar.textRight = textRight
+
+-- Backwards compat
+StaggerBar.text = textCenter
 
 -- Border around the bar
 local border = CreateFrame("Frame", nil, barContainer, "BackdropTemplate")
@@ -155,7 +172,9 @@ local function UpdateBar()
     local maxHealth = UnitHealthMax("player")
 
     if not stagger or not maxHealth or maxHealth == 0 then
-        StaggerBar.text:SetText("")
+        StaggerBar.textLeft:SetText("")
+        StaggerBar.textCenter:SetText("")
+        StaggerBar.textRight:SetText("")
         StaggerBar.bar:SetValue(0)
         return
     end
@@ -180,8 +199,12 @@ local function UpdateBar()
     local dps = tickDamage * 2
     local dpsPercent = math.floor((dps / maxHealth) * 1000) / 10
 
-    local dpsText = FormatNumber(dps)
-    StaggerBar.text:SetText(dpsText .. "/s (" .. dpsPercent .. "%)")
+    -- Left: total stagger pool
+    StaggerBar.textLeft:SetText(FormatNumber(stagger))
+    -- Center: damage per second
+    StaggerBar.textCenter:SetText(FormatNumber(dps) .. "/s")
+    -- Right: percent of max health
+    StaggerBar.textRight:SetText(dpsPercent .. "%")
 
     UpdateVisibility()
 end
@@ -303,13 +326,17 @@ local function ApplyFontSettings()
     if fontShadow == nil then fontShadow = defaults.fontShadow end
 
     local flags = fontShadow and "OUTLINE" or ""
-    StaggerBar.text:SetFont(fontPath, fontSize, flags)
 
     local fontColor = db.fontColor or defaults.fontColor
     local r = fontColor.r or 1
     local g = fontColor.g or 1
     local b = fontColor.b or 1
-    StaggerBar.text:SetTextColor(r, g, b, 1)
+
+    -- Apply to all three text elements
+    for _, text in ipairs({StaggerBar.textLeft, StaggerBar.textCenter, StaggerBar.textRight}) do
+        text:SetFont(fontPath, fontSize, flags)
+        text:SetTextColor(r, g, b, 1)
+    end
 end
 
 -- Apply lock state
@@ -325,7 +352,9 @@ local function ApplyLockState()
         StaggerBar.bar:SetValue(0)
         StaggerBar.bar:SetStatusBarColor(colors.light.r, colors.light.g, colors.light.b)
         StaggerBar.bg:SetColorTexture(0, 0, 0, 0.8)
-        StaggerBar.text:SetText("0/s (0%)")
+        StaggerBar.textLeft:SetText("0")
+        StaggerBar.textCenter:SetText("0/s")
+        StaggerBar.textRight:SetText("0%")
         StaggerBar:Show()
     end
     UpdateVisibility()
