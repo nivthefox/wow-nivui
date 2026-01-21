@@ -6,12 +6,12 @@
 ## SavedVariables: NivUI_DB, NivUI_StaggerBarDB
 
 NivUI.lua
-StaggerBar.lua
-UnitFrames/Defaults.lua
-UnitFrames/StyleManager.lua
-UnitFrames/WidgetConfigs.lua
-UnitFrames/WidgetFactories.lua
-UnitFrames/ConfigTab.lua
-Components/Designer.lua
-UnitFrames/PlayerFrame.lua
+modules/bars/StaggerBar.lua
+modules/unitframes/Defaults.lua
+modules/unitframes/StyleManager.lua
+modules/unitframes/WidgetConfigs.lua
+modules/unitframes/WidgetFactories.lua
+modules/unitframes/ConfigTab.lua
+components/Designer.lua
+modules/unitframes/PlayerFrame.lua
 ConfigFrame.lua
