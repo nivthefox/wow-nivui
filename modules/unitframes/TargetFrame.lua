@@ -198,6 +198,55 @@ local function UpdateStatusIndicators()
     end
 end
 
+local function UpdateCastbar()
+    if not customFrame or not customFrame.widgets.castbar then return end
+    local widget = customFrame.widgets.castbar
+    local config = currentStyle.castbar
+
+    local duration = UnitCastingDuration("target")
+    local isChanneling = false
+
+    if not duration or duration:IsZero() then
+        duration = UnitChannelDuration("target")
+        isChanneling = true
+    end
+
+    if duration and not duration:IsZero() then
+        local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
+        widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
+
+        local name = UnitCastingInfo("target")
+        if not name then
+            name = UnitChannelInfo("target")
+        end
+
+        if widget.spellName and config.showSpellName then
+            widget.spellName:SetText(name or "")
+        end
+
+        if widget.timer and config.showTimer then
+            widget.timer:SetFormattedText("%.1fs", duration:GetRemainingDuration())
+        end
+
+        local notInterruptible = select(8, UnitCastingInfo("target"))
+        if notInterruptible == nil then
+            notInterruptible = select(7, UnitChannelInfo("target"))
+        end
+
+        if notInterruptible then
+            local color = config.nonInterruptibleColor
+            widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+        else
+            local color = config.castingColor
+            widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+        end
+
+        widget:Show()
+    else
+        widget:Hide()
+    end
+end
+
 local function UpdateNameText()
     if not customFrame or not customFrame.widgets.nameText then return end
     local widget = customFrame.widgets.nameText
@@ -242,6 +291,7 @@ local function UpdateAllWidgets()
     UpdateNameText()
     UpdateLevelText()
     UpdateStatusIndicators()
+    UpdateCastbar()
 end
 
 local function HideRegions(frame)
@@ -313,7 +363,7 @@ local function SoftHideBlizzardTargetFrame()
     local children = { TargetFrame:GetChildren() }
     for _, child in ipairs(children) do
         local name = child:GetName()
-        if name and name:find("^TargetFrame") and child ~= TargetFrameSpellBar then
+        if name and name:find("^TargetFrame") then
             KillVisual(child)
         end
     end
@@ -334,52 +384,6 @@ local function SoftHideBlizzardTargetFrame()
             end
         end)
     end
-end
-
-local function AdoptBlizzardCastbar(config, style)
-    if not TargetFrameSpellBar then return end
-    if not config or not config.enabled then
-        if TargetFrameSpellBar then TargetFrameSpellBar:Hide() end
-        return
-    end
-
-    TargetFrameSpellBar:SetParent(customFrame)
-    TargetFrameSpellBar:ClearAllPoints()
-
-    if config.strata then TargetFrameSpellBar:SetFrameStrata(config.strata) end
-    if config.frameLevel then TargetFrameSpellBar:SetFrameLevel(config.frameLevel) end
-
-    local texturePath = NivUI:GetTexturePath(config.texture)
-    TargetFrameSpellBar:SetStatusBarTexture(texturePath)
-
-    if TargetFrameSpellBar.Border then TargetFrameSpellBar.Border:Hide() end
-    if TargetFrameSpellBar.BorderShield then TargetFrameSpellBar.BorderShield:Hide() end
-    if TargetFrameSpellBar.Flash then TargetFrameSpellBar.Flash:Hide() end
-    if TargetFrameSpellBar.Spark then TargetFrameSpellBar.Spark:Hide() end
-    if TargetFrameSpellBar.TextBorder then TargetFrameSpellBar.TextBorder:Hide() end
-
-    local anchor = config.anchor
-    if anchor then
-        local anchorTarget
-        if anchor.relativeTo == "frame" or anchor.relativeTo == nil then
-            anchorTarget = customFrame
-        else
-            anchorTarget = customFrame.widgets[anchor.relativeTo]
-            if not anchorTarget then
-                anchorTarget = customFrame
-            end
-        end
-        TargetFrameSpellBar:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
-    else
-        TargetFrameSpellBar:SetPoint("TOP", customFrame.widgets.powerBar or customFrame, "BOTTOM", 0, -2)
-    end
-
-    if config.size then
-        TargetFrameSpellBar:SetSize(config.size.width or 180, config.size.height or 16)
-    end
-
-    TargetFrameSpellBar:Show()
-    customFrame.widgets.castbar = TargetFrameSpellBar
 end
 
 local function DestroyCustomFrame()
@@ -442,7 +446,7 @@ local function BuildCustomFrame(styleName)
     customFrame.widgets = {}
 
     for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
-        if widgetType ~= "frame" and widgetType ~= "castbar" then
+        if widgetType ~= "frame" then
             local config = style[widgetType]
             if config and config.enabled and WF[widgetType] then
                 local success, widget = pcall(WF[widgetType], customFrame, config, style, "target")
@@ -477,8 +481,6 @@ local function BuildCustomFrame(styleName)
         end
     end
 
-    AdoptBlizzardCastbar(style.castbar, style)
-
     customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", "target")
     customFrame:RegisterUnitEvent("UNIT_MAXPOWER", "target")
     customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", "target")
@@ -489,6 +491,14 @@ local function BuildCustomFrame(styleName)
     customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     customFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "target")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", "target")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "target")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "target")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "target")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "target")
+    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", "target")
 
     customFrame:SetScript("OnEvent", function(self, event, unit)
         if event == "PLAYER_TARGET_CHANGED" then
@@ -515,6 +525,8 @@ local function BuildCustomFrame(styleName)
             UpdateNameText()
         elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
             UpdateStatusIndicators()
+        elseif event:find("SPELLCAST") then
+            UpdateCastbar()
         end
     end)
 
