@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: NivUI
+
+      - name: Create zip
+        run: zip -r NivUI-${{ github.event.release.tag_name }}.zip NivUI -x "NivUI/.git/*" -x "NivUI/.github/*"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NivUI-${{ github.event.release.tag_name }}.zip
