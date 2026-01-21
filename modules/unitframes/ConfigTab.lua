@@ -755,22 +755,25 @@ local function CreateAssignmentsPanel(parent, Components)
         -- Real-time updates checkbox
         local realtimeCheckbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         realtimeCheckbox:SetPoint("LEFT", dropdown, "RIGHT", 16, 0)
-        realtimeCheckbox:SetText("Real-Time")
-        realtimeCheckbox:SetNormalFontObject(GameFontHighlightSmall)
         realtimeCheckbox:SetChecked(NivUI:IsRealTimeUpdates(frameInfo.value))
         realtimeCheckbox:SetScript("OnClick", function(self)
             NivUI:SetRealTimeUpdates(frameInfo.value, self:GetChecked())
         end)
-        realtimeCheckbox:SetScript("OnEnter", function(self)
+
+        local realtimeLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        realtimeLabel:SetPoint("LEFT", realtimeCheckbox, "RIGHT", 2, 0)
+        realtimeLabel:SetText("Real-Time")
+
+        -- Tooltip on both checkbox and label
+        local function ShowRealtimeTooltip(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Real-Time Updates")
             GameTooltip:AddLine("Update health/power every frame instead of 10 times per second.", 1, 1, 1, true)
             GameTooltip:AddLine("More responsive but uses more CPU. Recommended for player frame only.", 1, 0.8, 0, true)
             GameTooltip:Show()
-        end)
-        realtimeCheckbox:SetScript("OnLeave", function()
-            GameTooltip:Hide()
-        end)
+        end
+        realtimeCheckbox:SetScript("OnEnter", ShowRealtimeTooltip)
+        realtimeCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
         AddRow(row, 4)
     end
