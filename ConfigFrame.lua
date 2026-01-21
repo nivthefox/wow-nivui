@@ -52,12 +52,21 @@ local function CreateLabel(parent, text, x, y)
 end
 
 -- Helper: Create a dropdown
-local function CreateDropdown(parent, name, x, y, width, items, onSelect)
+-- itemsOrGetter can be a table of items or a function that returns items
+local function CreateDropdown(parent, name, x, y, width, itemsOrGetter, onSelect)
     local dropdown = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
     dropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", x - 16, y + 2)
     UIDropDownMenu_SetWidth(dropdown, width)
 
+    local function GetItems()
+        if type(itemsOrGetter) == "function" then
+            return itemsOrGetter()
+        end
+        return itemsOrGetter
+    end
+
     local function Initialize(self, level)
+        local items = GetItems()
         for i, item in ipairs(items) do
             local info = UIDropDownMenu_CreateInfo()
             info.text = item.name
@@ -72,10 +81,10 @@ local function CreateDropdown(parent, name, x, y, width, items, onSelect)
     end
 
     UIDropDownMenu_Initialize(dropdown, Initialize)
-    dropdown.items = items
 
     function dropdown:SetValue(value)
         UIDropDownMenu_SetSelectedValue(self, value)
+        local items = GetItems()
         for _, item in ipairs(items) do
             if (item.path or item.value) == value then
                 UIDropDownMenu_SetText(self, item.name)
@@ -150,24 +159,19 @@ end
 
 -- Helper: Create a color swatch
 local function CreateColorSwatch(parent, x, y, onColorChanged)
-    local swatch = CreateFrame("Button", nil, parent)
+    local swatch = CreateFrame("Button", nil, parent, "BackdropTemplate")
     swatch:SetSize(20, 20)
     swatch:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
-
-    local texture = swatch:CreateTexture(nil, "BACKGROUND")
-    texture:SetAllPoints()
-    texture:SetColorTexture(1, 1, 1, 1)
-    swatch.texture = texture
-
-    local border = swatch:CreateTexture(nil, "OVERLAY")
-    border:SetPoint("TOPLEFT", -1, 1)
-    border:SetPoint("BOTTOMRIGHT", 1, -1)
-    border:SetColorTexture(0, 0, 0, 1)
-    border:SetDrawLayer("OVERLAY", -1)
+    swatch:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    swatch:SetBackdropBorderColor(0, 0, 0, 1)
 
     function swatch:SetColor(r, g, b)
         self.r, self.g, self.b = r, g, b
-        self.texture:SetColorTexture(r, g, b, 1)
+        self:SetBackdropColor(r, g, b, 1)
     end
 
     function swatch:GetColor()
@@ -246,7 +250,7 @@ local barTextureDropdown = CreateDropdown(
     LABEL_WIDTH,
     currentY,
     140,
-    NivUI.barTextures,
+    function() return NivUI:GetBarTextures() end,
     function(value)
         NivUI_StaggerBarDB.barTexture = value
         NivUI:ApplySettings("barTexture")
@@ -262,7 +266,7 @@ local fontDropdown = CreateDropdown(
     LABEL_WIDTH,
     currentY,
     140,
-    NivUI.fonts,
+    function() return NivUI:GetFonts() end,
     function(value)
         NivUI_StaggerBarDB.font = value
         NivUI:ApplySettings("font")

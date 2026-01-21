@@ -35,20 +35,67 @@ NivUI.defaults = {
     },
 }
 
--- Available bar textures for config dropdown
-NivUI.barTextures = {
+-- Fallback bar textures (used if SharedMedia unavailable)
+local BUILTIN_TEXTURES = {
     { path = "Interface\\TargetingFrame\\UI-StatusBar", name = "Default" },
     { path = "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill", name = "Target Frame" },
     { path = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill", name = "Raid Frame" },
     { path = "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar", name = "Skills Bar" },
 }
 
--- Available fonts for config dropdown
-NivUI.fonts = {
-    { path = "Fonts\\FRIZQT__.TTF", name = "Friz Quadrata (Default)" },
+-- Fallback fonts (used if SharedMedia unavailable)
+local BUILTIN_FONTS = {
+    { path = "Fonts\\FRIZQT__.TTF", name = "Friz Quadrata" },
     { path = "Fonts\\ARIALN.TTF", name = "Arial Narrow" },
     { path = "Fonts\\MORPHEUS.TTF", name = "Morpheus" },
+    { path = "Fonts\\SKURRI.TTF", name = "Skurri" },
 }
+
+-- Get SharedMedia if available
+function NivUI:GetSharedMedia()
+    if self.LSM == nil then
+        self.LSM = LibStub and LibStub("LibSharedMedia-3.0", true) or false
+    end
+    return self.LSM
+end
+
+-- Get available bar textures (from SharedMedia or fallback)
+function NivUI:GetBarTextures()
+    local LSM = self:GetSharedMedia()
+    if LSM then
+        local list = LSM:List("statusbar")
+        local textures = {}
+        for _, name in ipairs(list) do
+            table.insert(textures, {
+                path = LSM:Fetch("statusbar", name),
+                name = name,
+            })
+        end
+        return textures
+    end
+    return BUILTIN_TEXTURES
+end
+
+-- Get available fonts (from SharedMedia or fallback)
+function NivUI:GetFonts()
+    local LSM = self:GetSharedMedia()
+    if LSM then
+        local list = LSM:List("font")
+        local fonts = {}
+        for _, name in ipairs(list) do
+            table.insert(fonts, {
+                path = LSM:Fetch("font", name),
+                name = name,
+            })
+        end
+        return fonts
+    end
+    return BUILTIN_FONTS
+end
+
+-- For backwards compat, these are populated on first access
+NivUI.barTextures = nil
+NivUI.fonts = nil
 
 -- Registry for apply callbacks (modules register here, config calls them)
 NivUI.applyCallbacks = {}
