@@ -167,6 +167,9 @@ local function GetStaggerColor(percent)
     end
 end
 
+-- Forward declaration for visibility check
+local UpdateVisibility
+
 -- Update the bar display
 local function UpdateBar()
     local stagger = UnitStagger("player")
@@ -205,6 +208,9 @@ local function UpdateBar()
 
     local dpsText = FormatNumber(dps)
     StaggerBar.text:SetText(dpsText .. "/s (" .. dpsPercent .. "%)")
+
+    -- Re-check visibility (hides when stagger runs out)
+    UpdateVisibility()
 end
 
 -- Check if we should show the bar
@@ -212,12 +218,17 @@ local function ShouldShow()
     -- Always show when unlocked (for positioning)
     if not NivUI_StaggerBarDB.locked then return true end
     if not isBrewmaster then return false end
-    if not inCombat then return false end
-    return true
+
+    -- Show if in combat or have stagger
+    if inCombat then return true end
+    local stagger = UnitStagger("player")
+    if stagger and stagger > 0 then return true end
+
+    return false
 end
 
 -- Update visibility
-local function UpdateVisibility()
+UpdateVisibility = function()
     if ShouldShow() then
         StaggerBar:Show()
     else
