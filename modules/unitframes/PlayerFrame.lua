@@ -15,9 +15,10 @@ local pendingHide = false
 local pendingRestore = false
 
 -- Cached values for OnUpdate polling (avoids unnecessary updates)
-local cachedHealth = nil
+-- Using percent values because raw health/power are secret values in combat
+local cachedHealthPct = nil
 local cachedMaxHealth = nil
-local cachedPower = nil
+local cachedPowerPct = nil
 local cachedMaxPower = nil
 local cachedPowerType = nil
 
@@ -594,21 +595,22 @@ local function BuildCustomFrame(styleName)
     end)
 
     -- Frequent updates via OnUpdate (like Blizzard's frequentUpdates mode)
+    -- Use percent values for change detection since raw values are secret in combat
     customFrame:SetScript("OnUpdate", function(self, elapsed)
-        local health = UnitHealth("player")
+        local healthPct = UnitHealthPercent("player")
         local maxHealth = UnitHealthMax("player")
-        if health ~= cachedHealth or maxHealth ~= cachedMaxHealth then
-            cachedHealth = health
+        if healthPct ~= cachedHealthPct or maxHealth ~= cachedMaxHealth then
+            cachedHealthPct = healthPct
             cachedMaxHealth = maxHealth
             UpdateHealthBar()
             UpdateHealthText()
         end
 
         local powerType = UnitPowerType("player")
-        local power = UnitPower("player", powerType)
+        local powerPct = UnitPowerPercent("player")
         local maxPower = UnitPowerMax("player", powerType)
-        if power ~= cachedPower or maxPower ~= cachedMaxPower or powerType ~= cachedPowerType then
-            cachedPower = power
+        if powerPct ~= cachedPowerPct or maxPower ~= cachedMaxPower or powerType ~= cachedPowerType then
+            cachedPowerPct = powerPct
             cachedMaxPower = maxPower
             cachedPowerType = powerType
             UpdatePowerBar()
