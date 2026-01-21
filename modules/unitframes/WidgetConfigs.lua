@@ -58,10 +58,10 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "textureDropdown", key = "texture", label = "Texture" },
                 { kind = "dropdown", key = "colorMode", label = "Color Mode", options = "HEALTH_COLOR_MODES" },
-                { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorMode", value = "custom" } },
-                { kind = "colorPicker", key = "customColor", label = "Foreground Color", showIf = { key = "colorMode", value = "class_inverted" } },
-                { kind = "colorPicker", key = "gradientStart", label = "Gradient Start", showIf = { key = "colorMode", value = "health" } },
-                { kind = "colorPicker", key = "gradientEnd", label = "Gradient End", showIf = { key = "colorMode", value = "health" } },
+                { kind = "colorPicker", key = "customColor", label = "Custom Color", hasAlpha = true, showIf = { key = "colorMode", value = "custom" } },
+                { kind = "colorPicker", key = "customColor", label = "Foreground Color", hasAlpha = true, showIf = { key = "colorMode", value = "class_inverted" } },
+                { kind = "colorPicker", key = "gradientStart", label = "Gradient Start", hasAlpha = true, showIf = { key = "colorMode", value = "health" } },
+                { kind = "colorPicker", key = "gradientEnd", label = "Gradient End", hasAlpha = true, showIf = { key = "colorMode", value = "health" } },
                 { kind = "colorPicker", key = "backgroundColor", label = "Background", hasAlpha = true, hideIf = { key = "colorMode", value = "class_inverted" } },
             },
         },
@@ -100,7 +100,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "textureDropdown", key = "texture", label = "Texture" },
                 { kind = "dropdown", key = "colorMode", label = "Color Mode", options = "POWER_COLOR_MODES" },
-                { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorMode", value = "custom" } },
+                { kind = "colorPicker", key = "customColor", label = "Custom Color", hasAlpha = true, showIf = { key = "colorMode", value = "custom" } },
                 { kind = "colorPicker", key = "backgroundColor", label = "Background", hasAlpha = true },
             },
         },
@@ -161,7 +161,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "Color",
             entries = {
                 { kind = "checkbox", key = "colorByClass", label = "Color by Class" },
-                { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorByClass", value = false } },
+                { kind = "colorPicker", key = "customColor", label = "Custom Color", hasAlpha = true, showIf = { key = "colorByClass", value = false } },
             },
         },
         {
@@ -197,7 +197,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "Color",
             entries = {
                 { kind = "checkbox", key = "colorByDifficulty", label = "Color by Difficulty" },
-                { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorByDifficulty", value = false } },
+                { kind = "colorPicker", key = "customColor", label = "Custom Color", hasAlpha = true, showIf = { key = "colorByDifficulty", value = false } },
             },
         },
     },
@@ -227,7 +227,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "Display",
             entries = {
                 { kind = "dropdown", key = "format", label = "Format", options = "TEXT_FORMATS" },
-                { kind = "colorPicker", key = "color", label = "Color" },
+                { kind = "colorPicker", key = "color", label = "Color", hasAlpha = true },
             },
         },
     },
@@ -257,7 +257,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "Display",
             entries = {
                 { kind = "dropdown", key = "format", label = "Format", options = "TEXT_FORMATS" },
-                { kind = "colorPicker", key = "color", label = "Color" },
+                { kind = "colorPicker", key = "color", label = "Color", hasAlpha = true },
             },
         },
     },
@@ -373,10 +373,10 @@ NivUI.UnitFrames.WidgetConfigs = {
         {
             label = "Colors",
             entries = {
-                { kind = "colorPicker", key = "castingColor", label = "Casting" },
-                { kind = "colorPicker", key = "channelingColor", label = "Channeling" },
-                { kind = "colorPicker", key = "interruptibleColor", label = "Interruptible" },
-                { kind = "colorPicker", key = "nonInterruptibleColor", label = "Non-Interruptible" },
+                { kind = "colorPicker", key = "castingColor", label = "Casting", hasAlpha = true },
+                { kind = "colorPicker", key = "channelingColor", label = "Channeling", hasAlpha = true },
+                { kind = "colorPicker", key = "interruptibleColor", label = "Interruptible", hasAlpha = true },
+                { kind = "colorPicker", key = "nonInterruptibleColor", label = "Non-Interruptible", hasAlpha = true },
             },
         },
     },

@@ -56,20 +56,20 @@ function WF.healthBar(parent, config, style, unit)
     frame:SetOrientation(config.orientation or "HORIZONTAL")
     frame:SetReverseFill(config.reverseFill or false)
 
-    local r, g, b = 0.2, 0.8, 0.2
+    local r, g, b, a = 0.2, 0.8, 0.2, 1
     local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
 
     if config.colorMode == "class" then
         r, g, b = WF.GetClassColor(unit)
     elseif config.colorMode == "class_inverted" then
-        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
         bgR, bgG, bgB = WF.GetClassColor(unit)
     elseif config.colorMode == "custom" then
-        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
     end
 
     frame.bg:SetVertexColor(bgR, bgG, bgB, bgA)
-    frame:SetStatusBarColor(r, g, b)
+    frame:SetStatusBarColor(r, g, b, a)
 
     -- StatusBar accepts secret values directly
     local health = UnitHealth(unit)
@@ -104,15 +104,15 @@ function WF.powerBar(parent, config, style, unit)
     frame:SetOrientation(config.orientation or "HORIZONTAL")
     frame:SetReverseFill(config.reverseFill or false)
 
-    local r, g, b = 0.2, 0.2, 0.8
+    local r, g, b, a = 0.2, 0.2, 0.8, 1
     if config.colorMode == "power" then
         r, g, b = WF.GetPowerColor(unit)
     elseif config.colorMode == "class" then
         r, g, b = WF.GetClassColor(unit)
     elseif config.colorMode == "custom" then
-        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
     end
-    frame:SetStatusBarColor(r, g, b)
+    frame:SetStatusBarColor(r, g, b, a)
 
     -- StatusBar accepts secret values directly
     local powerType = UnitPowerType(unit)
@@ -213,12 +213,12 @@ local function CreateTextWidget(parent, config, textValue, widgetType, unit)
     frame.text:SetText(textValue)
 
     -- Color
-    local color = config.color or config.customColor or { r = 1, g = 1, b = 1 }
+    local color = config.color or config.customColor or { r = 1, g = 1, b = 1, a = 1 }
     if config.colorByClass then
         local r, g, b = WF.GetClassColor(unit)
-        frame.text:SetTextColor(r, g, b)
+        frame.text:SetTextColor(r, g, b, color.a or 1)
     else
-        frame.text:SetTextColor(color.r, color.g, color.b)
+        frame.text:SetTextColor(color.r, color.g, color.b, color.a or 1)
     end
 
     frame.widgetType = widgetType
@@ -413,7 +413,7 @@ function WF.castbar(parent, config, style, unit)
     frame:SetValue(0.6)  -- Preview value
 
     local color = config.castingColor
-    frame:SetStatusBarColor(color.r, color.g, color.b)
+    frame:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
 
     -- Icon
     if config.showIcon then

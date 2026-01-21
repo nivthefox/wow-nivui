@@ -46,20 +46,20 @@ local function UpdateHealthBar()
     widget:SetMinMaxValues(0, maxHealth)
     widget:SetValue(health)
 
-    local r, g, b = 0.2, 0.8, 0.2
+    local r, g, b, a = 0.2, 0.8, 0.2, 1
     local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
 
     if config.colorMode == "class" then
         r, g, b = GetClassColor("player")
     elseif config.colorMode == "class_inverted" then
-        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
         bgR, bgG, bgB = GetClassColor("player")
     elseif config.colorMode == "custom" then
-        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
     end
 
     widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
-    widget:SetStatusBarColor(r, g, b)
+    widget:SetStatusBarColor(r, g, b, a)
 end
 
 local function UpdatePowerBar()
@@ -74,15 +74,15 @@ local function UpdatePowerBar()
     widget:SetMinMaxValues(0, maxPower)
     widget:SetValue(power)
 
-    local r, g, b = 0.2, 0.2, 0.8
+    local r, g, b, a = 0.2, 0.2, 0.8, 1
     if config.colorMode == "power" then
         r, g, b = GetPowerColor("player")
     elseif config.colorMode == "class" then
         r, g, b = GetClassColor("player")
     elseif config.colorMode == "custom" then
-        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
     end
-    widget:SetStatusBarColor(r, g, b)
+    widget:SetStatusBarColor(r, g, b, a)
 end
 
 local function UpdateHealthText()
