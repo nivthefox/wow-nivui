@@ -212,6 +212,62 @@ function NivUI:SetRealTimeUpdates(frameType, enabled)
     self:TriggerEvent("RealTimeUpdatesChanged", { frameType = frameType, enabled = enabled })
 end
 
+function NivUI:DoesPartyIncludePlayer()
+    if NivUI_DB.partyIncludePlayer == nil then
+        return true  -- Default to including player
+    end
+    return NivUI_DB.partyIncludePlayer
+end
+
+function NivUI:SetPartyIncludePlayer(enabled)
+    NivUI_DB.partyIncludePlayer = enabled
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "includePlayer", enabled = enabled })
+end
+
+function NivUI:GetPartySpacing()
+    return NivUI_DB.partySpacing or 2
+end
+
+function NivUI:SetPartySpacing(value)
+    NivUI_DB.partySpacing = value
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "spacing", value = value })
+end
+
+function NivUI:GetPartyOrientation()
+    return NivUI_DB.partyOrientation or "VERTICAL"
+end
+
+function NivUI:SetPartyOrientation(value)
+    NivUI_DB.partyOrientation = value
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "orientation", value = value })
+end
+
+function NivUI:GetPartyGrowthDirection()
+    return NivUI_DB.partyGrowthDirection or "DOWN"
+end
+
+function NivUI:SetPartyGrowthDirection(value)
+    NivUI_DB.partyGrowthDirection = value
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "growthDirection", value = value })
+end
+
+function NivUI:DoesPartyShowWhenSolo()
+    if NivUI_DB.partyShowWhenSolo == nil then
+        return false
+    end
+    return NivUI_DB.partyShowWhenSolo
+end
+
+function NivUI:SetPartyShowWhenSolo(enabled)
+    NivUI_DB.partyShowWhenSolo = enabled
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "showWhenSolo", enabled = enabled })
+end
+
 function NivUI:GetStyleWithDefaults(name)
     local style = self:GetStyle(name)
     if not style then

@@ -951,6 +951,269 @@ function NivUI.UnitFrames:SetupAssignmentsTab(parent, Components)
     return container
 end
 
+local function CreatePartySettingsPanel(parent, Components)
+    local frame = CreateFrame("Frame", nil, parent)
+
+    local allFrames = {}
+    local controls = {}  -- Store control references for OnShow refresh
+
+    local function AddRow(row, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            row:SetPoint("TOP", frame, "TOP", 0, -10)
+        else
+            row:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, row)
+    end
+
+    -- Header
+    local header = Components.GetHeader(frame, "Party Frame Settings")
+    AddRow(header)
+
+    -- Preview checkbox
+    local previewRow = CreateFrame("Frame", nil, frame)
+    previewRow:SetHeight(24)
+    previewRow:SetPoint("LEFT", 20, 0)
+    previewRow:SetPoint("RIGHT", -20, 0)
+
+    local previewCheckbox = CreateFrame("CheckButton", nil, previewRow, "SettingsCheckboxTemplate")
+    previewCheckbox:SetPoint("LEFT", 0, 0)
+    previewCheckbox:SetText("")
+    previewCheckbox:SetScript("OnClick", function(self)
+        NivUI:TriggerEvent("PartyPreviewChanged", { enabled = self:GetChecked() })
+    end)
+    table.insert(controls, { control = previewCheckbox, kind = "preview" })
+
+    local previewLabel = previewRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    previewLabel:SetPoint("LEFT", previewCheckbox, "RIGHT", 4, 0)
+    previewLabel:SetText("Preview")
+
+    local previewDesc = previewRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    previewDesc:SetPoint("LEFT", previewLabel, "RIGHT", 8, 0)
+    previewDesc:SetTextColor(0.6, 0.6, 0.6)
+    previewDesc:SetText("(Show fake party frames)")
+
+    AddRow(previewRow, 8)
+
+    -- Include Player checkbox
+    local includePlayerRow = CreateFrame("Frame", nil, frame)
+    includePlayerRow:SetHeight(24)
+    includePlayerRow:SetPoint("LEFT", 20, 0)
+    includePlayerRow:SetPoint("RIGHT", -20, 0)
+
+    local includePlayerCheckbox = CreateFrame("CheckButton", nil, includePlayerRow, "SettingsCheckboxTemplate")
+    includePlayerCheckbox:SetPoint("LEFT", 0, 0)
+    includePlayerCheckbox:SetText("")
+    includePlayerCheckbox:SetScript("OnClick", function(self)
+        NivUI:SetPartyIncludePlayer(self:GetChecked())
+    end)
+    table.insert(controls, { control = includePlayerCheckbox, kind = "includePlayer" })
+
+    local includePlayerLabel = includePlayerRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    includePlayerLabel:SetPoint("LEFT", includePlayerCheckbox, "RIGHT", 4, 0)
+    includePlayerLabel:SetText("Include Player")
+
+    local function ShowIncludePlayerTooltip(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Include Player")
+        GameTooltip:AddLine("When checked, your character is shown as part of the party frames.", 1, 1, 1, true)
+        GameTooltip:AddLine("When unchecked, only your 4 party members are shown.", 1, 0.8, 0, true)
+        GameTooltip:Show()
+    end
+    includePlayerCheckbox:SetScript("OnEnter", ShowIncludePlayerTooltip)
+    includePlayerCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    AddRow(includePlayerRow, 4)
+
+    -- Show When Solo checkbox
+    local showSoloRow = CreateFrame("Frame", nil, frame)
+    showSoloRow:SetHeight(24)
+    showSoloRow:SetPoint("LEFT", 20, 0)
+    showSoloRow:SetPoint("RIGHT", -20, 0)
+
+    local showSoloCheckbox = CreateFrame("CheckButton", nil, showSoloRow, "SettingsCheckboxTemplate")
+    showSoloCheckbox:SetPoint("LEFT", 0, 0)
+    showSoloCheckbox:SetText("")
+    showSoloCheckbox:SetScript("OnClick", function(self)
+        NivUI:SetPartyShowWhenSolo(self:GetChecked())
+    end)
+    table.insert(controls, { control = showSoloCheckbox, kind = "showWhenSolo" })
+
+    local showSoloLabel = showSoloRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    showSoloLabel:SetPoint("LEFT", showSoloCheckbox, "RIGHT", 4, 0)
+    showSoloLabel:SetText("Show When Solo")
+
+    local function ShowSoloTooltip(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Show When Solo")
+        GameTooltip:AddLine("Show party frames even when you're not in a group.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end
+    showSoloCheckbox:SetScript("OnEnter", ShowSoloTooltip)
+    showSoloCheckbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    AddRow(showSoloRow, 4)
+
+    -- Spacing slider
+    local spacingRow = CreateFrame("Frame", nil, frame)
+    spacingRow:SetHeight(ROW_HEIGHT)
+    spacingRow:SetPoint("LEFT", 20, 0)
+    spacingRow:SetPoint("RIGHT", -20, 0)
+
+    local spacingLabel = spacingRow:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    spacingLabel:SetPoint("LEFT", 0, 0)
+    spacingLabel:SetText("Spacing:")
+
+    local spacingEditBox = CreateFrame("EditBox", nil, spacingRow, "InputBoxTemplate")
+    spacingEditBox:SetSize(50, 20)
+    spacingEditBox:SetPoint("RIGHT", -5, 0)
+    spacingEditBox:SetAutoFocus(false)
+    spacingEditBox:SetMaxLetters(4)
+
+    local spacingSlider = CreateFrame("Slider", nil, spacingRow, "MinimalSliderWithSteppersTemplate")
+    spacingSlider:SetPoint("LEFT", spacingLabel, "RIGHT", 20, 0)
+    spacingSlider:SetPoint("RIGHT", spacingEditBox, "LEFT", -10, 0)
+    spacingSlider:SetHeight(20)
+    spacingSlider:Init(2, 0, 20, 20, {})
+
+    table.insert(controls, { control = spacingSlider, editBox = spacingEditBox, kind = "spacing" })
+
+    local spacingUpdating = false
+
+    spacingSlider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+        if spacingUpdating then return end
+        spacingUpdating = true
+        spacingEditBox:SetText(tostring(math.floor(value)))
+        NivUI:SetPartySpacing(value)
+        spacingUpdating = false
+    end)
+
+    spacingEditBox:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText()) or 0
+        value = math.max(0, math.min(20, value))
+        spacingUpdating = true
+        spacingSlider:SetValue(value)
+        NivUI:SetPartySpacing(value)
+        spacingUpdating = false
+        self:ClearFocus()
+    end)
+
+    spacingEditBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+
+    AddRow(spacingRow, 8)
+
+    -- Orientation dropdown
+    local orientationRow = CreateFrame("Frame", nil, frame)
+    orientationRow:SetHeight(ROW_HEIGHT)
+    orientationRow:SetPoint("LEFT", 20, 0)
+    orientationRow:SetPoint("RIGHT", -20, 0)
+
+    local orientationLabel = orientationRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    orientationLabel:SetPoint("LEFT", 0, 0)
+    orientationLabel:SetText("Orientation:")
+
+    local orientationDropdown = CreateFrame("DropdownButton", nil, orientationRow, "WowStyle1DropdownTemplate")
+    orientationDropdown:SetWidth(150)
+    orientationDropdown:SetPoint("LEFT", orientationLabel, "RIGHT", 20, 0)
+
+    local growthDropdown  -- Forward reference
+
+    local function RefreshGrowthDropdown()
+        if not growthDropdown then return end
+        local orientation = NivUI:GetPartyOrientation()
+        local options
+        if orientation == "VERTICAL" then
+            options = {
+                { value = "DOWN", name = "Down" },
+                { value = "UP", name = "Up" },
+            }
+        else
+            options = {
+                { value = "RIGHT", name = "Right" },
+                { value = "LEFT", name = "Left" },
+            }
+        end
+
+        growthDropdown:SetupMenu(function(_, rootDescription)
+            for _, opt in ipairs(options) do
+                rootDescription:CreateRadio(
+                    opt.name,
+                    function() return NivUI:GetPartyGrowthDirection() == opt.value end,
+                    function() NivUI:SetPartyGrowthDirection(opt.value) end
+                )
+            end
+        end)
+    end
+
+    orientationDropdown:SetupMenu(function(_, rootDescription)
+        local options = {
+            { value = "VERTICAL", name = "Vertical" },
+            { value = "HORIZONTAL", name = "Horizontal" },
+        }
+        for _, opt in ipairs(options) do
+            rootDescription:CreateRadio(
+                opt.name,
+                function() return NivUI:GetPartyOrientation() == opt.value end,
+                function()
+                    NivUI:SetPartyOrientation(opt.value)
+                    -- Reset growth direction to sensible default
+                    if opt.value == "VERTICAL" then
+                        NivUI:SetPartyGrowthDirection("DOWN")
+                    else
+                        NivUI:SetPartyGrowthDirection("RIGHT")
+                    end
+                    RefreshGrowthDropdown()
+                end
+            )
+        end
+    end)
+
+    table.insert(controls, { control = orientationDropdown, kind = "orientation" })
+
+    AddRow(orientationRow, 4)
+
+    -- Growth Direction dropdown
+    local growthRow = CreateFrame("Frame", nil, frame)
+    growthRow:SetHeight(ROW_HEIGHT)
+    growthRow:SetPoint("LEFT", 20, 0)
+    growthRow:SetPoint("RIGHT", -20, 0)
+
+    local growthLabel = growthRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    growthLabel:SetPoint("LEFT", 0, 0)
+    growthLabel:SetText("Growth Direction:")
+
+    growthDropdown = CreateFrame("DropdownButton", nil, growthRow, "WowStyle1DropdownTemplate")
+    growthDropdown:SetWidth(150)
+    growthDropdown:SetPoint("LEFT", growthLabel, "RIGHT", 20, 0)
+
+    table.insert(controls, { control = growthDropdown, kind = "growth" })
+
+    AddRow(growthRow, 4)
+
+    -- Refresh control states when shown
+    frame:SetScript("OnShow", function()
+        for _, entry in ipairs(controls) do
+            if entry.kind == "preview" then
+                entry.control:SetChecked(false)  -- Preview always starts off
+            elseif entry.kind == "includePlayer" then
+                entry.control:SetChecked(NivUI:DoesPartyIncludePlayer())
+            elseif entry.kind == "showWhenSolo" then
+                entry.control:SetChecked(NivUI:DoesPartyShowWhenSolo())
+            elseif entry.kind == "spacing" then
+                local value = NivUI:GetPartySpacing()
+                entry.control:SetValue(value)
+                entry.editBox:SetText(tostring(value))
+            end
+        end
+        RefreshGrowthDropdown()
+    end)
+
+    return frame
+end
+
 function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
     container:SetAllPoints()
@@ -999,6 +1262,21 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     assignmentsTab:SetPoint("LEFT", designerTab, "RIGHT", 0, 0)
     assignmentsTab:SetScript("OnClick", function() SelectSubTab(2) end)
     table.insert(subTabs, assignmentsTab)
+
+    -- Create Party sub-tab content
+    local partyContainer = CreateFrame("Frame", nil, container)
+    partyContainer:SetPoint("TOPLEFT", 0, -32)
+    partyContainer:SetPoint("BOTTOMRIGHT", 0, 0)
+    partyContainer:Hide()
+
+    local partyPanel = CreatePartySettingsPanel(partyContainer, Components)
+    partyPanel:SetAllPoints()
+    table.insert(subTabContainers, partyContainer)
+
+    local partyTab = Components.GetTab(container, "Party")
+    partyTab:SetPoint("LEFT", assignmentsTab, "RIGHT", 0, 0)
+    partyTab:SetScript("OnClick", function() SelectSubTab(3) end)
+    table.insert(subTabs, partyTab)
 
     -- Select first sub-tab when shown
     container:SetScript("OnShow", function()
