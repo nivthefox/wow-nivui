@@ -3,7 +3,6 @@ NivUI.Designer = {}
 
 local PREVIEW_SCALE = 1.0
 local SELECTION_COLOR = { r = 0.2, g = 0.6, b = 1, a = 0.8 }
-local WidgetFactories = NivUI.WidgetFactories
 
 function NivUI.Designer:Create(parent)
     local container = CreateFrame("Frame", nil, parent)
@@ -87,63 +86,23 @@ function NivUI.Designer:BuildPreview(container, styleName)
         container.preview.debugBorder:Hide()
     end
 
-    if not NivUI.UnitFrames or not NivUI.UnitFrames.WIDGET_ORDER then
-        print("NivUI Designer: WIDGET_ORDER not found!")
+    local Base = NivUI.UnitFrames.Base
+    if not Base then
+        print("NivUI Designer: UnitFrameBase not loaded!")
         return
     end
 
-    local widgetCount = 0
-    for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
-        if widgetType ~= "frame" then
-            local config = style[widgetType]
-            if config and config.enabled and WidgetFactories[widgetType] then
-                local previewConfig = {}
-                for k, v in pairs(config) do
-                    if k ~= "strata" and k ~= "frameLevel" then
-                        previewConfig[k] = v
-                    end
-                end
-                local success, widget = pcall(WidgetFactories[widgetType], container.preview, previewConfig, style)
-                if success and widget then
-                    widget:EnableMouse(true)
-                    widget:SetScript("OnMouseDown", function()
-                        container:SelectWidget(widgetType)
-                    end)
+    container.widgets = Base.CreateWidgets(container.preview, style, nil, { forPreview = true })
 
-                    container.widgets[widgetType] = widget
-                    widgetCount = widgetCount + 1
-                elseif not success then
-                    print("NivUI Designer: Error creating", widgetType, "-", widget)
-                end
-            end
-        end
-    end
-
+    -- Add mouse interactivity for selection
     for widgetType, widget in pairs(container.widgets) do
-        local config = style[widgetType]
-        local anchor = config and config.anchor
-        if anchor then
-            widget:ClearAllPoints()
-
-            local anchorTarget
-            if anchor.relativeTo == "frame" or anchor.relativeTo == nil then
-                anchorTarget = container.preview
-            else
-                anchorTarget = container.widgets[anchor.relativeTo]
-                if not anchorTarget then
-                    anchorTarget = container.preview
-                end
-            end
-
-            widget:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
-        else
-            widget:SetPoint("CENTER", container.preview, "CENTER", 0, 0)
-        end
+        widget:EnableMouse(true)
+        widget:SetScript("OnMouseDown", function()
+            container:SelectWidget(widgetType)
+        end)
     end
 
-    if widgetCount == 0 then
-        print("NivUI Designer: No widgets created!")
-    end
+    Base.ApplyAnchors(container.preview, container.widgets, style)
 end
 
 function NivUI.Designer:RefreshPreview(container, styleName)
