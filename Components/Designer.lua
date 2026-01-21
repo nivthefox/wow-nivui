@@ -4,7 +4,7 @@
 NivUI = NivUI or {}
 NivUI.Designer = {}
 
-local PREVIEW_SCALE = 1.5
+local PREVIEW_SCALE = 1.0
 local SELECTION_COLOR = { r = 0.2, g = 0.6, b = 1, a = 0.8 }
 local SNAP_THRESHOLD = 5
 
