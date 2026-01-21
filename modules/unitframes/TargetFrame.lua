@@ -541,6 +541,7 @@ local function BuildCustomFrame(styleName)
         UpdateHealthText()
         UpdatePowerBar()
         UpdatePowerText()
+        UpdateCastbar()
     end)
 
     if UnitExists("target") then
