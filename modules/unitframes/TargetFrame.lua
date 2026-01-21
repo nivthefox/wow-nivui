@@ -346,6 +346,18 @@ local function AdoptBlizzardCastbar(config, style)
     TargetFrameSpellBar:SetParent(customFrame)
     TargetFrameSpellBar:ClearAllPoints()
 
+    if config.strata then TargetFrameSpellBar:SetFrameStrata(config.strata) end
+    if config.frameLevel then TargetFrameSpellBar:SetFrameLevel(config.frameLevel) end
+
+    local texturePath = NivUI:GetTexturePath(config.texture)
+    TargetFrameSpellBar:SetStatusBarTexture(texturePath)
+
+    if TargetFrameSpellBar.Border then TargetFrameSpellBar.Border:Hide() end
+    if TargetFrameSpellBar.BorderShield then TargetFrameSpellBar.BorderShield:Hide() end
+    if TargetFrameSpellBar.Flash then TargetFrameSpellBar.Flash:Hide() end
+    if TargetFrameSpellBar.Spark then TargetFrameSpellBar.Spark:Hide() end
+    if TargetFrameSpellBar.TextBorder then TargetFrameSpellBar.TextBorder:Hide() end
+
     local anchor = config.anchor
     if anchor then
         local anchorTarget
