@@ -15,9 +15,16 @@ local SNAP_THRESHOLD = 5
 local WidgetFactories = {}
 
 -- Helper to safely get a number (handles WoW's "secret" values)
+-- WoW's secret values can pass type() == "number" but still fail arithmetic
+-- So we use pcall to actually test if the value can be used
 local function SafeNumber(value, fallback)
-    if type(value) == "number" then
-        return value
+    if value == nil then
+        return fallback or 0
+    end
+    -- Try to perform arithmetic - this catches secret values that claim to be numbers
+    local success, result = pcall(function() return value + 0 end)
+    if success then
+        return result
     end
     return fallback or 0
 end
