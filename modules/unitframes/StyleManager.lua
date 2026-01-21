@@ -228,6 +228,26 @@ function NivUI:SetFrameEnabled(frameType, enabled)
     self:TriggerEvent("FrameEnabledChanged", { frameType = frameType, enabled = enabled })
 end
 
+-- Check if a frame type uses real-time updates (every frame instead of throttled)
+function NivUI:IsRealTimeUpdates(frameType)
+    if not NivUI_DB.unitFrameRealTimeUpdates then
+        return false
+    end
+    return NivUI_DB.unitFrameRealTimeUpdates[frameType] == true
+end
+
+-- Set whether a frame type uses real-time updates
+function NivUI:SetRealTimeUpdates(frameType, enabled)
+    if not NivUI_DB.unitFrameRealTimeUpdates then
+        NivUI_DB.unitFrameRealTimeUpdates = {}
+    end
+
+    NivUI_DB.unitFrameRealTimeUpdates[frameType] = enabled
+
+    -- Trigger event for listeners
+    self:TriggerEvent("RealTimeUpdatesChanged", { frameType = frameType, enabled = enabled })
+end
+
 -- Get a style with the full default values merged in
 -- This ensures any missing keys have defaults
 function NivUI:GetStyleWithDefaults(name)

@@ -735,7 +735,7 @@ local function CreateAssignmentsPanel(parent, Components)
         label:SetWidth(100)
         label:SetJustifyH("LEFT")
 
-        -- Style dropdown (right side)
+        -- Style dropdown
         local dropdown = CreateFrame("DropdownButton", nil, row, "WowStyle1DropdownTemplate")
         dropdown:SetPoint("LEFT", label, "RIGHT", 8, 0)
         dropdown:SetWidth(150)
@@ -750,6 +750,26 @@ local function CreateAssignmentsPanel(parent, Components)
                     function() NivUI:SetAssignment(frameInfo.value, name) end
                 )
             end
+        end)
+
+        -- Real-time updates checkbox
+        local realtimeCheckbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
+        realtimeCheckbox:SetPoint("LEFT", dropdown, "RIGHT", 16, 0)
+        realtimeCheckbox:SetText("Real-Time")
+        realtimeCheckbox:SetNormalFontObject(GameFontHighlightSmall)
+        realtimeCheckbox:SetChecked(NivUI:IsRealTimeUpdates(frameInfo.value))
+        realtimeCheckbox:SetScript("OnClick", function(self)
+            NivUI:SetRealTimeUpdates(frameInfo.value, self:GetChecked())
+        end)
+        realtimeCheckbox:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Real-Time Updates")
+            GameTooltip:AddLine("Update health/power every frame instead of 10 times per second.", 1, 1, 1, true)
+            GameTooltip:AddLine("More responsive but uses more CPU. Recommended for player frame only.", 1, 0.8, 0, true)
+            GameTooltip:Show()
+        end)
+        realtimeCheckbox:SetScript("OnLeave", function()
+            GameTooltip:Hide()
         end)
 
         AddRow(row, 4)

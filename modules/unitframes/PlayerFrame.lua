@@ -583,12 +583,14 @@ local function BuildCustomFrame(styleName)
         end
     end)
 
-    -- Throttled updates via OnUpdate
+    -- Updates via OnUpdate (throttled by default, real-time if configured)
     -- Health/power values are secret in combat and can't be compared for change detection
     customFrame:SetScript("OnUpdate", function(self, elapsed)
-        timeSinceLastUpdate = timeSinceLastUpdate + elapsed
-        if timeSinceLastUpdate < UPDATE_INTERVAL then return end
-        timeSinceLastUpdate = 0
+        if not NivUI:IsRealTimeUpdates("player") then
+            timeSinceLastUpdate = timeSinceLastUpdate + elapsed
+            if timeSinceLastUpdate < UPDATE_INTERVAL then return end
+            timeSinceLastUpdate = 0
+        end
 
         UpdateHealthBar()
         UpdateHealthText()
