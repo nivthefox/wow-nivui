@@ -9,9 +9,198 @@ NivUI.UnitFrames.PlayerFrame = PlayerFrameModule
 
 -- State
 local customFrame = nil
+local currentStyle = nil
 local blizzardHidden = false
 local pendingHide = false
 local pendingRestore = false
+
+-- Helpers from shared factories
+local function SafeNumber(value, fallback)
+    return NivUI.WidgetFactories.SafeNumber(value, fallback)
+end
+
+local function GetClassColor(unit)
+    return NivUI.WidgetFactories.GetClassColor(unit)
+end
+
+local function GetPowerColor(unit)
+    return NivUI.WidgetFactories.GetPowerColor(unit)
+end
+
+--------------------------------------------------------------------------------
+-- Widget Update Functions
+--------------------------------------------------------------------------------
+
+local function UpdateHealthBar()
+    if not customFrame or not customFrame.widgets.healthBar then return end
+    local widget = customFrame.widgets.healthBar
+    local config = currentStyle.healthBar
+
+    local maxHealth = UnitHealthMax("player") or 1
+    local health = UnitHealth("player") or 0
+
+    -- Set min/max directly (handles "secret" numbers in API)
+    widget:SetMinMaxValues(0, maxHealth)
+    widget:SetValue(health)
+
+    -- Update colors if needed (class color might change on spec change, etc.)
+    local r, g, b = 0.2, 0.8, 0.2
+    local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
+
+    if config.colorMode == "class" then
+        r, g, b = GetClassColor("player")
+    elseif config.colorMode == "class_inverted" then
+        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        bgR, bgG, bgB = GetClassColor("player")
+    elseif config.colorMode == "custom" then
+        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+    end
+
+    widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
+    widget:SetStatusBarColor(r, g, b)
+end
+
+local function UpdatePowerBar()
+    if not customFrame or not customFrame.widgets.powerBar then return end
+    local widget = customFrame.widgets.powerBar
+    local config = currentStyle.powerBar
+
+    local powerType = UnitPowerType("player")
+    local maxPower = UnitPowerMax("player", powerType) or 1
+    local power = UnitPower("player", powerType) or 0
+
+    -- Set min/max directly (handles "secret" numbers in API)
+    widget:SetMinMaxValues(0, maxPower)
+    widget:SetValue(power)
+
+    -- Update color based on power type
+    local r, g, b = 0.2, 0.2, 0.8
+    if config.colorMode == "power" then
+        r, g, b = GetPowerColor("player")
+    elseif config.colorMode == "class" then
+        r, g, b = GetClassColor("player")
+    elseif config.colorMode == "custom" then
+        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+    end
+    widget:SetStatusBarColor(r, g, b)
+end
+
+local function UpdateHealthText()
+    if not customFrame or not customFrame.widgets.healthText then return end
+    local widget = customFrame.widgets.healthText
+    local config = currentStyle.healthText
+
+    local health = UnitHealth("player") or 0
+    local maxHealth = UnitHealthMax("player") or 1
+    local text = ""
+
+    -- SafeNumber for math operations that might fail with secret numbers
+    local safeHealth = SafeNumber(health, 0)
+    local safeMaxHealth = SafeNumber(maxHealth, 1)
+
+    if config.format == "current" then
+        text = AbbreviateNumbers(safeHealth)
+    elseif config.format == "percent" then
+        text = math.floor((safeHealth / safeMaxHealth) * 100) .. "%"
+    elseif config.format == "current_percent" then
+        text = AbbreviateNumbers(safeHealth) .. " (" .. math.floor((safeHealth / safeMaxHealth) * 100) .. "%)"
+    elseif config.format == "current_max" then
+        text = AbbreviateNumbers(safeHealth) .. " / " .. AbbreviateNumbers(safeMaxHealth)
+    elseif config.format == "deficit" then
+        local deficit = safeMaxHealth - safeHealth
+        text = deficit > 0 and "-" .. AbbreviateNumbers(deficit) or ""
+    end
+
+    widget.text:SetText(text)
+end
+
+local function UpdatePowerText()
+    if not customFrame or not customFrame.widgets.powerText then return end
+    local widget = customFrame.widgets.powerText
+    local config = currentStyle.powerText
+
+    local powerType = UnitPowerType("player")
+    local power = UnitPower("player", powerType) or 0
+    local maxPower = UnitPowerMax("player", powerType) or 1
+    local text = ""
+
+    -- SafeNumber for math operations
+    local safePower = SafeNumber(power, 0)
+    local safeMaxPower = SafeNumber(maxPower, 1)
+
+    if config.format == "current" then
+        text = tostring(safePower)
+    elseif config.format == "percent" then
+        text = safeMaxPower > 0 and (math.floor((safePower / safeMaxPower) * 100) .. "%") or ""
+    elseif config.format == "current_percent" then
+        text = safeMaxPower > 0 and (safePower .. " (" .. math.floor((safePower / safeMaxPower) * 100) .. "%)") or tostring(safePower)
+    elseif config.format == "current_max" then
+        text = safePower .. " / " .. safeMaxPower
+    end
+
+    widget.text:SetText(text)
+end
+
+local function UpdatePortrait()
+    if not customFrame or not customFrame.widgets.portrait then return end
+    local widget = customFrame.widgets.portrait
+    local config = currentStyle.portrait
+
+    if config.mode == "3D" then
+        if widget.SetUnit then
+            widget:SetUnit("player")
+        end
+    elseif config.mode == "2D" then
+        if widget.texture then
+            SetPortraitTexture(widget.texture, "player")
+        end
+    end
+    -- Class icon doesn't need updating for player
+end
+
+local function UpdateStatusIndicators()
+    if not customFrame or not customFrame.widgets.statusIndicators then return end
+    local widget = customFrame.widgets.statusIndicators
+    local config = currentStyle.statusIndicators
+
+    if widget.combat then
+        if config.showCombat and UnitAffectingCombat("player") then
+            widget.combat:SetAlpha(1)
+            widget.combat:Show()
+        else
+            widget.combat:Hide()
+        end
+    end
+end
+
+local function UpdateNameText()
+    if not customFrame or not customFrame.widgets.nameText then return end
+    local widget = customFrame.widgets.nameText
+    local config = currentStyle.nameText
+
+    local name = UnitName("player") or "Player"
+    if config.truncateLength and #name > config.truncateLength then
+        name = name:sub(1, config.truncateLength) .. "..."
+    end
+    widget.text:SetText(name)
+end
+
+local function UpdateLevelText()
+    if not customFrame or not customFrame.widgets.levelText then return end
+    local widget = customFrame.widgets.levelText
+    local config = currentStyle.levelText
+
+    local level = UnitLevel("player")
+    local text = level == -1 and "??" or tostring(level)
+    widget.text:SetText(text)
+
+    if config.colorByDifficulty then
+        local color = GetQuestDifficultyColor(level)
+        if color then
+            widget.text:SetTextColor(color.r, color.g, color.b)
+        end
+    end
+end
 
 --------------------------------------------------------------------------------
 -- Blizzard Frame Management
@@ -155,7 +344,6 @@ local function RestoreBlizzardPlayerFrame()
     RestoreVisual(PlayerFrame.manabar)
 
     -- Re-register events by calling Blizzard's initialization
-    -- PlayerFrame_ToPlayerArt re-initializes the player frame
     if PlayerFrame_ToPlayerArt then
         PlayerFrame_ToPlayerArt(PlayerFrame)
     end
@@ -176,10 +364,12 @@ end
 
 local function DestroyCustomFrame()
     if customFrame then
+        customFrame:UnregisterAllEvents()
         customFrame:Hide()
         customFrame:SetParent(nil)
         customFrame = nil
     end
+    currentStyle = nil
 end
 
 local function BuildCustomFrame(styleName)
@@ -190,6 +380,8 @@ local function BuildCustomFrame(styleName)
         print("NivUI PlayerFrame: No style found for", styleName)
         return
     end
+
+    currentStyle = style
 
     local WF = NivUI.WidgetFactories
     if not WF then
@@ -205,7 +397,7 @@ local function BuildCustomFrame(styleName)
     customFrame = CreateFrame("Frame", "NivUI_PlayerFrame", UIParent)
     customFrame:SetSize(frameWidth, frameHeight)
 
-    -- Anchor to Blizzard PlayerFrame's position
+    -- Anchor TOPLEFT to Blizzard PlayerFrame's TOPLEFT
     customFrame:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 0, 0)
 
     -- Apply frame border if configured
@@ -262,7 +454,44 @@ local function BuildCustomFrame(styleName)
         end
     end
 
+    -- Register for unit events
+    customFrame:RegisterUnitEvent("UNIT_HEALTH", "player")
+    customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", "player")
+    customFrame:RegisterUnitEvent("UNIT_POWER_UPDATE", "player")
+    customFrame:RegisterUnitEvent("UNIT_MAXPOWER", "player")
+    customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
+    customFrame:RegisterUnitEvent("UNIT_MODEL_CHANGED", "player")
+    customFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", "player")
+    customFrame:RegisterUnitEvent("UNIT_LEVEL", "player")
+    customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+
+    customFrame:SetScript("OnEvent", function(self, event, unit)
+        if event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+            UpdateHealthBar()
+            UpdateHealthText()
+        elseif event == "UNIT_POWER_UPDATE" or event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
+            UpdatePowerBar()
+            UpdatePowerText()
+        elseif event == "UNIT_MODEL_CHANGED" then
+            UpdatePortrait()
+        elseif event == "UNIT_NAME_UPDATE" then
+            UpdateNameText()
+        elseif event == "UNIT_LEVEL" then
+            UpdateLevelText()
+        elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+            UpdateStatusIndicators()
+        end
+    end)
+
     customFrame:Show()
+
+    -- Initial update of all widgets
+    UpdateHealthBar()
+    UpdateHealthText()
+    UpdatePowerBar()
+    UpdatePowerText()
+    UpdateStatusIndicators()
 end
 
 --------------------------------------------------------------------------------
@@ -331,8 +560,8 @@ end)
 -- Listen for style changes (in case the assigned style is modified)
 NivUI:RegisterCallback("StyleChanged", function(data)
     if NivUI:IsFrameEnabled("player") then
-        local currentStyle = NivUI:GetAssignment("player")
-        if data.styleName == currentStyle then
+        local assignedStyle = NivUI:GetAssignment("player")
+        if data.styleName == assignedStyle then
             RefreshPlayerFrame()
         end
     end
