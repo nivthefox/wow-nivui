@@ -284,6 +284,9 @@ end
 local function ApplyBarTexture()
     local texture = NivUI:GetSetting("barTexture")
     StaggerBar.bar:SetStatusBarTexture(texture)
+    -- Re-anchor spark to the new texture
+    StaggerBar.spark:ClearAllPoints()
+    StaggerBar.spark:SetPoint("CENTER", StaggerBar.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 end
 
 -- Apply font settings from saved settings

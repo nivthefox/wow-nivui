@@ -197,6 +197,8 @@ local function CreateColorSwatch(parent, x, y, onColorChanged)
             g = g,
             b = b,
             swatchFunc = OnColorChanged,
+            opacityFunc = OnColorChanged,
+            okayFunc = OnColorChanged,
             cancelFunc = OnCancel,
             previousValues = { r = r, g = g, b = b },
         })
