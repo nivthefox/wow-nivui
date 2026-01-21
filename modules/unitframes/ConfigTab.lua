@@ -878,7 +878,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     bottomArea:SetPoint("TOPLEFT", previewContainer, "BOTTOMLEFT", 0, -8)
     bottomArea:SetPoint("BOTTOMRIGHT", 0, 0)
 
-    -- Widget list on the left
+    local settingsPanel
     local widgetList = CreateWidgetList(bottomArea, function(widgetType)
         designer:SelectWidget(widgetType)
         settingsPanel:BuildForWidget(widgetType)
@@ -886,8 +886,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     widgetList:SetPoint("TOPLEFT", 0, 0)
     widgetList:SetPoint("BOTTOMLEFT", 0, 0)
 
-    -- Settings panel on the right
-    local settingsPanel = CreateWidgetSettingsPanel(
+    settingsPanel = CreateWidgetSettingsPanel(
         bottomArea,
         getStyle,
         saveStyle,
@@ -1117,7 +1116,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     bottomArea:SetPoint("TOPLEFT", previewContainer, "BOTTOMLEFT", 0, -4)
     bottomArea:SetPoint("BOTTOMRIGHT", 0, 0)
 
-    -- Widget list on the left
+    local settingsPanel
     local widgetList = CreateWidgetList(bottomArea, function(widgetType)
         designer:SelectWidget(widgetType)
         settingsPanel:BuildForWidget(widgetType)
@@ -1125,8 +1124,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     widgetList:SetPoint("TOPLEFT", 0, 0)
     widgetList:SetPoint("BOTTOMLEFT", 0, 0)
 
-    -- Settings panel on the right
-    local settingsPanel = CreateWidgetSettingsPanel(
+    settingsPanel = CreateWidgetSettingsPanel(
         bottomArea,
         getStyle,
         saveStyle,
