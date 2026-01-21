@@ -429,12 +429,12 @@ local function SelectSidebarTab(index)
 end
 
 --------------------------------------------------------------------------------
--- Stagger Bar Tab
+-- Class Bars Tab
 --------------------------------------------------------------------------------
 
-local function SetupStaggerBarTab()
-    local container = CreateFrame("Frame", nil, ContentArea)
-    container:SetAllPoints()
+-- Creates the Stagger Bar settings content (used as a subtab)
+local function SetupStaggerBarContent(parent)
+    local container = CreateFrame("Frame", nil, parent)
     container:Hide()
 
     -- ScrollFrame for content
@@ -734,25 +734,69 @@ local function SetupStaggerBarTab()
     return container
 end
 
+-- Creates the Class Bars tab with subtabs (currently just Stagger)
+local staggerContent  -- Forward declaration for OnBarMoved callback
+local function SetupClassBarsTabWithSubtabs()
+    local container = CreateFrame("Frame", nil, ContentArea)
+    container:SetAllPoints()
+    container:Hide()
+
+    -- Sub-tab system
+    local subTabs = {}
+    local subTabContainers = {}
+    local currentSubTab = 1
+
+    local function SelectSubTab(index)
+        for i, tab in ipairs(subTabs) do
+            if i == index then
+                PanelTemplates_SelectTab(tab)
+                subTabContainers[i]:Show()
+            else
+                PanelTemplates_DeselectTab(tab)
+                subTabContainers[i]:Hide()
+            end
+        end
+        currentSubTab = index
+    end
+
+    -- Create Stagger sub-tab content
+    staggerContent = SetupStaggerBarContent(container)
+    staggerContent:SetPoint("TOPLEFT", 0, -32)
+    staggerContent:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, staggerContent)
+
+    local staggerTab = Components.GetTab(container, "Stagger")
+    staggerTab:SetPoint("TOPLEFT", 0, 0)
+    staggerTab:SetScript("OnClick", function() SelectSubTab(1) end)
+    table.insert(subTabs, staggerTab)
+
+    -- Select first sub-tab when shown
+    container:SetScript("OnShow", function()
+        SelectSubTab(currentSubTab)
+    end)
+
+    return container
+end
+
 --------------------------------------------------------------------------------
 -- Initialize Sidebar Tabs
 --------------------------------------------------------------------------------
 
--- Stagger Bar tab
-local staggerBarContainer = SetupStaggerBarTab()
-table.insert(sidebarContainers, staggerBarContainer)
+-- Class Bars tab (includes Stagger as sub-tab)
+local classBarsContainer = SetupClassBarsTabWithSubtabs()
+table.insert(sidebarContainers, classBarsContainer)
 
-local staggerBarTab = Components.GetSidebarTab(Sidebar, "Stagger Bar")
-staggerBarTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)
-staggerBarTab:SetScript("OnClick", function() SelectSidebarTab(1) end)
-table.insert(sidebarTabs, staggerBarTab)
+local classBarsTab = Components.GetSidebarTab(Sidebar, "Class Bars")
+classBarsTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)
+classBarsTab:SetScript("OnClick", function() SelectSidebarTab(1) end)
+table.insert(sidebarTabs, classBarsTab)
 
 -- Unit Frames tab (includes Designer and Assignments as sub-tabs)
 local unitFramesContainer = NivUI.UnitFrames:SetupConfigTabWithSubtabs(ContentArea, Components)
 table.insert(sidebarContainers, unitFramesContainer)
 
 local unitFramesTab = Components.GetSidebarTab(Sidebar, "Unit Frames")
-unitFramesTab:SetPoint("TOPLEFT", staggerBarTab, "BOTTOMLEFT", 0, -2)
+unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
 unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
 table.insert(sidebarTabs, unitFramesTab)
 
@@ -767,11 +811,11 @@ end)
 
 NivUI.OnBarMoved = function()
     local db = NivUI_DB.staggerBar
-    if staggerBarContainer.widthSlider then
-        staggerBarContainer.widthSlider:SetValue(db.width or 394)
+    if staggerContent and staggerContent.widthSlider then
+        staggerContent.widthSlider:SetValue(db.width or 394)
     end
-    if staggerBarContainer.heightSlider then
-        staggerBarContainer.heightSlider:SetValue(db.height or 20)
+    if staggerContent and staggerContent.heightSlider then
+        staggerContent.heightSlider:SetValue(db.height or 20)
     end
 end
 
