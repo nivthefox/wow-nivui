@@ -479,6 +479,8 @@ local function BuildCustomFrame(styleName)
 
     customFrame = CreateFrame("Frame", "NivUI_PlayerFrame", UIParent)
     customFrame:SetSize(frameWidth, frameHeight)
+    if frameConfig.strata then customFrame:SetFrameStrata(frameConfig.strata) end
+    if frameConfig.frameLevel then customFrame:SetFrameLevel(frameConfig.frameLevel) end
 
     -- Anchor TOPLEFT to Blizzard PlayerFrame's TOPLEFT
     customFrame:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", 0, 0)

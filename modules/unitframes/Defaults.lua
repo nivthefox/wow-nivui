@@ -96,6 +96,18 @@ NivUI.UnitFrames.BAR_ORIENTATIONS = {
     { value = "VERTICAL", name = "Vertical" },
 }
 
+-- Frame strata options
+NivUI.UnitFrames.FRAME_STRATA = {
+    { value = "BACKGROUND", name = "Background" },
+    { value = "LOW", name = "Low" },
+    { value = "MEDIUM", name = "Medium" },
+    { value = "HIGH", name = "High" },
+    { value = "DIALOG", name = "Dialog" },
+    { value = "FULLSCREEN", name = "Fullscreen" },
+    { value = "FULLSCREEN_DIALOG", name = "Fullscreen Dialog" },
+    { value = "TOOLTIP", name = "Tooltip" },
+}
+
 -- Text alignments
 NivUI.UnitFrames.TEXT_ALIGNMENTS = {
     { value = "LEFT", name = "Left" },
@@ -121,6 +133,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     frame = {
         width = 200,
         height = 60,
+        strata = "MEDIUM",
+        frameLevel = 1,
         showBorder = false,
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
         borderSize = 1,
@@ -131,7 +145,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         enabled = true,
         anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", 0, 0),
         size = { width = 180, height = 24 },
-        layer = 1,
+        strata = "MEDIUM",
+        frameLevel = 2,
         texture = "Default",
         orientation = "HORIZONTAL",
         reverseFill = false,
@@ -149,7 +164,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         enabled = true,
         anchor = DefaultAnchor("TOPLEFT", "healthBar", "BOTTOMLEFT", 0, -2),
         size = { width = 180, height = 12 },
-        layer = 1,
+        strata = "MEDIUM",
+        frameLevel = 2,
         texture = "Default",
         orientation = "HORIZONTAL",
         reverseFill = false,
@@ -163,7 +179,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         enabled = true,
         anchor = DefaultAnchor("RIGHT", "frame", "LEFT", -4, 0),
         size = { width = 48, height = 48 },
-        layer = 0,
+        strata = "MEDIUM",
+        frameLevel = 1,
         mode = "3D",
         shape = "square",
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
@@ -174,7 +191,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     nameText = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMLEFT", "healthBar", "TOPLEFT", 2, 2),
-        layer = 10,
+        strata = "MEDIUM",
+        frameLevel = 10,
         font = "Friz Quadrata",
         fontSize = 12,
         fontOutline = "OUTLINE",
@@ -188,7 +206,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     levelText = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMRIGHT", "healthBar", "TOPRIGHT", -2, 2),
-        layer = 10,
+        strata = "MEDIUM",
+        frameLevel = 10,
         font = "Friz Quadrata",
         fontSize = 11,
         fontOutline = "OUTLINE",
@@ -201,7 +220,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     healthText = {
         enabled = true,
         anchor = DefaultAnchor("CENTER", "healthBar", "CENTER", 0, 0),
-        layer = 10,
+        strata = "MEDIUM",
+        frameLevel = 10,
         font = "Friz Quadrata",
         fontSize = 11,
         fontOutline = "OUTLINE",
@@ -214,7 +234,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     powerText = {
         enabled = true,
         anchor = DefaultAnchor("CENTER", "powerBar", "CENTER", 0, 0),
-        layer = 10,
+        strata = "MEDIUM",
+        frameLevel = 10,
         font = "Friz Quadrata",
         fontSize = 10,
         fontOutline = "OUTLINE",
@@ -226,6 +247,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     -- Status Indicators
     statusIndicators = {
         enabled = true,
+        strata = "MEDIUM",
+        frameLevel = 5,
         showCombat = true,
         showResting = true,
         showDead = true,
@@ -241,6 +264,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     leaderIcon = {
         enabled = true,
         anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", -4, 4),
+        strata = "MEDIUM",
+        frameLevel = 5,
         size = 16,
     },
 
@@ -248,6 +273,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     raidMarker = {
         enabled = true,
         anchor = DefaultAnchor("TOP", "frame", "TOP", 0, 8),
+        strata = "MEDIUM",
+        frameLevel = 5,
         size = 20,
     },
 
@@ -256,7 +283,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         enabled = true,
         anchor = DefaultAnchor("TOP", "powerBar", "BOTTOM", 0, 0),
         size = { width = 180, height = 16 },
-        layer = 2,
+        strata = "MEDIUM",
+        frameLevel = 3,
         texture = "Default",
         orientation = "HORIZONTAL",
         reverseFill = false,
@@ -274,7 +302,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     buffs = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMLEFT", "frame", "TOPLEFT", 0, 4),
-        layer = 5,
+        strata = "MEDIUM",
+        frameLevel = 5,
         iconSize = 20,
         spacing = 2,
         perRow = 8,
@@ -289,7 +318,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     debuffs = {
         enabled = true,
         anchor = DefaultAnchor("BOTTOMLEFT", "buffs", "TOPLEFT", 0, 2),
-        layer = 5,
+        strata = "MEDIUM",
+        frameLevel = 5,
         iconSize = 22,
         spacing = 2,
         perRow = 8,

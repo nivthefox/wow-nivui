@@ -28,6 +28,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "borderColor", label = "Border Color", hasAlpha = true, showIf = { key = "showBorder", value = true } },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -73,6 +80,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "absorbColor", label = "Absorb Color", hasAlpha = true },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -108,6 +122,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "backgroundColor", label = "Background", hasAlpha = true },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -139,6 +160,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "dropdown", key = "shape", label = "Shape", options = "PORTRAIT_SHAPES" },
                 { kind = "colorPicker", key = "borderColor", label = "Border Color", hasAlpha = true },
                 { kind = "slider", key = "borderWidth", label = "Border Width", min = 0, max = 4, step = 1 },
+            },
+        },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -180,6 +208,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "truncateLength", label = "Max Characters", min = 5, max = 40, step = 1 },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -211,6 +246,13 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "colorByDifficulty", label = "Color by Difficulty" },
                 { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorByDifficulty", value = false } },
+            },
+        },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -246,6 +288,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "color", label = "Color" },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -277,6 +326,13 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "dropdown", key = "format", label = "Format", options = "TEXT_FORMATS" },
                 { kind = "colorPicker", key = "color", label = "Color" },
+            },
+        },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -314,6 +370,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "showOffline", label = "Show Offline" },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -337,6 +400,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -358,6 +428,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+            },
+        },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -410,6 +487,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "nonInterruptibleColor", label = "Non-Interruptible" },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 
     ----------------------------------------------------------------------------
@@ -448,6 +532,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "showDuration", label = "Show Duration" },
                 { kind = "checkbox", key = "showStacks", label = "Show Stacks" },
                 { kind = "checkbox", key = "filterPlayer", label = "Only Player Buffs" },
+            },
+        },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -497,6 +588,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "dispellableColor", label = "Highlight Color", hasAlpha = true },
             },
         },
+        {
+            label = "Layering",
+            entries = {
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
     },
 }
 
@@ -528,6 +626,7 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         FONT_OUTLINES = self.FONT_OUTLINES,
         ANCHOR_POINTS = self.ANCHOR_POINTS,
         TEXT_ALIGNMENTS = self.TEXT_ALIGNMENTS,
+        FRAME_STRATA = self.FRAME_STRATA,
     }
     return lists[optionName] or {}
 end

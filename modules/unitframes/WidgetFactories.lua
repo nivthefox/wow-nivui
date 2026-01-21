@@ -56,6 +56,8 @@ function WF.healthBar(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     -- Background texture (use WHITE8x8 + SetVertexColor like MSUF does)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
@@ -106,6 +108,8 @@ function WF.powerBar(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     -- Background texture (use WHITE8x8 + SetVertexColor like MSUF does)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
@@ -180,6 +184,9 @@ function WF.portrait(parent, config, style, unit)
         SetPortraitTexture(frame.texture, unit)
     end
 
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
+
     -- Border
     if config.borderWidth > 0 then
         frame.border = CreateFrame("Frame", nil, frame, "BackdropTemplate")
@@ -214,6 +221,8 @@ local function CreateTextWidget(parent, config, textValue, widgetType, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(200, config.fontSize + 4)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     frame.text = frame:CreateFontString(nil, "OVERLAY")
     frame.text:SetAllPoints(frame)
@@ -312,6 +321,8 @@ function WF.statusIndicators(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.iconSize * 3, config.iconSize)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     -- Just show combat icon as example in preview
     frame.combat = frame:CreateTexture(nil, "OVERLAY")
@@ -335,6 +346,8 @@ function WF.leaderIcon(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     frame.icon = frame:CreateTexture(nil, "OVERLAY")
     frame.icon:SetAllPoints()
@@ -354,6 +367,8 @@ function WF.raidMarker(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     frame.icon = frame:CreateTexture(nil, "OVERLAY")
     frame.icon:SetAllPoints()
@@ -376,6 +391,8 @@ function WF.castbar(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     -- Background texture (use WHITE8x8 + SetVertexColor like MSUF does)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
@@ -428,6 +445,8 @@ end
 local function CreateAuraWidget(parent, config, widgetType, testAuras, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
     local iconSize = config.iconSize
     local spacing = config.spacing
