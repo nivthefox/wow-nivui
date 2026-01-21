@@ -3,6 +3,7 @@ NivUI.EditMode = {}
 
 local editModeActive = false
 local selectionFrames = {}
+local forceShownFrames = {}
 
 function NivUI.EditMode:IsActive()
     return editModeActive
@@ -98,20 +99,28 @@ end
 
 function NivUI.EditMode:ShowAllSelections()
     for frameType, selection in pairs(selectionFrames) do
-        if selection.customFrame and selection.customFrame:IsShown() then
+        if selection.customFrame then
+            if not selection.customFrame:IsShown() then
+                selection.customFrame:Show()
+                forceShownFrames[frameType] = true
+            end
             selection:Show()
         end
     end
 end
 
 function NivUI.EditMode:HideAllSelections()
-    for _, selection in pairs(selectionFrames) do
+    for frameType, selection in pairs(selectionFrames) do
         selection:Hide()
+        if forceShownFrames[frameType] and selection.customFrame then
+            selection.customFrame:Hide()
+            forceShownFrames[frameType] = nil
+        end
     end
 end
 
 function NivUI.EditMode:HideBlizzardSelections()
-    for _, blizzFrame in ipairs({PlayerFrame, TargetFrame}) do
+    for _, blizzFrame in ipairs({PlayerFrame, TargetFrame, PetFrame, FocusFrame}) do
         if blizzFrame and blizzFrame.Selection then
             blizzFrame.Selection:Hide()
             if not blizzFrame.Selection.NivUI_Hooked then
