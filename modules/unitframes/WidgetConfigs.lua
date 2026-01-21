@@ -14,10 +14,12 @@ NivUI.UnitFrames.WidgetConfigs = {
     ----------------------------------------------------------------------------
     frame = {
         {
-            label = "Size",
+            label = "General",
             entries = {
                 { kind = "slider", key = "width", label = "Width", min = 100, max = 400, step = 5 },
                 { kind = "slider", key = "height", label = "Height", min = 30, max = 200, step = 5 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -26,13 +28,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "showBorder", label = "Show Border" },
                 { kind = "slider", key = "borderSize", label = "Border Size", min = 1, max = 4, step = 1, showIf = { key = "showBorder", value = true } },
                 { kind = "colorPicker", key = "borderColor", label = "Border Color", hasAlpha = true, showIf = { key = "showBorder", value = true } },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -49,16 +44,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "size.height", label = "Height", min = 8, max = 60, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -80,13 +72,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "absorbColor", label = "Absorb Color", hasAlpha = true },
             },
         },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
-            },
-        },
     },
 
     ----------------------------------------------------------------------------
@@ -101,16 +86,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "size.height", label = "Height", min = 4, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -120,13 +102,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "dropdown", key = "colorMode", label = "Color Mode", options = "POWER_COLOR_MODES" },
                 { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorMode", value = "custom" } },
                 { kind = "colorPicker", key = "backgroundColor", label = "Background", hasAlpha = true },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -141,16 +116,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 16, max = 128, step = 4 },
                 { kind = "slider", key = "size.height", label = "Height", min = 16, max = 128, step = 4 },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -160,13 +132,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "dropdown", key = "shape", label = "Shape", options = "PORTRAIT_SHAPES" },
                 { kind = "colorPicker", key = "borderColor", label = "Border Color", hasAlpha = true },
                 { kind = "slider", key = "borderWidth", label = "Border Width", min = 0, max = 4, step = 1 },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -183,16 +148,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
                 { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -206,13 +168,6 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "Options",
             entries = {
                 { kind = "slider", key = "truncateLength", label = "Max Characters", min = 5, max = 40, step = 1 },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -229,16 +184,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
                 { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -246,13 +198,6 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "colorByDifficulty", label = "Color by Difficulty" },
                 { kind = "colorPicker", key = "customColor", label = "Custom Color", showIf = { key = "colorByDifficulty", value = false } },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -269,16 +214,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
                 { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -286,13 +228,6 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "dropdown", key = "format", label = "Format", options = "TEXT_FORMATS" },
                 { kind = "colorPicker", key = "color", label = "Color" },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -309,16 +244,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
                 { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
                 { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -326,13 +258,6 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "dropdown", key = "format", label = "Format", options = "TEXT_FORMATS" },
                 { kind = "colorPicker", key = "color", label = "Color" },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
@@ -346,16 +271,13 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "iconSize", label = "Icon Size", min = 8, max = 32, step = 1 },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -370,13 +292,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "showOffline", label = "Show Offline" },
             },
         },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
-            },
-        },
     },
 
     ----------------------------------------------------------------------------
@@ -388,21 +303,11 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size", label = "Size", min = 8, max = 32, step = 1 },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
                 { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
                 { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
@@ -418,21 +323,11 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size", label = "Size", min = 8, max = 48, step = 1 },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
                 { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
                 { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
@@ -451,16 +346,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "slider", key = "size.height", label = "Height", min = 8, max = 40, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
                 { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -487,13 +379,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "colorPicker", key = "nonInterruptibleColor", label = "Non-Interruptible" },
             },
         },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
-            },
-        },
     },
 
     ----------------------------------------------------------------------------
@@ -506,16 +391,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "iconSize", label = "Icon Size", min = 12, max = 40, step = 1 },
                 { kind = "slider", key = "spacing", label = "Spacing", min = 0, max = 8, step = 1 },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -534,13 +416,6 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "filterPlayer", label = "Only Player Buffs" },
             },
         },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
-            },
-        },
     },
 
     ----------------------------------------------------------------------------
@@ -553,16 +428,13 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "iconSize", label = "Icon Size", min = 12, max = 40, step = 1 },
                 { kind = "slider", key = "spacing", label = "Spacing", min = 0, max = 8, step = 1 },
-            },
-        },
-        {
-            label = "Position",
-            entries = {
                 { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
                 { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
                 { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
                 { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
                 { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
         {
@@ -586,13 +458,6 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "highlightDispellable", label = "Highlight Dispellable" },
                 { kind = "colorPicker", key = "dispellableColor", label = "Highlight Color", hasAlpha = true },
-            },
-        },
-        {
-            label = "Layering",
-            entries = {
-                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
-                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
             },
         },
     },
