@@ -697,27 +697,46 @@ local function CreateAssignmentsPanel(parent, Components)
     local header = Components.GetHeader(frame, "Frame Style Assignments")
     AddRow(header)
 
-    -- Create a dropdown for each frame type
+    -- Create a row with checkbox + dropdown for each frame type
     for _, frameInfo in ipairs(NivUI.UnitFrames.FRAME_TYPES) do
-        local dropdown = Components.GetBasicDropdown(
-            frame,
-            frameInfo.name .. ":",
-            function()
-                local names = NivUI:GetStyleNames()
-                local items = {}
-                for _, name in ipairs(names) do
-                    table.insert(items, { value = name, name = name })
-                end
-                return items
-            end,
-            function(value)
-                return NivUI:GetAssignment(frameInfo.value) == value
-            end,
-            function(value)
-                NivUI:SetAssignment(frameInfo.value, value)
+        local row = CreateFrame("Frame", nil, frame)
+        row:SetHeight(24)
+        row:SetPoint("LEFT", 20, 0)
+        row:SetPoint("RIGHT", -20, 0)
+
+        -- Enabled checkbox (left side)
+        local checkbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
+        checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
+        checkbox:SetChecked(NivUI:IsFrameEnabled(frameInfo.value))
+        checkbox:SetScript("OnClick", function(self)
+            NivUI:SetFrameEnabled(frameInfo.value, self:GetChecked())
+        end)
+
+        -- Frame type label
+        local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+        label:SetText(frameInfo.name .. ":")
+        label:SetWidth(100)
+        label:SetJustifyH("LEFT")
+
+        -- Style dropdown (right side)
+        local dropdown = CreateFrame("DropdownButton", nil, row, "WowStyle1DropdownTemplate")
+        dropdown:SetPoint("LEFT", label, "RIGHT", 8, 0)
+        dropdown:SetWidth(150)
+        dropdown:SetDefaultText("Select Style")
+
+        dropdown:SetupMenu(function(owner, rootDescription)
+            local names = NivUI:GetStyleNames()
+            for _, name in ipairs(names) do
+                rootDescription:CreateRadio(
+                    name,
+                    function() return NivUI:GetAssignment(frameInfo.value) == name end,
+                    function() NivUI:SetAssignment(frameInfo.value, name) end
+                )
             end
-        )
-        AddRow(dropdown, 4)
+        end)
+
+        AddRow(row, 4)
     end
 
     return frame

@@ -10,6 +10,8 @@ StaggerBar.lua
 UnitFrames/Defaults.lua
 UnitFrames/StyleManager.lua
 UnitFrames/WidgetConfigs.lua
+UnitFrames/WidgetFactories.lua
 UnitFrames/ConfigTab.lua
 Components/Designer.lua
+UnitFrames/PlayerFrame.lua
 ConfigFrame.lua

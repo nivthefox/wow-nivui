@@ -208,6 +208,26 @@ function NivUI:SetAssignment(frameType, styleName)
     self:TriggerEvent("AssignmentChanged", { frameType = frameType, styleName = styleName })
 end
 
+-- Check if a frame type is enabled
+function NivUI:IsFrameEnabled(frameType)
+    if not NivUI_DB.unitFrameEnabled then
+        return false
+    end
+    return NivUI_DB.unitFrameEnabled[frameType] == true
+end
+
+-- Set the enabled state for a frame type
+function NivUI:SetFrameEnabled(frameType, enabled)
+    if not NivUI_DB.unitFrameEnabled then
+        NivUI_DB.unitFrameEnabled = {}
+    end
+
+    NivUI_DB.unitFrameEnabled[frameType] = enabled
+
+    -- Trigger event for listeners
+    self:TriggerEvent("FrameEnabledChanged", { frameType = frameType, enabled = enabled })
+end
+
 -- Get a style with the full default values merged in
 -- This ensures any missing keys have defaults
 function NivUI:GetStyleWithDefaults(name)
