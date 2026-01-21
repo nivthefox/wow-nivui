@@ -56,10 +56,10 @@ function WidgetFactories.healthBar(parent, config, style)
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
 
-    -- Background (explicit anchoring - SetAllPoints behaves oddly on StatusBars)
+    -- Background (use explicit size - two-point anchoring behaves oddly on StatusBars)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
+    frame.bg:SetSize(config.size.width, config.size.height)
     frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    frame.bg:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 
     -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
@@ -101,9 +101,10 @@ function WidgetFactories.powerBar(parent, config, style)
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
 
-    -- Background
+    -- Background (use explicit size - two-point anchoring behaves oddly on StatusBars)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.bg:SetAllPoints()
+    frame.bg:SetSize(config.size.width, config.size.height)
+    frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
     local bgColor = config.backgroundColor
     frame.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
 
@@ -351,9 +352,10 @@ function WidgetFactories.castbar(parent, config, style)
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
 
-    -- Background
+    -- Background (use explicit size - two-point anchoring behaves oddly on StatusBars)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.bg:SetAllPoints()
+    frame.bg:SetSize(config.size.width, config.size.height)
+    frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
     local bgColor = config.backgroundColor
     frame.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
 
