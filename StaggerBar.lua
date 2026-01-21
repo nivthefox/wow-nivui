@@ -308,11 +308,6 @@ local function ApplyFontSettings()
     local g = fontColor.g or 1
     local b = fontColor.b or 1
     StaggerBar.text:SetTextColor(r, g, b, 1)
-
-    -- Debug: check what color actually got set
-    local actualR, actualG, actualB, actualA = StaggerBar.text:GetTextColor()
-    print(string.format("NivUI Font Color: set(%.2f,%.2f,%.2f) actual(%.2f,%.2f,%.2f,%.2f)",
-        r, g, b, actualR, actualG, actualB, actualA))
 end
 
 -- Apply lock state
