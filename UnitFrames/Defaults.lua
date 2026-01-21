@@ -243,7 +243,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
     -- Castbar
     castbar = {
         enabled = true,
-        anchor = DefaultAnchor("TOP", "powerBar", "BOTTOM", 0, -8),
+        anchor = DefaultAnchor("TOP", "powerBar", "BOTTOM", 0, 0),
         size = { width = 180, height = 16 },
         layer = 2,
         texture = "Default",

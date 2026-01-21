@@ -1,7 +1,7 @@
 -- NivUI Config Frame
 -- Modern configuration UI using Platynator-style components
 
-local FRAME_WIDTH = 580
+local FRAME_WIDTH = 680
 local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
 local SECTION_SPACING = 20
