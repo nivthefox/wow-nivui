@@ -505,15 +505,8 @@ local function SetupStaggerBarTab()
     local colorsHeader = Components.GetHeader(content, "Stagger Colors")
     AddFrame(colorsHeader, SECTION_SPACING)
 
-    -- Row 1: Light and Moderate
-    local colorRow1 = CreateFrame("Frame", nil, content)
-    colorRow1:SetHeight(ROW_HEIGHT)
-    colorRow1:SetPoint("LEFT", 20, 0)
-    colorRow1:SetPoint("RIGHT", -20, 0)
-    AddFrame(colorRow1)
-
     local lightColorPicker = Components.GetColorPicker(
-        colorRow1,
+        content,
         "Light:",
         false,
         function(color)
@@ -521,12 +514,10 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.light = color
         end
     )
-    lightColorPicker:ClearAllPoints()
-    lightColorPicker:SetPoint("LEFT", colorRow1, "LEFT", 0, 0)
-    lightColorPicker:SetPoint("RIGHT", colorRow1, "CENTER", -10, 0)
+    AddFrame(lightColorPicker)
 
     local moderateColorPicker = Components.GetColorPicker(
-        colorRow1,
+        content,
         "Moderate:",
         false,
         function(color)
@@ -534,19 +525,10 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.moderate = color
         end
     )
-    moderateColorPicker:ClearAllPoints()
-    moderateColorPicker:SetPoint("LEFT", colorRow1, "CENTER", 10, 0)
-    moderateColorPicker:SetPoint("RIGHT", colorRow1, "RIGHT", 0, 0)
-
-    -- Row 2: Heavy and Extreme
-    local colorRow2 = CreateFrame("Frame", nil, content)
-    colorRow2:SetHeight(ROW_HEIGHT)
-    colorRow2:SetPoint("LEFT", 20, 0)
-    colorRow2:SetPoint("RIGHT", -20, 0)
-    AddFrame(colorRow2)
+    AddFrame(moderateColorPicker)
 
     local heavyColorPicker = Components.GetColorPicker(
-        colorRow2,
+        content,
         "Heavy:",
         false,
         function(color)
@@ -554,12 +536,10 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.heavy = color
         end
     )
-    heavyColorPicker:ClearAllPoints()
-    heavyColorPicker:SetPoint("LEFT", colorRow2, "LEFT", 0, 0)
-    heavyColorPicker:SetPoint("RIGHT", colorRow2, "CENTER", -10, 0)
+    AddFrame(heavyColorPicker)
 
     local extremeColorPicker = Components.GetColorPicker(
-        colorRow2,
+        content,
         "Extreme:",
         false,
         function(color)
@@ -567,9 +547,7 @@ local function SetupStaggerBarTab()
             NivUI_StaggerBarDB.colors.extreme = color
         end
     )
-    extremeColorPicker:ClearAllPoints()
-    extremeColorPicker:SetPoint("LEFT", colorRow2, "CENTER", 10, 0)
-    extremeColorPicker:SetPoint("RIGHT", colorRow2, "RIGHT", 0, 0)
+    AddFrame(extremeColorPicker)
 
     ----------------------------------------------------------------------------
     -- Text Section
