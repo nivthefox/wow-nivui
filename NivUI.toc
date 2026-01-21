@@ -14,4 +14,5 @@ modules/unitframes/WidgetFactories.lua
 modules/unitframes/ConfigTab.lua
 components/Designer.lua
 modules/unitframes/PlayerFrame.lua
+modules/unitframes/TargetFrame.lua
 ConfigFrame.lua
