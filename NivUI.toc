@@ -20,4 +20,5 @@ modules/unitframes/TargetFrame.lua
 modules/unitframes/TargetOfTargetFrame.lua
 modules/unitframes/PetFrame.lua
 modules/unitframes/FocusFrame.lua
+modules/unitframes/PartyFrame.lua
 ConfigFrame.lua
