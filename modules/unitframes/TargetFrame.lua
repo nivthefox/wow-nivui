@@ -29,9 +29,11 @@ local function HideBlizzardTargetFrame(state)
     if TargetFrame.SetMouseMotionEnabled then
         TargetFrame:SetMouseMotionEnabled(false)
     end
+    --[[ SUSPECT: This might break Edit Mode
     if TargetFrame.SetHitRectInsets then
         TargetFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
     end
+    --]]
 
     --[[ BLOCK B: Hide regions
     Base.HideRegions(TargetFrame)
