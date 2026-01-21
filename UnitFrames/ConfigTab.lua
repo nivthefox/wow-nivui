@@ -9,6 +9,160 @@ local SECTION_SPACING = 20
 local WIDGET_LIST_WIDTH = 140
 
 --------------------------------------------------------------------------------
+-- Module-level state for dialogs
+--------------------------------------------------------------------------------
+
+-- These get set by the config UI and used by the dialogs
+NivUI.UnitFrames.currentStyleName = "Default"
+NivUI.UnitFrames.refreshCallback = nil
+
+--------------------------------------------------------------------------------
+-- Static Popup Dialogs (must be at top level)
+--------------------------------------------------------------------------------
+
+StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
+    text = "Enter name for new style:",
+    button1 = "Create",
+    button2 = "Cancel",
+    hasEditBox = true,
+    OnAccept = function(self)
+        local name = self.editBox:GetText()
+        if name and name ~= "" then
+            local success, err = NivUI:CreateStyle(name)
+            if success then
+                NivUI.UnitFrames.currentStyleName = name
+                if NivUI.UnitFrames.refreshCallback then
+                    NivUI.UnitFrames.refreshCallback()
+                end
+            else
+                print("NivUI: " .. (err or "Failed to create style"))
+            end
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local name = self:GetText()
+        if name and name ~= "" then
+            local success, err = NivUI:CreateStyle(name)
+            if success then
+                NivUI.UnitFrames.currentStyleName = name
+                if NivUI.UnitFrames.refreshCallback then
+                    NivUI.UnitFrames.refreshCallback()
+                end
+            else
+                print("NivUI: " .. (err or "Failed to create style"))
+            end
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+StaticPopupDialogs["NIVUI_DUPLICATE_STYLE"] = {
+    text = "Enter name for duplicate of '%s':",
+    button1 = "Duplicate",
+    button2 = "Cancel",
+    hasEditBox = true,
+    OnAccept = function(self)
+        local name = self.editBox:GetText()
+        if name and name ~= "" then
+            local success, err = NivUI:DuplicateStyle(NivUI.UnitFrames.currentStyleName, name)
+            if success then
+                NivUI.UnitFrames.currentStyleName = name
+                if NivUI.UnitFrames.refreshCallback then
+                    NivUI.UnitFrames.refreshCallback()
+                end
+            else
+                print("NivUI: " .. (err or "Failed to duplicate style"))
+            end
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local name = self:GetText()
+        if name and name ~= "" then
+            local success, err = NivUI:DuplicateStyle(NivUI.UnitFrames.currentStyleName, name)
+            if success then
+                NivUI.UnitFrames.currentStyleName = name
+                if NivUI.UnitFrames.refreshCallback then
+                    NivUI.UnitFrames.refreshCallback()
+                end
+            else
+                print("NivUI: " .. (err or "Failed to duplicate style"))
+            end
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
+    text = "Enter new name for '%s':",
+    button1 = "Rename",
+    button2 = "Cancel",
+    hasEditBox = true,
+    OnAccept = function(self)
+        local newName = self.editBox:GetText()
+        if newName and newName ~= "" then
+            local success, err = NivUI:RenameStyle(NivUI.UnitFrames.currentStyleName, newName)
+            if success then
+                NivUI.UnitFrames.currentStyleName = newName
+                if NivUI.UnitFrames.refreshCallback then
+                    NivUI.UnitFrames.refreshCallback()
+                end
+            else
+                print("NivUI: " .. (err or "Failed to rename style"))
+            end
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local newName = self:GetText()
+        if newName and newName ~= "" then
+            local success, err = NivUI:RenameStyle(NivUI.UnitFrames.currentStyleName, newName)
+            if success then
+                NivUI.UnitFrames.currentStyleName = newName
+                if NivUI.UnitFrames.refreshCallback then
+                    NivUI.UnitFrames.refreshCallback()
+                end
+            else
+                print("NivUI: " .. (err or "Failed to rename style"))
+            end
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
+    text = "Delete style '%s'? This cannot be undone.",
+    button1 = "Delete",
+    button2 = "Cancel",
+    OnAccept = function()
+        local success, err = NivUI:DeleteStyle(NivUI.UnitFrames.currentStyleName)
+        if success then
+            local names = NivUI:GetStyleNames()
+            NivUI.UnitFrames.currentStyleName = names[1] or "Default"
+            if NivUI.UnitFrames.refreshCallback then
+                NivUI.UnitFrames.refreshCallback()
+            end
+        else
+            print("NivUI: " .. (err or "Failed to delete style"))
+        end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    showAlert = true,
+}
+
+--------------------------------------------------------------------------------
 -- Local Helpers
 --------------------------------------------------------------------------------
 
@@ -579,8 +733,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     container:SetPoint("BOTTOMRIGHT", -8, 8)
     container:Hide()
 
-    -- State
-    local currentStyleName = "Default"
+    -- State (use module-level currentStyleName)
     local currentStyle = nil
 
     local function getStyle()
@@ -589,7 +742,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
 
     local function saveStyle(style)
         currentStyle = style
-        NivUI:SaveStyle(currentStyleName, style)
+        NivUI:SaveStyle(NivUI.UnitFrames.currentStyleName, style)
     end
 
     -- Ensure default style exists
@@ -619,9 +772,9 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
             for _, name in ipairs(names) do
                 rootDescription:CreateRadio(
                     name,
-                    function() return currentStyleName == name end,
+                    function() return NivUI.UnitFrames.currentStyleName == name end,
                     function()
-                        currentStyleName = name
+                        NivUI.UnitFrames.currentStyleName = name
                         currentStyle = NivUI:GetStyleWithDefaults(name)
                         container:RefreshAll()
                     end
@@ -645,7 +798,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     dupBtn:SetPoint("LEFT", newBtn, "RIGHT", 4, 0)
     dupBtn:SetText("Duplicate")
     dupBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_DUPLICATE_STYLE", currentStyleName)
+        StaticPopup_Show("NIVUI_DUPLICATE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
     -- Rename button
@@ -654,7 +807,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     renameBtn:SetPoint("LEFT", dupBtn, "RIGHT", 4, 0)
     renameBtn:SetText("Rename")
     renameBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_RENAME_STYLE", currentStyleName)
+        StaticPopup_Show("NIVUI_RENAME_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
     -- Delete button
@@ -663,7 +816,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     delBtn:SetPoint("LEFT", renameBtn, "RIGHT", 4, 0)
     delBtn:SetText("Delete")
     delBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_DELETE_STYLE", currentStyleName)
+        StaticPopup_Show("NIVUI_DELETE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
     ----------------------------------------------------------------------------
@@ -698,7 +851,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
         getStyle,
         saveStyle,
         function()
-            NivUI.Designer:RefreshPreview(designer, currentStyleName)
+            NivUI.Designer:RefreshPreview(designer, NivUI.UnitFrames.currentStyleName)
         end
     )
     settingsPanel:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
@@ -714,10 +867,10 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     -- Refresh function
     ----------------------------------------------------------------------------
     function container:RefreshAll()
-        currentStyle = NivUI:GetStyleWithDefaults(currentStyleName)
+        currentStyle = NivUI:GetStyleWithDefaults(NivUI.UnitFrames.currentStyleName)
         RefreshStyleDropdown()
         widgetList:Populate()
-        NivUI.Designer:BuildPreview(designer, currentStyleName)
+        NivUI.Designer:BuildPreview(designer, NivUI.UnitFrames.currentStyleName)
 
         -- Select first widget by default
         local firstWidget = NivUI.UnitFrames.WIDGET_ORDER[1]
@@ -730,124 +883,12 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
     -- OnShow
     ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
+        -- Register this container's refresh as the callback for dialogs
+        NivUI.UnitFrames.refreshCallback = function()
+            container:RefreshAll()
+        end
         container:RefreshAll()
     end)
-
-    ----------------------------------------------------------------------------
-    -- Static Popups
-    ----------------------------------------------------------------------------
-    StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
-        text = "Enter name for new style:",
-        button1 = "Create",
-        button2 = "Cancel",
-        hasEditBox = true,
-        OnAccept = function(self)
-            print("DEBUG: OnAccept called for NEW_STYLE")
-            local ok, result = pcall(function()
-                local name = self.editBox:GetText()
-                print("DEBUG: name =", name)
-                local success, err = NivUI:CreateStyle(name)
-                print("DEBUG: CreateStyle returned", success, err)
-                if success then
-                    currentStyleName = name
-                    container:RefreshAll()
-                else
-                    print("NivUI: " .. (err or "Failed to create style"))
-                end
-            end)
-            if not ok then
-                print("NivUI ERROR:", result)
-            end
-        end,
-        EditBoxOnEnterPressed = function(self)
-            local parent = self:GetParent()
-            local name = self:GetText()
-            local success, err = NivUI:CreateStyle(name)
-            if success then
-                currentStyleName = name
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to create style"))
-            end
-            parent:Hide()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-
-    StaticPopupDialogs["NIVUI_DUPLICATE_STYLE"] = {
-        text = "Enter name for duplicate of '%s':",
-        button1 = "Duplicate",
-        button2 = "Cancel",
-        hasEditBox = true,
-        OnAccept = function(self, data)
-            local name = self.editBox:GetText()
-            local success, err = NivUI:DuplicateStyle(currentStyleName, name)
-            if success then
-                currentStyleName = name
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to duplicate style"))
-            end
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-
-    StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
-        text = "Delete style '%s'? This cannot be undone.",
-        button1 = "Delete",
-        button2 = "Cancel",
-        OnAccept = function()
-            local success, err = NivUI:DeleteStyle(currentStyleName)
-            if success then
-                -- Select first available style
-                local names = NivUI:GetStyleNames()
-                currentStyleName = names[1] or "Default"
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to delete style"))
-            end
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-        showAlert = true,
-    }
-
-    StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
-        text = "Enter new name for '%s':",
-        button1 = "Rename",
-        button2 = "Cancel",
-        hasEditBox = true,
-        OnAccept = function(self)
-            local newName = self.editBox:GetText()
-            local success, err = NivUI:RenameStyle(currentStyleName, newName)
-            if success then
-                currentStyleName = newName
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to rename style"))
-            end
-        end,
-        EditBoxOnEnterPressed = function(self)
-            local parent = self:GetParent()
-            local newName = self:GetText()
-            local success, err = NivUI:RenameStyle(currentStyleName, newName)
-            if success then
-                currentStyleName = newName
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to rename style"))
-            end
-            parent:Hide()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
 
     return container
 end
@@ -938,8 +979,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
     container:Hide()
 
-    -- State
-    local currentStyleName = "Default"
+    -- State (use module-level currentStyleName)
     local currentStyle = nil
 
     local function getStyle()
@@ -948,7 +988,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
 
     local function saveStyle(style)
         currentStyle = style
-        NivUI:SaveStyle(currentStyleName, style)
+        NivUI:SaveStyle(NivUI.UnitFrames.currentStyleName, style)
     end
 
     -- Ensure default style exists
@@ -978,9 +1018,9 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
             for _, name in ipairs(names) do
                 rootDescription:CreateRadio(
                     name,
-                    function() return currentStyleName == name end,
+                    function() return NivUI.UnitFrames.currentStyleName == name end,
                     function()
-                        currentStyleName = name
+                        NivUI.UnitFrames.currentStyleName = name
                         currentStyle = NivUI:GetStyleWithDefaults(name)
                         container:RefreshAll()
                     end
@@ -995,7 +1035,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     newBtn:SetPoint("LEFT", styleDropdown, "RIGHT", 6, 0)
     newBtn:SetText("New")
     newBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_NEW_STYLE_2")
+        StaticPopup_Show("NIVUI_NEW_STYLE")
     end)
 
     -- Duplicate button
@@ -1004,7 +1044,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     dupBtn:SetPoint("LEFT", newBtn, "RIGHT", 2, 0)
     dupBtn:SetText("Copy")
     dupBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_DUPLICATE_STYLE_2", currentStyleName)
+        StaticPopup_Show("NIVUI_DUPLICATE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
     -- Rename button
@@ -1013,7 +1053,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     renameBtn:SetPoint("LEFT", dupBtn, "RIGHT", 2, 0)
     renameBtn:SetText("Rename")
     renameBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_RENAME_STYLE_2", currentStyleName)
+        StaticPopup_Show("NIVUI_RENAME_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
     -- Delete button
@@ -1022,7 +1062,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     delBtn:SetPoint("LEFT", renameBtn, "RIGHT", 2, 0)
     delBtn:SetText("Delete")
     delBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_DELETE_STYLE_2", currentStyleName)
+        StaticPopup_Show("NIVUI_DELETE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
     ----------------------------------------------------------------------------
@@ -1057,7 +1097,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
         getStyle,
         saveStyle,
         function()
-            NivUI.Designer:RefreshPreview(designer, currentStyleName)
+            NivUI.Designer:RefreshPreview(designer, NivUI.UnitFrames.currentStyleName)
         end
     )
     settingsPanel:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
@@ -1073,10 +1113,10 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     -- Refresh function
     ----------------------------------------------------------------------------
     function container:RefreshAll()
-        currentStyle = NivUI:GetStyleWithDefaults(currentStyleName)
+        currentStyle = NivUI:GetStyleWithDefaults(NivUI.UnitFrames.currentStyleName)
         RefreshStyleDropdown()
         widgetList:Populate()
-        NivUI.Designer:BuildPreview(designer, currentStyleName)
+        NivUI.Designer:BuildPreview(designer, NivUI.UnitFrames.currentStyleName)
 
         -- Select first widget by default
         local firstWidget = NivUI.UnitFrames.WIDGET_ORDER[1]
@@ -1089,124 +1129,12 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
     -- OnShow
     ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
+        -- Register this container's refresh as the callback for dialogs
+        NivUI.UnitFrames.refreshCallback = function()
+            container:RefreshAll()
+        end
         container:RefreshAll()
     end)
-
-    ----------------------------------------------------------------------------
-    -- Static Popups (use different names to avoid conflicts)
-    ----------------------------------------------------------------------------
-    StaticPopupDialogs["NIVUI_NEW_STYLE_2"] = {
-        text = "Enter name for new style:",
-        button1 = "Create",
-        button2 = "Cancel",
-        hasEditBox = true,
-        OnAccept = function(self)
-            print("DEBUG: OnAccept called for NEW_STYLE_2")
-            local ok, result = pcall(function()
-                local name = self.editBox:GetText()
-                print("DEBUG: name =", name)
-                local success, err = NivUI:CreateStyle(name)
-                print("DEBUG: CreateStyle returned", success, err)
-                if success then
-                    currentStyleName = name
-                    container:RefreshAll()
-                else
-                    print("NivUI: " .. (err or "Failed to create style"))
-                end
-            end)
-            if not ok then
-                print("NivUI ERROR:", result)
-            end
-        end,
-        EditBoxOnEnterPressed = function(self)
-            local parent = self:GetParent()
-            local name = self:GetText()
-            local success, err = NivUI:CreateStyle(name)
-            if success then
-                currentStyleName = name
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to create style"))
-            end
-            parent:Hide()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-
-    StaticPopupDialogs["NIVUI_DUPLICATE_STYLE_2"] = {
-        text = "Enter name for duplicate of '%s':",
-        button1 = "Duplicate",
-        button2 = "Cancel",
-        hasEditBox = true,
-        OnAccept = function(self, data)
-            local name = self.editBox:GetText()
-            local success, err = NivUI:DuplicateStyle(currentStyleName, name)
-            if success then
-                currentStyleName = name
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to duplicate style"))
-            end
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
-
-    StaticPopupDialogs["NIVUI_DELETE_STYLE_2"] = {
-        text = "Delete style '%s'? This cannot be undone.",
-        button1 = "Delete",
-        button2 = "Cancel",
-        OnAccept = function()
-            local success, err = NivUI:DeleteStyle(currentStyleName)
-            if success then
-                -- Select first available style
-                local names = NivUI:GetStyleNames()
-                currentStyleName = names[1] or "Default"
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to delete style"))
-            end
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-        showAlert = true,
-    }
-
-    StaticPopupDialogs["NIVUI_RENAME_STYLE_2"] = {
-        text = "Enter new name for '%s':",
-        button1 = "Rename",
-        button2 = "Cancel",
-        hasEditBox = true,
-        OnAccept = function(self)
-            local newName = self.editBox:GetText()
-            local success, err = NivUI:RenameStyle(currentStyleName, newName)
-            if success then
-                currentStyleName = newName
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to rename style"))
-            end
-        end,
-        EditBoxOnEnterPressed = function(self)
-            local parent = self:GetParent()
-            local newName = self:GetText()
-            local success, err = NivUI:RenameStyle(currentStyleName, newName)
-            if success then
-                currentStyleName = newName
-                container:RefreshAll()
-            else
-                print("NivUI: " .. (err or "Failed to rename style"))
-            end
-            parent:Hide()
-        end,
-        timeout = 0,
-        whileDead = true,
-        hideOnEscape = true,
-    }
 
     return container
 end
