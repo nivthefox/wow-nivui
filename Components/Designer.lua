@@ -503,19 +503,6 @@ function NivUI.Designer:Create(parent)
     bg:SetAllPoints()
     bg:SetColorTexture(0.05, 0.05, 0.05, 0.9)
 
-    -- Center lines for snapping
-    local hLine = container:CreateTexture(nil, "ARTWORK")
-    hLine:SetHeight(1)
-    hLine:SetPoint("LEFT", container, "LEFT", 10, 0)
-    hLine:SetPoint("RIGHT", container, "RIGHT", -10, 0)
-    hLine:SetColorTexture(0.3, 0.3, 0.3, 0.5)
-
-    local vLine = container:CreateTexture(nil, "ARTWORK")
-    vLine:SetWidth(1)
-    vLine:SetPoint("TOP", container, "TOP", 0, -10)
-    vLine:SetPoint("BOTTOM", container, "BOTTOM", 0, 10)
-    vLine:SetColorTexture(0.3, 0.3, 0.3, 0.5)
-
     container.preview = preview
     container.widgets = {}
     container.selectedWidget = nil
@@ -564,8 +551,25 @@ function NivUI.Designer:BuildPreview(container, styleName)
         return
     end
 
-    -- Set preview frame size based on style
-    container.preview:SetSize(style.width, style.height)
+    -- Set preview frame size based on style.frame (with fallback for old styles)
+    local frameConfig = style.frame or {}
+    local frameWidth = frameConfig.width or style.width or 200
+    local frameHeight = frameConfig.height or style.height or 60
+    container.preview:SetSize(frameWidth, frameHeight)
+
+    -- Apply frame border
+    if frameConfig.showBorder then
+        local borderSize = frameConfig.borderSize or 1
+        local borderColor = frameConfig.borderColor or { r = 0, g = 0, b = 0, a = 1 }
+        container.preview.debugBorder:SetBackdrop({
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = borderSize,
+        })
+        container.preview.debugBorder:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+        container.preview.debugBorder:Show()
+    else
+        container.preview.debugBorder:Hide()
+    end
 
     -- Check if WIDGET_ORDER exists
     if not NivUI.UnitFrames or not NivUI.UnitFrames.WIDGET_ORDER then
@@ -576,30 +580,33 @@ function NivUI.Designer:BuildPreview(container, styleName)
     -- Create each widget
     local widgetCount = 0
     for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
-        local config = style[widgetType]
-        if config and config.enabled and WidgetFactories[widgetType] then
-            local success, widget = pcall(WidgetFactories[widgetType], container.preview, config, style)
-            if success and widget then
-                -- Position based on anchor (simplified for preview - just offset from frame)
-                local anchor = config.anchor
-                if anchor then
-                    widget:ClearAllPoints()
-                    -- For preview, we simplify and anchor to the preview frame
-                    widget:SetPoint(anchor.point, container.preview, anchor.relativePoint or anchor.point, anchor.x, anchor.y)
-                else
-                    widget:SetPoint("CENTER")
+        -- Skip "frame" - it's not a widget, just config for the container
+        if widgetType ~= "frame" then
+            local config = style[widgetType]
+            if config and config.enabled and WidgetFactories[widgetType] then
+                local success, widget = pcall(WidgetFactories[widgetType], container.preview, config, style)
+                if success and widget then
+                    -- Position based on anchor (simplified for preview - just offset from frame)
+                    local anchor = config.anchor
+                    if anchor then
+                        widget:ClearAllPoints()
+                        -- For preview, we simplify and anchor to the preview frame
+                        widget:SetPoint(anchor.point, container.preview, anchor.relativePoint or anchor.point, anchor.x, anchor.y)
+                    else
+                        widget:SetPoint("CENTER")
+                    end
+
+                    -- Click handler for selection
+                    widget:EnableMouse(true)
+                    widget:SetScript("OnMouseDown", function()
+                        container:SelectWidget(widgetType)
+                    end)
+
+                    container.widgets[widgetType] = widget
+                    widgetCount = widgetCount + 1
+                elseif not success then
+                    print("NivUI Designer: Error creating", widgetType, "-", widget)
                 end
-
-                -- Click handler for selection
-                widget:EnableMouse(true)
-                widget:SetScript("OnMouseDown", function()
-                    container:SelectWidget(widgetType)
-                end)
-
-                container.widgets[widgetType] = widget
-                widgetCount = widgetCount + 1
-            elseif not success then
-                print("NivUI Designer: Error creating", widgetType, "-", widget)
             end
         end
     end

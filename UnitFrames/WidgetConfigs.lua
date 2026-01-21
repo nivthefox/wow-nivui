@@ -10,6 +10,27 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 NivUI.UnitFrames.WidgetConfigs = {
     ----------------------------------------------------------------------------
+    -- Frame
+    ----------------------------------------------------------------------------
+    frame = {
+        {
+            label = "Size",
+            entries = {
+                { kind = "slider", key = "width", label = "Width", min = 100, max = 400, step = 5 },
+                { kind = "slider", key = "height", label = "Height", min = 30, max = 200, step = 5 },
+            },
+        },
+        {
+            label = "Border",
+            entries = {
+                { kind = "checkbox", key = "showBorder", label = "Show Border" },
+                { kind = "slider", key = "borderSize", label = "Border Size", min = 1, max = 4, step = 1, showIf = { key = "showBorder", value = true } },
+                { kind = "colorPicker", key = "borderColor", label = "Border Color", hasAlpha = true, showIf = { key = "showBorder", value = true } },
+            },
+        },
+    },
+
+    ----------------------------------------------------------------------------
     -- Health Bar
     ----------------------------------------------------------------------------
     healthBar = {

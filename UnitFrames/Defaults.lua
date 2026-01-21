@@ -83,9 +83,14 @@ end
 -- Default style definition
 -- This is what a new style starts with
 NivUI.UnitFrames.DEFAULT_STYLE = {
-    -- Frame dimensions
-    width = 200,
-    height = 60,
+    -- Frame settings
+    frame = {
+        width = 200,
+        height = 60,
+        showBorder = false,
+        borderColor = { r = 0, g = 0, b = 0, a = 1 },
+        borderSize = 1,
+    },
 
     -- Health Bar
     healthBar = {
@@ -256,6 +261,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
 
 -- Widget list for iteration (order matters for UI)
 NivUI.UnitFrames.WIDGET_ORDER = {
+    "frame",
     "healthBar",
     "powerBar",
     "portrait",
@@ -273,6 +279,7 @@ NivUI.UnitFrames.WIDGET_ORDER = {
 
 -- Human-readable widget names
 NivUI.UnitFrames.WIDGET_NAMES = {
+    frame = "Frame",
     healthBar = "Health Bar",
     powerBar = "Power Bar",
     portrait = "Portrait",
