@@ -25,6 +25,7 @@ NivUI.UnitFrames.FRAME_TYPES = {
 -- Health bar color modes
 NivUI.UnitFrames.HEALTH_COLOR_MODES = {
     { value = "class", name = "Class Color" },
+    { value = "class_inverted", name = "Class Color (Inverted)" },
     { value = "health", name = "Health Gradient" },
     { value = "reaction", name = "Reaction" },
     { value = "custom", name = "Custom" },

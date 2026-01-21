@@ -59,8 +59,6 @@ function WidgetFactories.healthBar(parent, config, style)
     -- Background
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetAllPoints()
-    local bgColor = config.backgroundColor
-    frame.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
 
     -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
@@ -69,11 +67,19 @@ function WidgetFactories.healthBar(parent, config, style)
 
     -- Apply color based on mode
     local r, g, b = 0.2, 0.8, 0.2
+    local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
+
     if config.colorMode == "class" then
         r, g, b = GetClassColor("player")
+    elseif config.colorMode == "class_inverted" then
+        -- Inverted: foreground uses custom color, background uses class color
+        r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
+        bgR, bgG, bgB = GetClassColor("player")
     elseif config.colorMode == "custom" then
         r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
     end
+
+    frame.bg:SetColorTexture(bgR, bgG, bgB, bgA)
     frame:SetStatusBarColor(r, g, b)
 
     -- Set value from live data (handle secret/nil values)
