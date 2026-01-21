@@ -16,20 +16,27 @@ local function HideBlizzardTargetFrame(state)
     -- TEMP: Testing which part breaks Edit Mode
     -- Comment out blocks one at a time to find the culprit
 
-    -- BLOCK A: Event/mouse disabling
+    -- BLOCK A: Event/mouse disabling (testing one at a time)
+    -- A1: UnregisterAllEvents
     if TargetFrame.UnregisterAllEvents then
         TargetFrame:UnregisterAllEvents()
     end
+    --[[ A2: EnableMouse
     if TargetFrame.EnableMouse then
         TargetFrame:EnableMouse(false)
     end
+    --]]
+    --[[ A3: SetMouseClickEnabled
     if TargetFrame.SetMouseClickEnabled then
         TargetFrame:SetMouseClickEnabled(false)
     end
+    --]]
+    --[[ A4: SetMouseMotionEnabled
     if TargetFrame.SetMouseMotionEnabled then
         TargetFrame:SetMouseMotionEnabled(false)
     end
-    --[[ SUSPECT: This might break Edit Mode
+    --]]
+    --[[ A5: SetHitRectInsets
     if TargetFrame.SetHitRectInsets then
         TargetFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
     end
