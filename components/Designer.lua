@@ -97,7 +97,13 @@ function NivUI.Designer:BuildPreview(container, styleName)
         if widgetType ~= "frame" then
             local config = style[widgetType]
             if config and config.enabled and WidgetFactories[widgetType] then
-                local success, widget = pcall(WidgetFactories[widgetType], container.preview, config, style)
+                local previewConfig = {}
+                for k, v in pairs(config) do
+                    if k ~= "strata" and k ~= "frameLevel" then
+                        previewConfig[k] = v
+                    end
+                end
+                local success, widget = pcall(WidgetFactories[widgetType], container.preview, previewConfig, style)
                 if success and widget then
                     widget:EnableMouse(true)
                     widget:SetScript("OnMouseDown", function()
