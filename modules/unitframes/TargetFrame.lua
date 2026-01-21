@@ -44,6 +44,7 @@ local function HideBlizzardTargetFrame(state)
         end
     end
 
+    --[[ TEMP: Skip children loop to test Edit Mode
     local children = { TargetFrame:GetChildren() }
     for _, child in ipairs(children) do
         local name = child:GetName()
@@ -51,6 +52,7 @@ local function HideBlizzardTargetFrame(state)
             Base.KillVisual(child)
         end
     end
+    --]]
 
     state.blizzardHidden = true
 
@@ -71,7 +73,7 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorFrame = TargetFrame,
     anchorOffsetX = 24,
     anchorOffsetY = 0,
-    hideBlizzard = nil,  -- HideBlizzardTargetFrame,  -- TEMP: testing Edit Mode
+    hideBlizzard = HideBlizzardTargetFrame,
 
     shouldShow = function()
         return UnitExists("target")
