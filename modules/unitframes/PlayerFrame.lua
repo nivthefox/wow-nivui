@@ -37,13 +37,11 @@ local function UpdateHealthBar()
     local config = currentStyle.healthBar
 
     local maxHealth = UnitHealthMax("player") or 1
-    local health = UnitHealth("player") or 0
+    local health = UnitHealth("player")
 
-    -- Set min/max directly (handles "secret" numbers in API)
     widget:SetMinMaxValues(0, maxHealth)
     widget:SetValue(health)
 
-    -- Update colors if needed (class color might change on spec change, etc.)
     local r, g, b = 0.2, 0.8, 0.2
     local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
 
@@ -67,13 +65,11 @@ local function UpdatePowerBar()
 
     local powerType = UnitPowerType("player")
     local maxPower = UnitPowerMax("player", powerType) or 1
-    local power = UnitPower("player", powerType) or 0
+    local power = UnitPower("player", powerType)
 
-    -- Set min/max directly (handles "secret" numbers in API)
     widget:SetMinMaxValues(0, maxPower)
     widget:SetValue(power)
 
-    -- Update color based on power type
     local r, g, b = 0.2, 0.2, 0.8
     if config.colorMode == "power" then
         r, g, b = GetPowerColor("player")
@@ -94,7 +90,6 @@ local function UpdateHealthText()
     local maxHealth = UnitHealthMax("player")
     local text = ""
 
-    -- Use UnitHealthPercent for secret-safe percentage (C-side calculation)
     local pct = nil
     if UnitHealthPercent then
         local ok, result = pcall(UnitHealthPercent, "player")
@@ -103,7 +98,6 @@ local function UpdateHealthText()
         end
     end
 
-    -- Use Blizzard's abbreviator for secret-safe number formatting
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local healthStr = abbrev(health)
     local maxHealthStr = abbrev(maxHealth)
@@ -125,7 +119,6 @@ local function UpdateHealthText()
     elseif config.format == "current_max" then
         text = healthStr .. " / " .. maxHealthStr
     elseif config.format == "deficit" then
-        -- Deficit requires subtraction which may fail with secret values
         local ok, deficit = pcall(function() return maxHealth - health end)
         if ok and deficit and deficit > 0 then
             text = "-" .. abbrev(deficit)
@@ -147,7 +140,6 @@ local function UpdatePowerText()
     local maxPower = UnitPowerMax("player", powerType)
     local text = ""
 
-    -- Use UnitPowerPercent for secret-safe percentage (C-side calculation)
     local pct = nil
     if UnitPowerPercent then
         local ok, result = pcall(UnitPowerPercent, "player", powerType)
@@ -156,7 +148,6 @@ local function UpdatePowerText()
         end
     end
 
-    -- Use Blizzard's abbreviator for secret-safe number formatting
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local powerStr = abbrev(power)
     local maxPowerStr = abbrev(maxPower)

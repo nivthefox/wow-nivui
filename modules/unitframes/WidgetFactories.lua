@@ -4,13 +4,8 @@
 NivUI = NivUI or {}
 NivUI.WidgetFactories = {}
 
---------------------------------------------------------------------------------
--- Helper Functions
---------------------------------------------------------------------------------
-
--- Helper to safely get a number (handles WoW's "secret" values)
--- WoW's secret values can pass type() == "number" but still fail arithmetic
--- So we use pcall to actually test if the value can be used
+-- WARNING: Does arithmetic, fails on secret values during combat.
+-- For combat-safe code, pass values directly to StatusBar:SetValue().
 function NivUI.WidgetFactories.SafeNumber(value, fallback)
     if value == nil then
         return fallback or 0
@@ -23,7 +18,6 @@ function NivUI.WidgetFactories.SafeNumber(value, fallback)
     return fallback or 0
 end
 
--- Helper to get class color
 function NivUI.WidgetFactories.GetClassColor(unit)
     local _, class = UnitClass(unit or "player")
     if class then
@@ -35,7 +29,6 @@ function NivUI.WidgetFactories.GetClassColor(unit)
     return 1, 1, 1
 end
 
--- Helper to get power color
 function NivUI.WidgetFactories.GetPowerColor(unit)
     local powerType = UnitPowerType(unit or "player")
     local color = PowerBarColor[powerType]
@@ -45,13 +38,8 @@ function NivUI.WidgetFactories.GetPowerColor(unit)
     return 0.2, 0.2, 0.8
 end
 
---------------------------------------------------------------------------------
--- Widget Factories
---------------------------------------------------------------------------------
-
 local WF = NivUI.WidgetFactories
 
--- Health Bar Factory
 function WF.healthBar(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
@@ -59,28 +47,21 @@ function WF.healthBar(parent, config, style, unit)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
-    -- Background texture (use WHITE8x8 + SetVertexColor like MSUF does)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetTexture("Interface\\Buttons\\WHITE8x8")
     frame.bg:SetAllPoints(frame)
 
-    -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
     frame:SetStatusBarTexture(texturePath)
-    frame:SetMinMaxValues(0, 1)
-
-    -- Orientation and fill direction
     frame:SetOrientation(config.orientation or "HORIZONTAL")
     frame:SetReverseFill(config.reverseFill or false)
 
-    -- Apply color based on mode
     local r, g, b = 0.2, 0.8, 0.2
     local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
 
     if config.colorMode == "class" then
         r, g, b = WF.GetClassColor(unit)
     elseif config.colorMode == "class_inverted" then
-        -- Inverted: foreground uses custom color, background uses class color
         r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
         bgR, bgG, bgB = WF.GetClassColor(unit)
     elseif config.colorMode == "custom" then
@@ -90,20 +71,21 @@ function WF.healthBar(parent, config, style, unit)
     frame.bg:SetVertexColor(bgR, bgG, bgB, bgA)
     frame:SetStatusBarColor(r, g, b)
 
-    -- Set value from live data (handle secret/nil values)
-    local health = WF.SafeNumber(UnitHealth(unit), 71000)
-    local maxHealth = WF.SafeNumber(UnitHealthMax(unit), 100000)
-    if maxHealth > 0 then
-        frame:SetValue(health / maxHealth)
+    -- StatusBar accepts secret values directly
+    local health = UnitHealth(unit)
+    local maxHealth = UnitHealthMax(unit)
+    if maxHealth and maxHealth > 0 then
+        frame:SetMinMaxValues(0, maxHealth)
+        frame:SetValue(health)
     else
-        frame:SetValue(0.71)  -- Preview value
+        frame:SetMinMaxValues(0, 100000)
+        frame:SetValue(71000)
     end
 
     frame.widgetType = "healthBar"
     return frame
 end
 
--- Power Bar Factory
 function WF.powerBar(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
@@ -111,23 +93,17 @@ function WF.powerBar(parent, config, style, unit)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
-    -- Background texture (use WHITE8x8 + SetVertexColor like MSUF does)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetTexture("Interface\\Buttons\\WHITE8x8")
     frame.bg:SetAllPoints(frame)
     local bgColor = config.backgroundColor
     frame.bg:SetVertexColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
 
-    -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
     frame:SetStatusBarTexture(texturePath)
-    frame:SetMinMaxValues(0, 1)
-
-    -- Orientation and fill direction
     frame:SetOrientation(config.orientation or "HORIZONTAL")
     frame:SetReverseFill(config.reverseFill or false)
 
-    -- Apply color based on mode
     local r, g, b = 0.2, 0.2, 0.8
     if config.colorMode == "power" then
         r, g, b = WF.GetPowerColor(unit)
@@ -138,20 +114,22 @@ function WF.powerBar(parent, config, style, unit)
     end
     frame:SetStatusBarColor(r, g, b)
 
-    -- Set value from live data (handle secret/nil values)
-    local power = WF.SafeNumber(UnitPower(unit), 80)
-    local maxPower = WF.SafeNumber(UnitPowerMax(unit), 100)
-    if maxPower > 0 then
-        frame:SetValue(power / maxPower)
+    -- StatusBar accepts secret values directly
+    local powerType = UnitPowerType(unit)
+    local power = UnitPower(unit, powerType)
+    local maxPower = UnitPowerMax(unit, powerType)
+    if maxPower and maxPower > 0 then
+        frame:SetMinMaxValues(0, maxPower)
+        frame:SetValue(power)
     else
-        frame:SetValue(0.8)  -- Preview value
+        frame:SetMinMaxValues(0, 100)
+        frame:SetValue(80)
     end
 
     frame.widgetType = "powerBar"
     return frame
 end
 
--- Portrait Factory
 function WF.portrait(parent, config, style, unit)
     unit = unit or "player"
     local frame
@@ -216,7 +194,6 @@ function WF.portrait(parent, config, style, unit)
     return frame
 end
 
--- Text Factory (generic for name, level, health, power text)
 local function CreateTextWidget(parent, config, textValue, widgetType, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
@@ -275,23 +252,37 @@ end
 
 function WF.healthText(parent, config, style, unit)
     unit = unit or "player"
-    local health = WF.SafeNumber(UnitHealth(unit), 71000)
-    local maxHealth = WF.SafeNumber(UnitHealthMax(unit), 100000)
+    local health = UnitHealth(unit)
+    local maxHealth = UnitHealthMax(unit)
     local text = ""
 
-    if maxHealth == 0 then maxHealth = 100000 end  -- Fallback
+    local pct = nil
+    if UnitHealthPercent then
+        local ok, result = pcall(UnitHealthPercent, unit)
+        if ok and result then
+            pct = result
+        end
+    end
+
+    local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
+    local healthStr = health and abbrev(health) or "71000"
+    local maxHealthStr = maxHealth and abbrev(maxHealth) or "100000"
 
     if config.format == "current" then
-        text = AbbreviateNumbers(health)
+        text = healthStr
     elseif config.format == "percent" then
-        text = math.floor((health / maxHealth) * 100) .. "%"
+        text = pct and string.format("%.0f%%", pct) or "71%"
     elseif config.format == "current_percent" then
-        text = AbbreviateNumbers(health) .. " (" .. math.floor((health / maxHealth) * 100) .. "%)"
+        text = pct and string.format("%s (%.0f%%)", healthStr, pct) or "71000 (71%)"
     elseif config.format == "current_max" then
-        text = AbbreviateNumbers(health) .. " / " .. AbbreviateNumbers(maxHealth)
+        text = healthStr .. " / " .. maxHealthStr
     elseif config.format == "deficit" then
-        local deficit = maxHealth - health
-        text = deficit > 0 and "-" .. AbbreviateNumbers(deficit) or ""
+        local ok, deficit = pcall(function() return maxHealth - health end)
+        if ok and deficit and deficit > 0 then
+            text = "-" .. abbrev(deficit)
+        else
+            text = ""
+        end
     end
 
     return CreateTextWidget(parent, config, text, "healthText", unit)
@@ -299,24 +290,36 @@ end
 
 function WF.powerText(parent, config, style, unit)
     unit = unit or "player"
-    local power = WF.SafeNumber(UnitPower(unit), 80)
-    local maxPower = WF.SafeNumber(UnitPowerMax(unit), 100)
+    local powerType = UnitPowerType(unit)
+    local power = UnitPower(unit, powerType)
+    local maxPower = UnitPowerMax(unit, powerType)
     local text = ""
 
+    local pct = nil
+    if UnitPowerPercent then
+        local ok, result = pcall(UnitPowerPercent, unit, powerType)
+        if ok and result then
+            pct = result
+        end
+    end
+
+    local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
+    local powerStr = power and abbrev(power) or "80"
+    local maxPowerStr = maxPower and abbrev(maxPower) or "100"
+
     if config.format == "current" then
-        text = tostring(power)
+        text = powerStr
     elseif config.format == "percent" then
-        text = maxPower > 0 and (math.floor((power / maxPower) * 100) .. "%") or ""
+        text = pct and string.format("%.0f%%", pct) or "80%"
     elseif config.format == "current_percent" then
-        text = maxPower > 0 and (power .. " (" .. math.floor((power / maxPower) * 100) .. "%)") or tostring(power)
+        text = pct and string.format("%s (%.0f%%)", powerStr, pct) or "80 (80%)"
     elseif config.format == "current_max" then
-        text = power .. " / " .. maxPower
+        text = powerStr .. " / " .. maxPowerStr
     end
 
     return CreateTextWidget(parent, config, text, "powerText", unit)
 end
 
--- Status Indicators Factory
 function WF.statusIndicators(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
@@ -341,7 +344,6 @@ function WF.statusIndicators(parent, config, style, unit)
     return frame
 end
 
--- Leader Icon Factory
 function WF.leaderIcon(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
@@ -362,7 +364,6 @@ function WF.leaderIcon(parent, config, style, unit)
     return frame
 end
 
--- Raid Marker Factory
 function WF.raidMarker(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
@@ -386,7 +387,6 @@ function WF.raidMarker(parent, config, style, unit)
     return frame
 end
 
--- Castbar Factory
 function WF.castbar(parent, config, style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
@@ -441,7 +441,6 @@ function WF.castbar(parent, config, style, unit)
     return frame
 end
 
--- Aura Icon Factory (shared for buffs/debuffs)
 local function CreateAuraWidget(parent, config, widgetType, testAuras, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
