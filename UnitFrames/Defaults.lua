@@ -69,6 +69,12 @@ NivUI.UnitFrames.AURA_GROWTH = {
     { value = "DOWN", name = "Down" },
 }
 
+-- Bar orientations
+NivUI.UnitFrames.BAR_ORIENTATIONS = {
+    { value = "HORIZONTAL", name = "Horizontal" },
+    { value = "VERTICAL", name = "Vertical" },
+}
+
 -- Default anchor configuration
 local function DefaultAnchor(point, relativeTo, relativePoint, x, y)
     return {
@@ -99,6 +105,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         size = { width = 180, height = 24 },
         layer = 1,
         texture = "Default",
+        orientation = "HORIZONTAL",
+        reverseFill = false,
         colorMode = "class",
         customColor = { r = 0.2, g = 0.8, b = 0.2 },
         gradientStart = { r = 1, g = 0, b = 0 },
@@ -115,6 +123,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         size = { width = 180, height = 12 },
         layer = 1,
         texture = "Default",
+        orientation = "HORIZONTAL",
+        reverseFill = false,
         colorMode = "power",
         customColor = { r = 0.2, g = 0.2, b = 0.8 },
         backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
@@ -216,6 +226,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         size = { width = 180, height = 16 },
         layer = 2,
         texture = "Default",
+        orientation = "HORIZONTAL",
+        reverseFill = false,
         showIcon = true,
         showTimer = true,
         showSpellName = true,

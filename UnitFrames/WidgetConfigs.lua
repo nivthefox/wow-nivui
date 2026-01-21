@@ -40,6 +40,8 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 50, max = 400, step = 5 },
                 { kind = "slider", key = "size.height", label = "Height", min = 8, max = 60, step = 1 },
+                { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
+                { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
             },
         },
         {
@@ -73,6 +75,8 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 50, max = 400, step = 5 },
                 { kind = "slider", key = "size.height", label = "Height", min = 4, max = 40, step = 1 },
+                { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
+                { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
             },
         },
         {
@@ -264,6 +268,8 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
                 { kind = "slider", key = "size.width", label = "Width", min = 50, max = 400, step = 5 },
                 { kind = "slider", key = "size.height", label = "Height", min = 8, max = 40, step = 1 },
+                { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
+                { kind = "checkbox", key = "reverseFill", label = "Reverse Fill" },
             },
         },
         {
@@ -377,6 +383,7 @@ function NivUI.UnitFrames:GetOptionList(optionName)
         PORTRAIT_SHAPES = self.PORTRAIT_SHAPES,
         TEXT_FORMATS = self.TEXT_FORMATS,
         AURA_GROWTH = self.AURA_GROWTH,
+        BAR_ORIENTATIONS = self.BAR_ORIENTATIONS,
         FONT_OUTLINES = self.FONT_OUTLINES,
         ANCHOR_POINTS = self.ANCHOR_POINTS,
     }

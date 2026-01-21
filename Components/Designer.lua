@@ -66,6 +66,10 @@ function WidgetFactories.healthBar(parent, config, style)
     frame:SetStatusBarTexture(texturePath)
     frame:SetMinMaxValues(0, 1)
 
+    -- Orientation and fill direction
+    frame:SetOrientation(config.orientation or "HORIZONTAL")
+    frame:SetReverseFill(config.reverseFill or false)
+
     -- Apply color based on mode
     local r, g, b = 0.2, 0.8, 0.2
     local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
@@ -112,6 +116,10 @@ function WidgetFactories.powerBar(parent, config, style)
     local texturePath = NivUI:GetTexturePath(config.texture)
     frame:SetStatusBarTexture(texturePath)
     frame:SetMinMaxValues(0, 1)
+
+    -- Orientation and fill direction
+    frame:SetOrientation(config.orientation or "HORIZONTAL")
+    frame:SetReverseFill(config.reverseFill or false)
 
     -- Apply color based on mode
     local r, g, b = 0.2, 0.2, 0.8
@@ -363,6 +371,11 @@ function WidgetFactories.castbar(parent, config, style)
     local texturePath = NivUI:GetTexturePath(config.texture)
     frame:SetStatusBarTexture(texturePath)
     frame:SetMinMaxValues(0, 1)
+
+    -- Orientation and fill direction
+    frame:SetOrientation(config.orientation or "HORIZONTAL")
+    frame:SetReverseFill(config.reverseFill or false)
+
     frame:SetValue(0.6)  -- Preview value
 
     local color = config.castingColor
