@@ -887,6 +887,11 @@ function NivUI.UnitFrames:SetupConfigTab(parent, Components)
         NivUI.UnitFrames.refreshCallback = function()
             container:RefreshAll()
         end
+        -- Select first style alphabetically if current doesn't exist
+        local names = NivUI:GetStyleNames()
+        if not NivUI:StyleExists(NivUI.UnitFrames.currentStyleName) then
+            NivUI.UnitFrames.currentStyleName = names[1] or "Default"
+        end
         container:RefreshAll()
     end)
 
@@ -1132,6 +1137,11 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
         -- Register this container's refresh as the callback for dialogs
         NivUI.UnitFrames.refreshCallback = function()
             container:RefreshAll()
+        end
+        -- Select first style alphabetically if current doesn't exist
+        local names = NivUI:GetStyleNames()
+        if not NivUI:StyleExists(NivUI.UnitFrames.currentStyleName) then
+            NivUI.UnitFrames.currentStyleName = names[1] or "Default"
         end
         container:RefreshAll()
     end)
