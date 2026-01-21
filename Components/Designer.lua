@@ -53,18 +53,22 @@ end
 
 -- Health Bar Factory
 function WidgetFactories.healthBar(parent, config, style)
-    local frame = CreateFrame("StatusBar", nil, parent)
-    frame:SetSize(config.size.width, config.size.height)
+    -- Container frame holds background + status bar (StatusBars don't play nice with child textures)
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(config.size.width, config.size.height)
 
-    -- Background (use explicit size - two-point anchoring behaves oddly on StatusBars)
-    frame.bg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.bg:SetSize(config.size.width, config.size.height)
-    frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    -- Background on the container
+    container.bg = container:CreateTexture(nil, "BACKGROUND")
+    container.bg:SetAllPoints(container)
+
+    -- StatusBar as child of container
+    local bar = CreateFrame("StatusBar", nil, container)
+    bar:SetAllPoints(container)
 
     -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
-    frame:SetStatusBarTexture(texturePath)
-    frame:SetMinMaxValues(0, 1)
+    bar:SetStatusBarTexture(texturePath)
+    bar:SetMinMaxValues(0, 1)
 
     -- Apply color based on mode
     local r, g, b = 0.2, 0.8, 0.2
@@ -80,38 +84,43 @@ function WidgetFactories.healthBar(parent, config, style)
         r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
     end
 
-    frame.bg:SetColorTexture(bgR, bgG, bgB, bgA)
-    frame:SetStatusBarColor(r, g, b)
+    container.bg:SetColorTexture(bgR, bgG, bgB, bgA)
+    bar:SetStatusBarColor(r, g, b)
 
     -- Set value from live data (handle secret/nil values)
     local health = SafeNumber(UnitHealth("player"), 71000)
     local maxHealth = SafeNumber(UnitHealthMax("player"), 100000)
     if maxHealth > 0 then
-        frame:SetValue(health / maxHealth)
+        bar:SetValue(health / maxHealth)
     else
-        frame:SetValue(0.71)  -- Preview value
+        bar:SetValue(0.71)  -- Preview value
     end
 
-    frame.widgetType = "healthBar"
-    return frame
+    container.bar = bar
+    container.widgetType = "healthBar"
+    return container
 end
 
 -- Power Bar Factory
 function WidgetFactories.powerBar(parent, config, style)
-    local frame = CreateFrame("StatusBar", nil, parent)
-    frame:SetSize(config.size.width, config.size.height)
+    -- Container frame holds background + status bar
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(config.size.width, config.size.height)
 
-    -- Background (use explicit size - two-point anchoring behaves oddly on StatusBars)
-    frame.bg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.bg:SetSize(config.size.width, config.size.height)
-    frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    -- Background on the container
+    container.bg = container:CreateTexture(nil, "BACKGROUND")
+    container.bg:SetAllPoints(container)
     local bgColor = config.backgroundColor
-    frame.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
+    container.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
+
+    -- StatusBar as child of container
+    local bar = CreateFrame("StatusBar", nil, container)
+    bar:SetAllPoints(container)
 
     -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
-    frame:SetStatusBarTexture(texturePath)
-    frame:SetMinMaxValues(0, 1)
+    bar:SetStatusBarTexture(texturePath)
+    bar:SetMinMaxValues(0, 1)
 
     -- Apply color based on mode
     local r, g, b = 0.2, 0.2, 0.8
@@ -122,19 +131,20 @@ function WidgetFactories.powerBar(parent, config, style)
     elseif config.colorMode == "custom" then
         r, g, b = config.customColor.r, config.customColor.g, config.customColor.b
     end
-    frame:SetStatusBarColor(r, g, b)
+    bar:SetStatusBarColor(r, g, b)
 
     -- Set value from live data (handle secret/nil values)
     local power = SafeNumber(UnitPower("player"), 80)
     local maxPower = SafeNumber(UnitPowerMax("player"), 100)
     if maxPower > 0 then
-        frame:SetValue(power / maxPower)
+        bar:SetValue(power / maxPower)
     else
-        frame:SetValue(0.8)  -- Preview value
+        bar:SetValue(0.8)  -- Preview value
     end
 
-    frame.widgetType = "powerBar"
-    return frame
+    container.bar = bar
+    container.widgetType = "powerBar"
+    return container
 end
 
 -- Portrait Factory
@@ -349,49 +359,54 @@ end
 
 -- Castbar Factory
 function WidgetFactories.castbar(parent, config, style)
-    local frame = CreateFrame("StatusBar", nil, parent)
-    frame:SetSize(config.size.width, config.size.height)
+    -- Container frame holds background + status bar
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(config.size.width, config.size.height)
 
-    -- Background (use explicit size - two-point anchoring behaves oddly on StatusBars)
-    frame.bg = frame:CreateTexture(nil, "BACKGROUND")
-    frame.bg:SetSize(config.size.width, config.size.height)
-    frame.bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    -- Background on the container
+    container.bg = container:CreateTexture(nil, "BACKGROUND")
+    container.bg:SetAllPoints(container)
     local bgColor = config.backgroundColor
-    frame.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
+    container.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
+
+    -- StatusBar as child of container
+    local bar = CreateFrame("StatusBar", nil, container)
+    bar:SetAllPoints(container)
 
     -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
-    frame:SetStatusBarTexture(texturePath)
-    frame:SetMinMaxValues(0, 1)
-    frame:SetValue(0.6)  -- Preview value
+    bar:SetStatusBarTexture(texturePath)
+    bar:SetMinMaxValues(0, 1)
+    bar:SetValue(0.6)  -- Preview value
 
     local color = config.castingColor
-    frame:SetStatusBarColor(color.r, color.g, color.b)
+    bar:SetStatusBarColor(color.r, color.g, color.b)
 
     -- Icon
     if config.showIcon then
-        frame.icon = frame:CreateTexture(nil, "ARTWORK")
-        frame.icon:SetSize(config.size.height, config.size.height)
-        frame.icon:SetPoint("RIGHT", frame, "LEFT", -2, 0)
-        frame.icon:SetTexture("Interface\\Icons\\Spell_Nature_Lightning")
+        container.icon = container:CreateTexture(nil, "ARTWORK")
+        container.icon:SetSize(config.size.height, config.size.height)
+        container.icon:SetPoint("RIGHT", container, "LEFT", -2, 0)
+        container.icon:SetTexture("Interface\\Icons\\Spell_Nature_Lightning")
     end
 
     -- Spell name
     if config.showSpellName then
-        frame.spellName = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        frame.spellName:SetPoint("LEFT", 4, 0)
-        frame.spellName:SetText("Lightning Bolt")
+        container.spellName = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        container.spellName:SetPoint("LEFT", 4, 0)
+        container.spellName:SetText("Lightning Bolt")
     end
 
     -- Timer
     if config.showTimer then
-        frame.timer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        frame.timer:SetPoint("RIGHT", -4, 0)
-        frame.timer:SetText("1.2s")
+        container.timer = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        container.timer:SetPoint("RIGHT", -4, 0)
+        container.timer:SetText("1.2s")
     end
 
-    frame.widgetType = "castbar"
-    return frame
+    container.bar = bar
+    container.widgetType = "castbar"
+    return container
 end
 
 -- Aura Icon Factory (shared for buffs/debuffs)
