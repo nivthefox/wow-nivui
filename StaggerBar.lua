@@ -46,12 +46,9 @@ local clickBg = StaggerBar:CreateTexture(nil, "BACKGROUND", nil, -1)
 clickBg:SetAllPoints()
 clickBg:SetColorTexture(0, 0, 0, 0)  -- Invisible but clickable
 
--- The actual bar container (4px tall, at bottom of frame)
+-- The actual bar container (fills the frame)
 local barContainer = CreateFrame("Frame", nil, StaggerBar)
-barContainer:SetHeight(4)
-barContainer:SetPoint("LEFT", StaggerBar, "LEFT", 0, 0)
-barContainer:SetPoint("RIGHT", StaggerBar, "RIGHT", 0, 0)
-barContainer:SetPoint("BOTTOM", StaggerBar, "BOTTOM", 0, 0)
+barContainer:SetAllPoints()
 StaggerBar.barContainer = barContainer
 
 -- Resize handle (bottom-right corner)
@@ -100,10 +97,10 @@ spark:SetBlendMode("ADD")
 spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 StaggerBar.spark = spark
 
--- Text overlay (above the bar)
+-- Text overlay (centered on bar)
 local text = StaggerBar:CreateFontString(nil, "OVERLAY")
 text:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-text:SetPoint("BOTTOM", barContainer, "TOP", 0, 2)
+text:SetPoint("CENTER", barContainer, "CENTER", 0, 0)
 text:SetTextColor(1, 1, 1, 1)
 StaggerBar.text = text
 
@@ -123,35 +120,20 @@ local lastUpdate = 0
 local isBrewmaster = false
 local inCombat = false
 
--- Format large numbers
+-- Format numbers: 6423 -> 6.4k, 1234567 -> 1.2m
 local function FormatNumber(num)
-    if num > 999999 then
-        return string.format("%.2fm", num / 1000000)
-    elseif num > 99999 then
-        return string.format("%dk", math.floor(num / 1000))
-    elseif num > 9999 then
+    if num >= 1000000 then
+        return string.format("%.1fm", num / 1000000)
+    elseif num >= 1000 then
         return string.format("%.1fk", num / 1000)
     else
         return tostring(math.floor(num))
     end
 end
 
--- Debug mode
-local debugMode = false
-local lastDebugTime = 0
-
 -- Stagger decay rate: approximately 10% of pool per second, ticks every 0.5s
 local STAGGER_TICK_RATE = 0.5
 local STAGGER_DECAY_PER_SECOND = 0.10
-
--- Helper to get table keys (for debug)
-local function GetKeysArray(t)
-    local keys = {}
-    for k in pairs(t) do
-        table.insert(keys, tostring(k))
-    end
-    return keys
-end
 
 -- Get tick damage from stagger debuff
 local function GetStaggerTickDamage()
@@ -161,28 +143,6 @@ local function GetStaggerTickDamage()
     local auraData = C_UnitAuras.GetPlayerAuraBySpellID(STAGGER_HEAVY)
                   or C_UnitAuras.GetPlayerAuraBySpellID(STAGGER_MODERATE)
                   or C_UnitAuras.GetPlayerAuraBySpellID(STAGGER_LIGHT)
-
-    if debugMode then
-        local now = GetTime()
-        if now - lastDebugTime >= 1 then  -- Throttle debug output
-            lastDebugTime = now
-            if auraData then
-                print("NivUI Debug: Found aura, spellId=" .. tostring(auraData.spellId))
-                print("NivUI Debug: aura keys: " .. table.concat(GetKeysArray(auraData) or {}, ", "))
-                if auraData.points then
-                    print("NivUI Debug: points has " .. #auraData.points .. " entries")
-                    for i, v in ipairs(auraData.points) do
-                        print("NivUI Debug: points[" .. i .. "] = " .. tostring(v))
-                    end
-                else
-                    print("NivUI Debug: No points table")
-                end
-            else
-                print("NivUI Debug: No stagger aura found via GetPlayerAuraBySpellID")
-            end
-            print("NivUI Debug: UnitStagger = " .. tostring(stagger))
-        end
-    end
 
     -- If API gives us the value, use it
     if auraData and auraData.points and auraData.points[1] then
@@ -240,11 +200,11 @@ local function UpdateBar()
 
     -- Get tick damage and format text
     local tickDamage = GetStaggerTickDamage()
-    local displayTick = tickDamage * 2  -- damage per second (ticks every 0.5s)
-    local tickPercent = math.floor((tickDamage / maxHealth) * 1000) / 10
+    local dps = tickDamage * 2  -- damage per second (ticks every 0.5s)
+    local dpsPercent = math.floor((dps / maxHealth) * 1000) / 10
 
-    local tickText = FormatNumber(displayTick)
-    StaggerBar.text:SetText(tickText .. "/s (" .. tickPercent .. "%)")
+    local dpsText = FormatNumber(dps)
+    StaggerBar.text:SetText(dpsText .. "/s (" .. dpsPercent .. "%)")
 end
 
 -- Check if we should show the bar
@@ -405,19 +365,12 @@ SlashCmdList["NIVUI"] = function(msg)
             end
             LoadPosition()
             print("NivUI Stagger Bar: Reset to defaults")
-        elseif cmd == "debug" then
-            debugMode = not debugMode
-            print("NivUI Stagger Bar: Debug mode " .. (debugMode and "ON" or "OFF"))
-            if debugMode then
-                print("  Watch chat for API output (throttled to 1/sec)")
-            end
         else
             print("NivUI Stagger Bar commands:")
             print("  /nivui stagger lock - Lock position")
             print("  /nivui stagger unlock - Unlock for repositioning")
             print("  /nivui stagger show - Force show (for testing)")
             print("  /nivui stagger reset - Reset to defaults")
-            print("  /nivui stagger debug - Toggle debug output")
         end
     else
         print("NivUI commands:")
