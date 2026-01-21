@@ -4,7 +4,7 @@
 NivUI = NivUI or {}
 NivUI.Designer = {}
 
-local PREVIEW_SCALE = 2
+local PREVIEW_SCALE = 1.5
 local SELECTION_COLOR = { r = 0.2, g = 0.6, b = 1, a = 0.8 }
 local SNAP_THRESHOLD = 5
 
@@ -61,10 +61,10 @@ function WidgetFactories.healthBar(parent, config, style)
     end
     frame:SetStatusBarColor(r, g, b)
 
-    -- Set value from live data
-    local health = UnitHealth("player")
-    local maxHealth = UnitHealthMax("player")
-    if maxHealth > 0 then
+    -- Set value from live data (handle secret/nil values)
+    local health = tonumber(UnitHealth("player")) or 0
+    local maxHealth = tonumber(UnitHealthMax("player")) or 0
+    if maxHealth > 0 and health > 0 then
         frame:SetValue(health / maxHealth)
     else
         frame:SetValue(0.71)  -- Preview value
@@ -101,9 +101,9 @@ function WidgetFactories.powerBar(parent, config, style)
     end
     frame:SetStatusBarColor(r, g, b)
 
-    -- Set value from live data
-    local power = UnitPower("player")
-    local maxPower = UnitPowerMax("player")
+    -- Set value from live data (handle secret/nil values)
+    local power = tonumber(UnitPower("player")) or 0
+    local maxPower = tonumber(UnitPowerMax("player")) or 0
     if maxPower > 0 then
         frame:SetValue(power / maxPower)
     else
@@ -223,9 +223,11 @@ function WidgetFactories.levelText(parent, config, style)
 end
 
 function WidgetFactories.healthText(parent, config, style)
-    local health = UnitHealth("player")
-    local maxHealth = UnitHealthMax("player")
+    local health = tonumber(UnitHealth("player")) or 50000
+    local maxHealth = tonumber(UnitHealthMax("player")) or 100000
     local text = ""
+
+    if maxHealth == 0 then maxHealth = 100000 end  -- Fallback
 
     if config.format == "current" then
         text = AbbreviateNumbers(health)
@@ -244,8 +246,8 @@ function WidgetFactories.healthText(parent, config, style)
 end
 
 function WidgetFactories.powerText(parent, config, style)
-    local power = UnitPower("player")
-    local maxPower = UnitPowerMax("player")
+    local power = tonumber(UnitPower("player")) or 80
+    local maxPower = tonumber(UnitPowerMax("player")) or 100
     local text = ""
 
     if config.format == "current" then

@@ -1,10 +1,11 @@
 -- NivUI Config Frame
 -- Modern configuration UI using Platynator-style components
 
-local FRAME_WIDTH = 480
-local FRAME_HEIGHT = 620
+local FRAME_WIDTH = 580
+local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
 local SECTION_SPACING = 20
+local SIDEBAR_WIDTH = 100
 
 --------------------------------------------------------------------------------
 -- Component Helpers (Platynator-style)
@@ -320,7 +321,7 @@ function Components.GetHeader(parent, text)
     return holder
 end
 
--- Create a tab button
+-- Create a top tab button (for sub-tabs)
 function Components.GetTab(parent, text)
     local tab = CreateFrame("Button", nil, parent, "PanelTopTabButtonTemplate")
     tab:SetText(text)
@@ -330,6 +331,40 @@ function Components.GetTab(parent, text)
     end)
     tab:GetScript("OnShow")(tab)
     return tab
+end
+
+-- Create a sidebar tab button (for left-side navigation)
+function Components.GetSidebarTab(parent, text)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(SIDEBAR_WIDTH - 8, 28)
+
+    -- Background (shown when selected)
+    btn.selectedBg = btn:CreateTexture(nil, "BACKGROUND")
+    btn.selectedBg:SetAllPoints()
+    btn.selectedBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
+    btn.selectedBg:Hide()
+
+    -- Highlight
+    btn.highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+    btn.highlight:SetAllPoints()
+    btn.highlight:SetColorTexture(0.3, 0.3, 0.3, 0.5)
+
+    -- Text
+    btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    btn.text:SetPoint("LEFT", 8, 0)
+    btn.text:SetText(text)
+
+    function btn:SetSelected(selected)
+        if selected then
+            btn.selectedBg:Show()
+            btn.text:SetFontObject("GameFontHighlight")
+        else
+            btn.selectedBg:Hide()
+            btn.text:SetFontObject("GameFontNormal")
+        end
+    end
+
+    return btn
 end
 
 --------------------------------------------------------------------------------
@@ -366,24 +401,40 @@ ConfigFrame:SetScript("OnMouseWheel", function() end)
 table.insert(UISpecialFrames, "NivUIConfigFrame")
 
 --------------------------------------------------------------------------------
--- Tab System
+-- Sidebar Tab System
 --------------------------------------------------------------------------------
 
-local tabs = {}
-local tabContainers = {}
-local currentTab = 1
+-- Sidebar container
+local Sidebar = CreateFrame("Frame", nil, ConfigFrame)
+Sidebar:SetWidth(SIDEBAR_WIDTH)
+Sidebar:SetPoint("TOPLEFT", 8, -28)
+Sidebar:SetPoint("BOTTOMLEFT", 8, 8)
 
-local function SelectTab(index)
-    for i, tab in ipairs(tabs) do
+-- Sidebar background
+local sidebarBg = Sidebar:CreateTexture(nil, "BACKGROUND")
+sidebarBg:SetAllPoints()
+sidebarBg:SetColorTexture(0.05, 0.05, 0.05, 0.8)
+
+-- Content area (right of sidebar)
+local ContentArea = CreateFrame("Frame", nil, ConfigFrame)
+ContentArea:SetPoint("TOPLEFT", Sidebar, "TOPRIGHT", 4, 0)
+ContentArea:SetPoint("BOTTOMRIGHT", -8, 8)
+
+local sidebarTabs = {}
+local sidebarContainers = {}
+local currentSidebarTab = 1
+
+local function SelectSidebarTab(index)
+    for i, tab in ipairs(sidebarTabs) do
         if i == index then
-            PanelTemplates_SelectTab(tab)
-            tabContainers[i]:Show()
+            tab:SetSelected(true)
+            sidebarContainers[i]:Show()
         else
-            PanelTemplates_DeselectTab(tab)
-            tabContainers[i]:Hide()
+            tab:SetSelected(false)
+            sidebarContainers[i]:Hide()
         end
     end
-    currentTab = index
+    currentSidebarTab = index
 end
 
 --------------------------------------------------------------------------------
@@ -391,9 +442,8 @@ end
 --------------------------------------------------------------------------------
 
 local function SetupStaggerBarTab()
-    local container = CreateFrame("Frame", nil, ConfigFrame)
-    container:SetPoint("TOPLEFT", 8, -60)
-    container:SetPoint("BOTTOMRIGHT", -8, 8)
+    local container = CreateFrame("Frame", nil, ContentArea)
+    container:SetAllPoints()
     container:Hide()
 
     -- ScrollFrame for content
@@ -402,7 +452,7 @@ local function SetupStaggerBarTab()
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(FRAME_WIDTH - 50, 900)
+    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 900)
     scrollFrame:SetScrollChild(content)
 
     local allFrames = {}
@@ -694,38 +744,30 @@ local function SetupStaggerBarTab()
 end
 
 --------------------------------------------------------------------------------
--- Initialize Tabs
+-- Initialize Sidebar Tabs
 --------------------------------------------------------------------------------
 
+-- Stagger Bar tab
 local staggerBarContainer = SetupStaggerBarTab()
-table.insert(tabContainers, staggerBarContainer)
+table.insert(sidebarContainers, staggerBarContainer)
 
-local staggerBarTab = Components.GetTab(ConfigFrame, "Stagger Bar")
-staggerBarTab:SetPoint("TOPLEFT", ConfigFrame, "TOPLEFT", 10, -25)
-staggerBarTab:SetScript("OnClick", function() SelectTab(1) end)
-table.insert(tabs, staggerBarTab)
+local staggerBarTab = Components.GetSidebarTab(Sidebar, "Stagger Bar")
+staggerBarTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)
+staggerBarTab:SetScript("OnClick", function() SelectSidebarTab(1) end)
+table.insert(sidebarTabs, staggerBarTab)
 
--- Unit Frames tab (Style Designer)
-local unitFramesContainer = NivUI.UnitFrames:SetupConfigTab(ConfigFrame, Components)
-table.insert(tabContainers, unitFramesContainer)
+-- Unit Frames tab (includes Designer and Assignments as sub-tabs)
+local unitFramesContainer = NivUI.UnitFrames:SetupConfigTabWithSubtabs(ContentArea, Components)
+table.insert(sidebarContainers, unitFramesContainer)
 
-local unitFramesTab = Components.GetTab(ConfigFrame, "Unit Frames")
-unitFramesTab:SetPoint("LEFT", staggerBarTab, "RIGHT", -5, 0)
-unitFramesTab:SetScript("OnClick", function() SelectTab(2) end)
-table.insert(tabs, unitFramesTab)
-
--- Frame Assignments tab
-local assignmentsContainer = NivUI.UnitFrames:SetupAssignmentsTab(ConfigFrame, Components)
-table.insert(tabContainers, assignmentsContainer)
-
-local assignmentsTab = Components.GetTab(ConfigFrame, "Assignments")
-assignmentsTab:SetPoint("LEFT", unitFramesTab, "RIGHT", -5, 0)
-assignmentsTab:SetScript("OnClick", function() SelectTab(3) end)
-table.insert(tabs, assignmentsTab)
+local unitFramesTab = Components.GetSidebarTab(Sidebar, "Unit Frames")
+unitFramesTab:SetPoint("TOPLEFT", staggerBarTab, "BOTTOMLEFT", 0, -2)
+unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
+table.insert(sidebarTabs, unitFramesTab)
 
 -- Select first tab by default
 ConfigFrame:SetScript("OnShow", function()
-    SelectTab(currentTab)
+    SelectSidebarTab(currentSidebarTab)
 end)
 
 --------------------------------------------------------------------------------
@@ -741,3 +783,6 @@ NivUI.OnBarMoved = function()
         staggerBarContainer.heightSlider:SetValue(db.height or 20)
     end
 end
+
+-- Export components for other modules
+NivUI.Components = Components

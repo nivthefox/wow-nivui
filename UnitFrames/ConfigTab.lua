@@ -810,3 +810,298 @@ function NivUI.UnitFrames:SetupAssignmentsTab(parent, Components)
 
     return container
 end
+
+--------------------------------------------------------------------------------
+-- Combined Setup with Sub-tabs (Designer + Assignments)
+--------------------------------------------------------------------------------
+
+function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetAllPoints()
+    container:Hide()
+
+    -- Sub-tab system
+    local subTabs = {}
+    local subTabContainers = {}
+    local currentSubTab = 1
+
+    local function SelectSubTab(index)
+        for i, tab in ipairs(subTabs) do
+            if i == index then
+                PanelTemplates_SelectTab(tab)
+                subTabContainers[i]:Show()
+            else
+                PanelTemplates_DeselectTab(tab)
+                subTabContainers[i]:Hide()
+            end
+        end
+        currentSubTab = index
+    end
+
+    -- Create Designer sub-tab content
+    local designerContainer = self:SetupDesignerContent(container, Components)
+    designerContainer:SetPoint("TOPLEFT", 0, -32)
+    designerContainer:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, designerContainer)
+
+    local designerTab = Components.GetTab(container, "Designer")
+    designerTab:SetPoint("TOPLEFT", 0, 0)
+    designerTab:SetScript("OnClick", function() SelectSubTab(1) end)
+    table.insert(subTabs, designerTab)
+
+    -- Create Assignments sub-tab content
+    local assignmentsContainer = CreateFrame("Frame", nil, container)
+    assignmentsContainer:SetPoint("TOPLEFT", 0, -32)
+    assignmentsContainer:SetPoint("BOTTOMRIGHT", 0, 0)
+    assignmentsContainer:Hide()
+
+    local assignmentsPanel = CreateAssignmentsPanel(assignmentsContainer, Components)
+    assignmentsPanel:SetAllPoints()
+    table.insert(subTabContainers, assignmentsContainer)
+
+    local assignmentsTab = Components.GetTab(container, "Assignments")
+    assignmentsTab:SetPoint("LEFT", designerTab, "RIGHT", 0, 0)
+    assignmentsTab:SetScript("OnClick", function() SelectSubTab(2) end)
+    table.insert(subTabs, assignmentsTab)
+
+    -- Select first sub-tab when shown
+    container:SetScript("OnShow", function()
+        SelectSubTab(currentSubTab)
+    end)
+
+    return container
+end
+
+--------------------------------------------------------------------------------
+-- Designer Content (extracted from SetupConfigTab)
+--------------------------------------------------------------------------------
+
+function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
+    local container = CreateFrame("Frame", nil, parent)
+    container:Hide()
+
+    -- State
+    local currentStyleName = "Default"
+    local currentStyle = nil
+
+    local function getStyle()
+        return currentStyle
+    end
+
+    local function saveStyle(style)
+        currentStyle = style
+        NivUI:SaveStyle(currentStyleName, style)
+    end
+
+    -- Ensure default style exists
+    NivUI:InitializeDefaultStyle()
+
+    ----------------------------------------------------------------------------
+    -- Top Bar: Style selector and actions
+    ----------------------------------------------------------------------------
+    local topBar = CreateFrame("Frame", nil, container)
+    topBar:SetHeight(36)
+    topBar:SetPoint("TOPLEFT", 0, 0)
+    topBar:SetPoint("TOPRIGHT", 0, 0)
+
+    -- Style label
+    local styleLabel = topBar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    styleLabel:SetPoint("LEFT", 10, 0)
+    styleLabel:SetText("Style:")
+
+    -- Style dropdown
+    local styleDropdown = CreateFrame("DropdownButton", nil, topBar, "WowStyle1DropdownTemplate")
+    styleDropdown:SetWidth(120)
+    styleDropdown:SetPoint("LEFT", styleLabel, "RIGHT", 10, 0)
+
+    local function RefreshStyleDropdown()
+        styleDropdown:SetupMenu(function(_, rootDescription)
+            local names = NivUI:GetStyleNames()
+            for _, name in ipairs(names) do
+                rootDescription:CreateRadio(
+                    name,
+                    function() return currentStyleName == name end,
+                    function()
+                        currentStyleName = name
+                        currentStyle = NivUI:GetStyleWithDefaults(name)
+                        container:RefreshAll()
+                    end
+                )
+            end
+        end)
+    end
+
+    -- New button
+    local newBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
+    newBtn:SetSize(50, 22)
+    newBtn:SetPoint("LEFT", styleDropdown, "RIGHT", 6, 0)
+    newBtn:SetText("New")
+    newBtn:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_NEW_STYLE_2")
+    end)
+
+    -- Duplicate button
+    local dupBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
+    dupBtn:SetSize(50, 22)
+    dupBtn:SetPoint("LEFT", newBtn, "RIGHT", 2, 0)
+    dupBtn:SetText("Copy")
+    dupBtn:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_DUPLICATE_STYLE_2", currentStyleName)
+    end)
+
+    -- Delete button
+    local delBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
+    delBtn:SetSize(50, 22)
+    delBtn:SetPoint("LEFT", dupBtn, "RIGHT", 2, 0)
+    delBtn:SetText("Delete")
+    delBtn:SetScript("OnClick", function()
+        if currentStyleName == "Default" then
+            print("NivUI: Cannot delete the Default style")
+            return
+        end
+        StaticPopup_Show("NIVUI_DELETE_STYLE_2", currentStyleName)
+    end)
+
+    ----------------------------------------------------------------------------
+    -- Preview Area
+    ----------------------------------------------------------------------------
+    local previewContainer = CreateFrame("Frame", nil, container)
+    previewContainer:SetHeight(140)
+    previewContainer:SetPoint("TOPLEFT", topBar, "BOTTOMLEFT", 0, -4)
+    previewContainer:SetPoint("TOPRIGHT", topBar, "BOTTOMRIGHT", 0, -4)
+
+    local designer = NivUI.Designer:Create(previewContainer)
+    designer:SetAllPoints()
+
+    ----------------------------------------------------------------------------
+    -- Bottom Split: Widget List + Settings
+    ----------------------------------------------------------------------------
+    local bottomArea = CreateFrame("Frame", nil, container)
+    bottomArea:SetPoint("TOPLEFT", previewContainer, "BOTTOMLEFT", 0, -4)
+    bottomArea:SetPoint("BOTTOMRIGHT", 0, 0)
+
+    -- Widget list on the left
+    local widgetList = CreateWidgetList(bottomArea, function(widgetType)
+        designer:SelectWidget(widgetType)
+        settingsPanel:BuildForWidget(widgetType)
+    end)
+    widgetList:SetPoint("TOPLEFT", 0, 0)
+    widgetList:SetPoint("BOTTOMLEFT", 0, 0)
+
+    -- Settings panel on the right
+    local settingsPanel = CreateWidgetSettingsPanel(
+        bottomArea,
+        getStyle,
+        saveStyle,
+        function()
+            NivUI.Designer:RefreshPreview(designer, currentStyleName)
+        end
+    )
+    settingsPanel:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
+    settingsPanel:SetPoint("BOTTOMRIGHT", 0, 0)
+
+    -- Link designer selection to widget list
+    designer.onSelectionChanged = function(widgetType)
+        widgetList:Select(widgetType)
+        settingsPanel:BuildForWidget(widgetType)
+    end
+
+    ----------------------------------------------------------------------------
+    -- Refresh function
+    ----------------------------------------------------------------------------
+    function container:RefreshAll()
+        currentStyle = NivUI:GetStyleWithDefaults(currentStyleName)
+        RefreshStyleDropdown()
+        widgetList:Populate()
+        NivUI.Designer:BuildPreview(designer, currentStyleName)
+
+        -- Select first widget by default
+        local firstWidget = NivUI.UnitFrames.WIDGET_ORDER[1]
+        widgetList:Select(firstWidget)
+        designer:SelectWidget(firstWidget)
+        settingsPanel:BuildForWidget(firstWidget)
+    end
+
+    ----------------------------------------------------------------------------
+    -- OnShow
+    ----------------------------------------------------------------------------
+    container:SetScript("OnShow", function()
+        container:RefreshAll()
+    end)
+
+    ----------------------------------------------------------------------------
+    -- Static Popups (use different names to avoid conflicts)
+    ----------------------------------------------------------------------------
+    StaticPopupDialogs["NIVUI_NEW_STYLE_2"] = {
+        text = "Enter name for new style:",
+        button1 = "Create",
+        button2 = "Cancel",
+        hasEditBox = true,
+        OnAccept = function(self)
+            local name = self.editBox:GetText()
+            local success, err = NivUI:CreateStyle(name)
+            if success then
+                currentStyleName = name
+                container:RefreshAll()
+            else
+                print("NivUI: " .. (err or "Failed to create style"))
+            end
+        end,
+        EditBoxOnEnterPressed = function(self)
+            local parent = self:GetParent()
+            local name = self:GetText()
+            local success, err = NivUI:CreateStyle(name)
+            if success then
+                currentStyleName = name
+                container:RefreshAll()
+            else
+                print("NivUI: " .. (err or "Failed to create style"))
+            end
+            parent:Hide()
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+
+    StaticPopupDialogs["NIVUI_DUPLICATE_STYLE_2"] = {
+        text = "Enter name for duplicate of '%s':",
+        button1 = "Duplicate",
+        button2 = "Cancel",
+        hasEditBox = true,
+        OnAccept = function(self, data)
+            local name = self.editBox:GetText()
+            local success, err = NivUI:DuplicateStyle(currentStyleName, name)
+            if success then
+                currentStyleName = name
+                container:RefreshAll()
+            else
+                print("NivUI: " .. (err or "Failed to duplicate style"))
+            end
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+
+    StaticPopupDialogs["NIVUI_DELETE_STYLE_2"] = {
+        text = "Delete style '%s'? This cannot be undone.",
+        button1 = "Delete",
+        button2 = "Cancel",
+        OnAccept = function()
+            local success, err = NivUI:DeleteStyle(currentStyleName)
+            if success then
+                currentStyleName = "Default"
+                container:RefreshAll()
+            else
+                print("NivUI: " .. (err or "Failed to delete style"))
+            end
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        showAlert = true,
+    }
+
+    return container
+end
