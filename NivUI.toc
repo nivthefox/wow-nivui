@@ -18,4 +18,6 @@ modules/unitframes/EditModeSupport.lua
 modules/unitframes/PlayerFrame.lua
 modules/unitframes/TargetFrame.lua
 modules/unitframes/TargetOfTargetFrame.lua
+modules/unitframes/PetFrame.lua
+modules/unitframes/FocusFrame.lua
 ConfigFrame.lua
