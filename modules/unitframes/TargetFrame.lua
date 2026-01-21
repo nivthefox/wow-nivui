@@ -16,7 +16,7 @@ local function HideBlizzardTargetFrame(state)
     -- TEMP: Testing which part breaks Edit Mode
     -- Comment out blocks one at a time to find the culprit
 
-    --[[ BLOCK A: Event/mouse disabling
+    -- BLOCK A: Event/mouse disabling
     if TargetFrame.UnregisterAllEvents then
         TargetFrame:UnregisterAllEvents()
     end
@@ -32,7 +32,6 @@ local function HideBlizzardTargetFrame(state)
     if TargetFrame.SetHitRectInsets then
         TargetFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
     end
-    --]]
 
     --[[ BLOCK B: Hide regions
     Base.HideRegions(TargetFrame)
