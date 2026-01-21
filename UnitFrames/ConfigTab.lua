@@ -209,11 +209,9 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         local widgetData = style and style[widgetType] or {}
 
         -- Create tabs
-        local tabX = 0
         for i, tabConfig in ipairs(config) do
             local tab = CreateFrame("Button", nil, self.tabHolder, "PanelTopTabButtonTemplate")
             tab:SetText(tabConfig.label)
-            tab:SetPoint("TOPLEFT", tabX, 0)
             tab:SetScript("OnShow", function(self)
                 PanelTemplates_TabResize(self, 10, nil, 60)
             end)
@@ -222,8 +220,14 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 self:SelectTab(i)
             end)
 
+            -- Position: first tab at left, others anchor to previous
+            if #self.tabButtons == 0 then
+                tab:SetPoint("TOPLEFT", 0, 0)
+            else
+                tab:SetPoint("LEFT", self.tabButtons[#self.tabButtons], "RIGHT", 0, 0)
+            end
+
             table.insert(self.tabButtons, tab)
-            tabX = tabX + tab:GetWidth() - 10
 
             -- Create panel for this tab
             local panel = CreateFrame("ScrollFrame", nil, self.contentArea, "UIPanelScrollFrameTemplate")
@@ -259,9 +263,13 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             table.insert(self.tabPanels, panel)
         end
 
-        -- Select first tab
+        -- Restore previous tab if valid, otherwise select first
         if #self.tabButtons > 0 then
-            self:SelectTab(1)
+            local tabToSelect = self.currentTab
+            if tabToSelect > #self.tabButtons then
+                tabToSelect = 1
+            end
+            self:SelectTab(tabToSelect)
         end
     end
 

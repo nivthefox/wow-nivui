@@ -14,6 +14,14 @@ local SNAP_THRESHOLD = 5
 
 local WidgetFactories = {}
 
+-- Helper to safely get a number (handles WoW's "secret" values)
+local function SafeNumber(value, fallback)
+    if type(value) == "number" then
+        return value
+    end
+    return fallback or 0
+end
+
 -- Helper to get class color
 local function GetClassColor(unit)
     local _, class = UnitClass(unit or "player")
@@ -62,9 +70,9 @@ function WidgetFactories.healthBar(parent, config, style)
     frame:SetStatusBarColor(r, g, b)
 
     -- Set value from live data (handle secret/nil values)
-    local health = tonumber(UnitHealth("player")) or 0
-    local maxHealth = tonumber(UnitHealthMax("player")) or 0
-    if maxHealth > 0 and health > 0 then
+    local health = SafeNumber(UnitHealth("player"), 71000)
+    local maxHealth = SafeNumber(UnitHealthMax("player"), 100000)
+    if maxHealth > 0 then
         frame:SetValue(health / maxHealth)
     else
         frame:SetValue(0.71)  -- Preview value
@@ -102,8 +110,8 @@ function WidgetFactories.powerBar(parent, config, style)
     frame:SetStatusBarColor(r, g, b)
 
     -- Set value from live data (handle secret/nil values)
-    local power = tonumber(UnitPower("player")) or 0
-    local maxPower = tonumber(UnitPowerMax("player")) or 0
+    local power = SafeNumber(UnitPower("player"), 80)
+    local maxPower = SafeNumber(UnitPowerMax("player"), 100)
     if maxPower > 0 then
         frame:SetValue(power / maxPower)
     else
@@ -223,8 +231,8 @@ function WidgetFactories.levelText(parent, config, style)
 end
 
 function WidgetFactories.healthText(parent, config, style)
-    local health = tonumber(UnitHealth("player")) or 50000
-    local maxHealth = tonumber(UnitHealthMax("player")) or 100000
+    local health = SafeNumber(UnitHealth("player"), 71000)
+    local maxHealth = SafeNumber(UnitHealthMax("player"), 100000)
     local text = ""
 
     if maxHealth == 0 then maxHealth = 100000 end  -- Fallback
@@ -246,8 +254,8 @@ function WidgetFactories.healthText(parent, config, style)
 end
 
 function WidgetFactories.powerText(parent, config, style)
-    local power = tonumber(UnitPower("player")) or 80
-    local maxPower = tonumber(UnitPowerMax("player")) or 100
+    local power = SafeNumber(UnitPower("player"), 80)
+    local maxPower = SafeNumber(UnitPowerMax("player"), 100)
     local text = ""
 
     if config.format == "current" then
@@ -515,15 +523,8 @@ function NivUI.Designer:Create(parent)
 
     container.SelectWidget = function(self, widgetType)
         self.selectedWidget = widgetType
-        if widgetType and self.widgets[widgetType] then
-            local widget = self.widgets[widgetType]
-            self.selectionOverlay:ClearAllPoints()
-            self.selectionOverlay:SetPoint("TOPLEFT", widget, "TOPLEFT", -2, 2)
-            self.selectionOverlay:SetPoint("BOTTOMRIGHT", widget, "BOTTOMRIGHT", 2, -2)
-            self.selectionOverlay:Show()
-        else
-            self.selectionOverlay:Hide()
-        end
+        -- Selection overlay disabled - was obscuring the preview
+        self.selectionOverlay:Hide()
 
         if self.onSelectionChanged then
             self.onSelectionChanged(widgetType)
