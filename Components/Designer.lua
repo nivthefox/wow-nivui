@@ -487,7 +487,6 @@ function NivUI.Designer:Create(parent)
     local preview = CreateFrame("Frame", nil, container)
     preview:SetPoint("CENTER")
     preview:SetScale(PREVIEW_SCALE)
-    preview:SetFlattensRenderLayers(true)
     preview:SetSize(200, 60)  -- Default size, will be updated by BuildPreview
 
     -- Debug border around preview frame (so we can see where it is)
