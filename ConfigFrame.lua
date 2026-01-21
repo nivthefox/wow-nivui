@@ -383,7 +383,7 @@ local heightEditbox = CreateSimpleEditbox(
     currentY,
     45,
     function(value)
-        if value and value >= 16 and value <= 60 then
+        if value and value >= 5 and value <= 60 then
             NivUI_StaggerBarDB.height = value
             NivUI:ApplySettings("position")
         end

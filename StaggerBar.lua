@@ -18,7 +18,7 @@ local StaggerBar = CreateFrame("Frame", "NivUIStaggerBar", UIParent)
 StaggerBar:SetSize(394, 20)
 StaggerBar:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
 StaggerBar:SetResizable(true)
-StaggerBar:SetResizeBounds(100, 16, 800, 60)
+StaggerBar:SetResizeBounds(100, 5, 800, 60)
 StaggerBar:Hide()
 
 -- Background for the whole clickable area (transparent)
