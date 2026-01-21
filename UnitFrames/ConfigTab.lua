@@ -315,7 +315,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             editBox:SetSize(50, 20)
             editBox:SetPoint("RIGHT", -5, 0)
             editBox:SetAutoFocus(false)
-            editBox:SetNumeric(true)
             editBox:SetMaxLetters(6)
             editBox:SetText(tostring(currentValue or entry.min))
 
