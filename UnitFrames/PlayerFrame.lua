@@ -90,25 +90,48 @@ local function UpdateHealthText()
     local widget = customFrame.widgets.healthText
     local config = currentStyle.healthText
 
-    local health = UnitHealth("player") or 0
-    local maxHealth = UnitHealthMax("player") or 1
+    local health = UnitHealth("player")
+    local maxHealth = UnitHealthMax("player")
     local text = ""
 
-    -- SafeNumber for math operations that might fail with secret numbers
-    local safeHealth = SafeNumber(health, 0)
-    local safeMaxHealth = SafeNumber(maxHealth, 1)
+    -- Use UnitHealthPercent for secret-safe percentage (C-side calculation)
+    local pct = nil
+    if UnitHealthPercent then
+        local ok, result = pcall(UnitHealthPercent, "player")
+        if ok and result then
+            pct = result
+        end
+    end
+
+    -- Use Blizzard's abbreviator for secret-safe number formatting
+    local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
+    local healthStr = abbrev(health)
+    local maxHealthStr = abbrev(maxHealth)
 
     if config.format == "current" then
-        text = AbbreviateNumbers(safeHealth)
+        text = healthStr
     elseif config.format == "percent" then
-        text = math.floor((safeHealth / safeMaxHealth) * 100) .. "%"
+        if pct then
+            text = string.format("%.0f%%", pct)
+        else
+            text = healthStr
+        end
     elseif config.format == "current_percent" then
-        text = AbbreviateNumbers(safeHealth) .. " (" .. math.floor((safeHealth / safeMaxHealth) * 100) .. "%)"
+        if pct then
+            text = string.format("%s (%.0f%%)", healthStr, pct)
+        else
+            text = healthStr
+        end
     elseif config.format == "current_max" then
-        text = AbbreviateNumbers(safeHealth) .. " / " .. AbbreviateNumbers(safeMaxHealth)
+        text = healthStr .. " / " .. maxHealthStr
     elseif config.format == "deficit" then
-        local deficit = safeMaxHealth - safeHealth
-        text = deficit > 0 and "-" .. AbbreviateNumbers(deficit) or ""
+        -- Deficit requires subtraction which may fail with secret values
+        local ok, deficit = pcall(function() return maxHealth - health end)
+        if ok and deficit and deficit > 0 then
+            text = "-" .. abbrev(deficit)
+        else
+            text = ""
+        end
     end
 
     widget.text:SetText(text)
@@ -120,22 +143,40 @@ local function UpdatePowerText()
     local config = currentStyle.powerText
 
     local powerType = UnitPowerType("player")
-    local power = UnitPower("player", powerType) or 0
-    local maxPower = UnitPowerMax("player", powerType) or 1
+    local power = UnitPower("player", powerType)
+    local maxPower = UnitPowerMax("player", powerType)
     local text = ""
 
-    -- SafeNumber for math operations
-    local safePower = SafeNumber(power, 0)
-    local safeMaxPower = SafeNumber(maxPower, 1)
+    -- Use UnitPowerPercent for secret-safe percentage (C-side calculation)
+    local pct = nil
+    if UnitPowerPercent then
+        local ok, result = pcall(UnitPowerPercent, "player", powerType)
+        if ok and result then
+            pct = result
+        end
+    end
+
+    -- Use Blizzard's abbreviator for secret-safe number formatting
+    local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
+    local powerStr = abbrev(power)
+    local maxPowerStr = abbrev(maxPower)
 
     if config.format == "current" then
-        text = tostring(safePower)
+        text = powerStr
     elseif config.format == "percent" then
-        text = safeMaxPower > 0 and (math.floor((safePower / safeMaxPower) * 100) .. "%") or ""
+        if pct then
+            text = string.format("%.0f%%", pct)
+        else
+            text = powerStr
+        end
     elseif config.format == "current_percent" then
-        text = safeMaxPower > 0 and (safePower .. " (" .. math.floor((safePower / safeMaxPower) * 100) .. "%)") or tostring(safePower)
+        if pct then
+            text = string.format("%s (%.0f%%)", powerStr, pct)
+        else
+            text = powerStr
+        end
     elseif config.format == "current_max" then
-        text = safePower .. " / " .. safeMaxPower
+        text = powerStr .. " / " .. maxPowerStr
     end
 
     widget.text:SetText(text)
