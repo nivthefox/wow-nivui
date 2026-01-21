@@ -7,3 +7,4 @@
 
 NivUI.lua
 StaggerBar.lua
+ConfigFrame.lua
