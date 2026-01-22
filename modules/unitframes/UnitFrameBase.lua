@@ -329,12 +329,9 @@ function UnitFrameBase.UpdateCastbar(state)
 
     local cast = config.castingColor
     local nonInt = config.nonInterruptibleColor
-    widget:SetStatusBarColor(
-        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.r, nonInt.r),
-        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.g, nonInt.g),
-        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.b, nonInt.b),
-        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.a or 1, nonInt.a or 1)
-    )
+    widget:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible,
+        cast.r, cast.g, cast.b,
+        nonInt.r, nonInt.g, nonInt.b)
 
     widget:Show()
 end
@@ -517,6 +514,11 @@ function UnitFrameBase.BuildCustomFrame(state)
 
     state.timeSinceLastUpdate = 0
     customFrame:SetScript("OnUpdate", function(self, elapsed)
+        if state.shouldShow and not state.shouldShow() then
+            self:Hide()
+            return
+        end
+
         if not NivUI:IsRealTimeUpdates(state.frameType) then
             state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
             if state.timeSinceLastUpdate < UPDATE_INTERVAL then return end
