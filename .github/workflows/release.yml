@@ -17,7 +17,7 @@ jobs:
           path: NivUI
 
       - name: Create zip
-        run: zip -r NivUI-${{ github.event.release.tag_name }}.zip NivUI -x "NivUI/.git/*" -x "NivUI/.github/*"
+        run: zip -r NivUI-${{ github.event.release.tag_name }}.zip NivUI -x "NivUI/.git/*" -x "NivUI/.github/*" -x "NivUI/.luacheckrc"
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
