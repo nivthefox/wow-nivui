@@ -21,5 +21,6 @@ modules/unitframes/TargetOfTargetFrame.lua
 modules/unitframes/PetFrame.lua
 modules/unitframes/FocusFrame.lua
 modules/unitframes/PartyFrame.lua
+modules/unitframes/BossFrame.lua
 modules/unitframes/RaidFrame.lua
 ConfigFrame.lua

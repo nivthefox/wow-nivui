@@ -335,6 +335,38 @@ function NivUI:SetRaidPlayerGrowthDirection(raidSize, value)
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "playerGrowthDirection", value = value })
 end
 
+-- Boss Settings
+
+function NivUI:GetBossSpacing()
+    return NivUI_DB.bossSpacing or 2
+end
+
+function NivUI:SetBossSpacing(value)
+    NivUI_DB.bossSpacing = value
+
+    self:TriggerEvent("BossSettingsChanged", { setting = "spacing", value = value })
+end
+
+function NivUI:GetBossOrientation()
+    return NivUI_DB.bossOrientation or "VERTICAL"
+end
+
+function NivUI:SetBossOrientation(value)
+    NivUI_DB.bossOrientation = value
+
+    self:TriggerEvent("BossSettingsChanged", { setting = "orientation", value = value })
+end
+
+function NivUI:GetBossGrowthDirection()
+    return NivUI_DB.bossGrowthDirection or "DOWN"
+end
+
+function NivUI:SetBossGrowthDirection(value)
+    NivUI_DB.bossGrowthDirection = value
+
+    self:TriggerEvent("BossSettingsChanged", { setting = "growthDirection", value = value })
+end
+
 function NivUI:GetStyleWithDefaults(name)
     local style = self:GetStyle(name)
     if not style then

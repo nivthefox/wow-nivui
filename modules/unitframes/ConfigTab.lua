@@ -1462,6 +1462,211 @@ local function CreateRaidSettingsPanel(parent, Components, raidSize, raidLabel)
     return frame
 end
 
+local function CreateBossSettingsPanel(parent, Components)
+    local frame = CreateFrame("Frame", nil, parent)
+
+    local allFrames = {}
+    local controls = {}
+
+    local function AddRow(row, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            row:SetPoint("TOP", frame, "TOP", 0, -10)
+        else
+            row:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, row)
+    end
+
+    -- Header
+    local header = Components.GetHeader(frame, "Boss Frame Settings")
+    AddRow(header)
+
+    -- Preview checkbox
+    local previewRow = CreateFrame("Frame", nil, frame)
+    previewRow:SetHeight(24)
+    previewRow:SetPoint("LEFT", 20, 0)
+    previewRow:SetPoint("RIGHT", -20, 0)
+
+    local previewCheckbox = CreateFrame("CheckButton", nil, previewRow, "SettingsCheckboxTemplate")
+    previewCheckbox:SetPoint("LEFT", 0, 0)
+    previewCheckbox:SetText("")
+    previewCheckbox:SetScript("OnClick", function(self)
+        NivUI:TriggerEvent("BossPreviewChanged", { enabled = self:GetChecked() })
+    end)
+    table.insert(controls, { control = previewCheckbox, kind = "preview" })
+
+    local previewLabel = previewRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    previewLabel:SetPoint("LEFT", previewCheckbox, "RIGHT", 4, 0)
+    previewLabel:SetText("Preview")
+
+    local previewDesc = previewRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    previewDesc:SetPoint("LEFT", previewLabel, "RIGHT", 8, 0)
+    previewDesc:SetTextColor(0.6, 0.6, 0.6)
+    previewDesc:SetText("(Show fake boss frames)")
+
+    AddRow(previewRow, 8)
+
+    -- Spacing slider
+    local spacingRow = CreateFrame("Frame", nil, frame)
+    spacingRow:SetHeight(ROW_HEIGHT)
+    spacingRow:SetPoint("LEFT", 20, 0)
+    spacingRow:SetPoint("RIGHT", -20, 0)
+
+    local spacingLabel = spacingRow:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    spacingLabel:SetPoint("LEFT", 0, 0)
+    spacingLabel:SetText("Spacing:")
+
+    local spacingEditBox = CreateFrame("EditBox", nil, spacingRow, "InputBoxTemplate")
+    spacingEditBox:SetSize(50, 20)
+    spacingEditBox:SetPoint("RIGHT", -5, 0)
+    spacingEditBox:SetAutoFocus(false)
+    spacingEditBox:SetMaxLetters(4)
+
+    local spacingSlider = CreateFrame("Slider", nil, spacingRow, "MinimalSliderWithSteppersTemplate")
+    spacingSlider:SetPoint("LEFT", spacingLabel, "RIGHT", 20, 0)
+    spacingSlider:SetPoint("RIGHT", spacingEditBox, "LEFT", -10, 0)
+    spacingSlider:SetHeight(20)
+    spacingSlider:Init(2, 0, 20, 20, {})
+
+    table.insert(controls, { control = spacingSlider, editBox = spacingEditBox, kind = "spacing" })
+
+    local spacingUpdating = false
+
+    spacingSlider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+        if spacingUpdating then return end
+        spacingUpdating = true
+        spacingEditBox:SetText(tostring(math.floor(value)))
+        NivUI:SetBossSpacing(value)
+        spacingUpdating = false
+    end)
+
+    spacingEditBox:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText()) or 0
+        value = math.max(0, math.min(20, value))
+        spacingUpdating = true
+        spacingSlider:SetValue(value)
+        NivUI:SetBossSpacing(value)
+        spacingUpdating = false
+        self:ClearFocus()
+    end)
+
+    spacingEditBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+
+    AddRow(spacingRow, 8)
+
+    -- Orientation dropdown
+    local orientationRow = CreateFrame("Frame", nil, frame)
+    orientationRow:SetHeight(ROW_HEIGHT)
+    orientationRow:SetPoint("LEFT", 20, 0)
+    orientationRow:SetPoint("RIGHT", -20, 0)
+
+    local orientationLabel = orientationRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    orientationLabel:SetPoint("LEFT", 0, 0)
+    orientationLabel:SetText("Orientation:")
+
+    local orientationDropdown = CreateFrame("DropdownButton", nil, orientationRow, "WowStyle1DropdownTemplate")
+    orientationDropdown:SetWidth(150)
+    orientationDropdown:SetPoint("LEFT", orientationLabel, "RIGHT", 20, 0)
+
+    local growthDropdown  -- Forward reference
+
+    local function RefreshGrowthDropdown()
+        if not growthDropdown then return end
+        local orientation = NivUI:GetBossOrientation()
+        local options
+        if orientation == "VERTICAL" then
+            options = {
+                { value = "DOWN", name = "Down" },
+                { value = "UP", name = "Up" },
+            }
+        else
+            options = {
+                { value = "RIGHT", name = "Right" },
+                { value = "LEFT", name = "Left" },
+            }
+        end
+
+        growthDropdown:SetupMenu(function(_, rootDescription)
+            for _, opt in ipairs(options) do
+                rootDescription:CreateRadio(
+                    opt.name,
+                    function() return NivUI:GetBossGrowthDirection() == opt.value end,
+                    function() NivUI:SetBossGrowthDirection(opt.value) end
+                )
+            end
+        end)
+    end
+
+    orientationDropdown:SetupMenu(function(_, rootDescription)
+        local options = {
+            { value = "VERTICAL", name = "Vertical" },
+            { value = "HORIZONTAL", name = "Horizontal" },
+        }
+        for _, opt in ipairs(options) do
+            rootDescription:CreateRadio(
+                opt.name,
+                function() return NivUI:GetBossOrientation() == opt.value end,
+                function()
+                    NivUI:SetBossOrientation(opt.value)
+                    -- Reset growth direction to sensible default
+                    if opt.value == "VERTICAL" then
+                        NivUI:SetBossGrowthDirection("DOWN")
+                    else
+                        NivUI:SetBossGrowthDirection("RIGHT")
+                    end
+                    RefreshGrowthDropdown()
+                end
+            )
+        end
+    end)
+
+    table.insert(controls, { control = orientationDropdown, kind = "orientation" })
+
+    AddRow(orientationRow, 4)
+
+    -- Growth Direction dropdown
+    local growthRow = CreateFrame("Frame", nil, frame)
+    growthRow:SetHeight(ROW_HEIGHT)
+    growthRow:SetPoint("LEFT", 20, 0)
+    growthRow:SetPoint("RIGHT", -20, 0)
+
+    local growthLabel = growthRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    growthLabel:SetPoint("LEFT", 0, 0)
+    growthLabel:SetText("Growth Direction:")
+
+    growthDropdown = CreateFrame("DropdownButton", nil, growthRow, "WowStyle1DropdownTemplate")
+    growthDropdown:SetWidth(150)
+    growthDropdown:SetPoint("LEFT", growthLabel, "RIGHT", 20, 0)
+
+    table.insert(controls, { control = growthDropdown, kind = "growth" })
+
+    AddRow(growthRow, 4)
+
+    -- Refresh control states when shown
+    frame:SetScript("OnShow", function()
+        for _, entry in ipairs(controls) do
+            if entry.kind == "preview" then
+                entry.control:SetChecked(false)  -- Preview always starts off
+            elseif entry.kind == "spacing" then
+                local value = NivUI:GetBossSpacing()
+                entry.control:SetValue(value)
+                entry.editBox:SetText(tostring(value))
+            end
+        end
+        RefreshGrowthDropdown()
+    end)
+
+    -- Turn off preview when leaving tab
+    frame:SetScript("OnHide", function()
+        NivUI:TriggerEvent("BossPreviewChanged", { enabled = false })
+    end)
+
+    return frame
+end
+
 function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
     container:SetAllPoints()
@@ -1526,6 +1731,21 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     partyTab:SetScript("OnClick", function() SelectSubTab(3) end)
     table.insert(subTabs, partyTab)
 
+    -- Create Boss sub-tab content
+    local bossContainer = CreateFrame("Frame", nil, container)
+    bossContainer:SetPoint("TOPLEFT", 0, -32)
+    bossContainer:SetPoint("BOTTOMRIGHT", 0, 0)
+    bossContainer:Hide()
+
+    local bossPanel = CreateBossSettingsPanel(bossContainer, Components)
+    bossPanel:SetAllPoints()
+    table.insert(subTabContainers, bossContainer)
+
+    local bossTab = Components.GetTab(container, "Boss")
+    bossTab:SetPoint("LEFT", partyTab, "RIGHT", 0, 0)
+    bossTab:SetScript("OnClick", function() SelectSubTab(4) end)
+    table.insert(subTabs, bossTab)
+
     -- Create Raid (10) sub-tab content
     local raid10Container = CreateFrame("Frame", nil, container)
     raid10Container:SetPoint("TOPLEFT", 0, -32)
@@ -1537,8 +1757,8 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     table.insert(subTabContainers, raid10Container)
 
     local raid10Tab = Components.GetTab(container, "Raid (10)")
-    raid10Tab:SetPoint("LEFT", partyTab, "RIGHT", 0, 0)
-    raid10Tab:SetScript("OnClick", function() SelectSubTab(4) end)
+    raid10Tab:SetPoint("LEFT", bossTab, "RIGHT", 0, 0)
+    raid10Tab:SetScript("OnClick", function() SelectSubTab(5) end)
     table.insert(subTabs, raid10Tab)
 
     -- Create Raid (20) sub-tab content
@@ -1553,7 +1773,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
 
     local raid20Tab = Components.GetTab(container, "Raid (20)")
     raid20Tab:SetPoint("LEFT", raid10Tab, "RIGHT", 0, 0)
-    raid20Tab:SetScript("OnClick", function() SelectSubTab(5) end)
+    raid20Tab:SetScript("OnClick", function() SelectSubTab(6) end)
     table.insert(subTabs, raid20Tab)
 
     -- Create Raid (40) sub-tab content
@@ -1568,7 +1788,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
 
     local raid40Tab = Components.GetTab(container, "Raid (40)")
     raid40Tab:SetPoint("LEFT", raid20Tab, "RIGHT", 0, 0)
-    raid40Tab:SetScript("OnClick", function() SelectSubTab(6) end)
+    raid40Tab:SetScript("OnClick", function() SelectSubTab(7) end)
     table.insert(subTabs, raid40Tab)
 
     -- Select first sub-tab when shown
