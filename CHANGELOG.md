@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Edit Mode overlays now match Blizzard's native visual style
+- Frames snap to screen edges, center, grid lines, and other frames when dragging in Edit Mode
+
 ### Fixed
 
 - Enemy target names now display correctly with Midnight's secret value system
