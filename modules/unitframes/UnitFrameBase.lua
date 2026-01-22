@@ -265,88 +265,43 @@ function UnitFrameBase.UpdateCastbar(state)
     local config = state.currentStyle.castbar
     local unit = state.unit
 
-    -- Try Duration API first (12.0+)
-    local duration = UnitCastingDuration and UnitCastingDuration(unit)
-    local isChanneling = false
-
-    if not duration or (duration.IsZero and duration:IsZero()) then
-        duration = UnitChannelDuration and UnitChannelDuration(unit)
-        isChanneling = true
-    end
-
-    -- Duration API path
-    if duration and duration.IsZero and not duration:IsZero() then
-        local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
-        widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
-
-        local name = UnitCastingInfo(unit)
-        if not name then
-            name = UnitChannelInfo(unit)
-        end
-
-        if widget.spellName and config.showSpellName then
-            widget.spellName:SetText(name or "")
-        end
-
-        if widget.timer and config.showTimer then
-            widget.timer:SetFormattedText("%.1fs", duration:GetRemainingDuration())
-        end
-
-        local notInterruptible = select(8, UnitCastingInfo(unit))
-        if notInterruptible == nil then
-            notInterruptible = select(7, UnitChannelInfo(unit))
-        end
-
-        if notInterruptible then
-            local color = config.nonInterruptibleColor
-            widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-        else
-            local color = config.castingColor
-            widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-        end
-
-        widget:Show()
-        return
-    end
-
-    -- Legacy API fallback (pre-12.0)
+    -- Check for active cast using CastingInfo/ChannelInfo (returns nil if no cast)
     local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID = UnitCastingInfo(unit)
+    local isChanneling = false
 
     if not name then
         name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible, spellID = UnitChannelInfo(unit)
         isChanneling = true
     end
 
-    if name then
+    if not name then
+        widget:Hide()
+        if state.castbarTicking then
+            state.castbarTicking = false
+            widget:SetScript("OnUpdate", nil)
+        end
+        return
+    end
+
+    -- Try Duration API (12.0+) for display
+    local usedDurationAPI = false
+    if UnitCastingDuration and UnitChannelDuration then
+        local duration = isChanneling and UnitChannelDuration(unit) or UnitCastingDuration(unit)
+        if duration and duration.SetTimerDuration then
+            local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
+            widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
+            usedDurationAPI = true
+        end
+    end
+
+    -- Legacy fallback for progress display
+    if not usedDurationAPI and startTimeMS and endTimeMS then
         local durationSec = (endTimeMS - startTimeMS) / 1000
         local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
         local progress = elapsed / durationSec
 
         widget:SetMinMaxValues(0, 1)
         widget:SetValue(isChanneling and (1 - progress) or progress)
-
-        if widget.spellName and config.showSpellName then
-            widget.spellName:SetText(name)
-        end
-
-        if widget.icon and config.showIcon then
-            widget.icon:SetTexture(texture)
-        end
-
-        if widget.timer and config.showTimer then
-            local remaining = durationSec - elapsed
-            widget.timer:SetText(string.format("%.1fs", remaining))
-        end
-
-        if notInterruptible then
-            local color = config.nonInterruptibleColor
-            widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-        else
-            local color = config.castingColor
-            widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-        end
-
-        widget:Show()
 
         -- Set up OnUpdate for legacy API
         if not state.castbarTicking then
@@ -355,13 +310,31 @@ function UnitFrameBase.UpdateCastbar(state)
                 UnitFrameBase.UpdateCastbar(state)
             end)
         end
-    else
-        widget:Hide()
-        if state.castbarTicking then
-            state.castbarTicking = false
-            widget:SetScript("OnUpdate", nil)
-        end
     end
+
+    if widget.spellName and config.showSpellName then
+        widget.spellName:SetText(name or "")
+    end
+
+    if widget.icon and config.showIcon then
+        widget.icon:SetTexture(texture)
+    end
+
+    if widget.timer and config.showTimer and startTimeMS and endTimeMS then
+        local remaining = (endTimeMS - GetTime() * 1000) / 1000
+        widget.timer:SetFormattedText("%.1fs", remaining)
+    end
+
+    -- notInterruptible might be secret for enemy casts, use SetVertexColorFromBoolean if available
+    if notInterruptible then
+        local color = config.nonInterruptibleColor
+        widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+    else
+        local color = config.castingColor
+        widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+    end
+
+    widget:Show()
 end
 
 function UnitFrameBase.UpdateAllWidgets(state)
