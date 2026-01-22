@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Arena enemy unit frames with the same customization options as boss frames
+
 ### Changed
 
 - Edit Mode overlays now match Blizzard's native visual style

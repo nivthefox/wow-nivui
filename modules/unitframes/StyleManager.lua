@@ -367,6 +367,38 @@ function NivUI:SetBossGrowthDirection(value)
     self:TriggerEvent("BossSettingsChanged", { setting = "growthDirection", value = value })
 end
 
+-- Arena Settings
+
+function NivUI:GetArenaSpacing()
+    return NivUI_DB.arenaSpacing or 2
+end
+
+function NivUI:SetArenaSpacing(value)
+    NivUI_DB.arenaSpacing = value
+
+    self:TriggerEvent("ArenaSettingsChanged", { setting = "spacing", value = value })
+end
+
+function NivUI:GetArenaOrientation()
+    return NivUI_DB.arenaOrientation or "VERTICAL"
+end
+
+function NivUI:SetArenaOrientation(value)
+    NivUI_DB.arenaOrientation = value
+
+    self:TriggerEvent("ArenaSettingsChanged", { setting = "orientation", value = value })
+end
+
+function NivUI:GetArenaGrowthDirection()
+    return NivUI_DB.arenaGrowthDirection or "DOWN"
+end
+
+function NivUI:SetArenaGrowthDirection(value)
+    NivUI_DB.arenaGrowthDirection = value
+
+    self:TriggerEvent("ArenaSettingsChanged", { setting = "growthDirection", value = value })
+end
+
 function NivUI:GetStyleWithDefaults(name)
     local style = self:GetStyle(name)
     if not style then

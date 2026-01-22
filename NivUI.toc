@@ -23,5 +23,6 @@ modules/unitframes/PetFrame.lua
 modules/unitframes/FocusFrame.lua
 modules/unitframes/PartyFrame.lua
 modules/unitframes/BossFrame.lua
+modules/unitframes/ArenaFrame.lua
 modules/unitframes/RaidFrame.lua
 ConfigFrame.lua

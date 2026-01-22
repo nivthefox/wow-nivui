@@ -3,54 +3,43 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
+local MAX_ARENA_FRAMES = 5
+
 local state = {
     enabled = false,
     previewMode = false,
     container = nil,
-    memberFrames = {},  -- Keyed by unit ID: "player", "party1", etc.
+    memberFrames = {},  -- Keyed by unit ID: "arena1", "arena2", etc.
     memberStates = {},  -- State objects for each member frame
     styleName = nil,
 }
 
-local function GetPartyUnits()
+local function GetArenaUnits()
     local units = {}
-    local includePlayer = NivUI:DoesPartyIncludePlayer()
-
-    if includePlayer then
-        table.insert(units, "player")
+    for i = 1, MAX_ARENA_FRAMES do
+        table.insert(units, "arena" .. i)
     end
-
-    for i = 1, 4 do
-        table.insert(units, "party" .. i)
-    end
-
     return units
 end
 
-local function ShouldShowPartyFrames()
+local function ShouldShowArenaFrames()
     if state.previewMode then
         return true
     end
 
-    if IsInRaid() then
-        return false
+    -- Show if any arena opponent exists
+    for i = 1, MAX_ARENA_FRAMES do
+        if UnitExists("arena" .. i) then
+            return true
+        end
     end
 
-    local showWhenSolo = NivUI:DoesPartyShowWhenSolo()
-    if showWhenSolo then
-        return true
-    end
-
-    return IsInGroup()
+    return false
 end
 
 local function ShouldShowUnit(unit)
     if state.previewMode then
         return true
-    end
-
-    if unit == "player" then
-        return NivUI:DoesPartyIncludePlayer() and ShouldShowPartyFrames()
     end
 
     return UnitExists(unit)
@@ -59,10 +48,10 @@ end
 local function LayoutMemberFrames()
     if not state.container then return end
 
-    local orientation = NivUI:GetPartyOrientation()
-    local growth = NivUI:GetPartyGrowthDirection()
-    local spacing = NivUI:GetPartySpacing()
-    local units = GetPartyUnits()
+    local orientation = NivUI:GetArenaOrientation()
+    local growth = NivUI:GetArenaGrowthDirection()
+    local spacing = NivUI:GetArenaSpacing()
+    local units = GetArenaUnits()
 
     local style = NivUI:GetStyleWithDefaults(state.styleName)
     local frameWidth = style.frame.width or 200
@@ -127,7 +116,7 @@ local function CreateMemberFrame(unit)
     local frameWidth = frameConfig.width or 200
     local frameHeight = frameConfig.height or 60
 
-    local frameName = "NivUI_PartyFrame_" .. unit
+    local frameName = "NivUI_ArenaFrame_" .. unit
     local frame = CreateFrame("Button", frameName, state.container, "SecureUnitButtonTemplate")
     frame:SetSize(frameWidth, frameHeight)
 
@@ -136,7 +125,7 @@ local function CreateMemberFrame(unit)
 
     frame:SetAttribute("unit", unit)
     frame:SetAttribute("type1", "target")
-    frame:SetAttribute("type2", "togglemenu")
+    frame:SetAttribute("type2", "focus")  -- Arena frames set focus on right-click
     frame:RegisterForClicks("AnyUp")
 
     if frameConfig.showBorder then
@@ -156,8 +145,8 @@ local function CreateMemberFrame(unit)
 
     local memberState = {
         unit = unit,
-        frameType = "party",
-        defaultName = unit == "player" and UnitName("player") or "Party Member",
+        frameType = "arena",
+        defaultName = "Arena",
         customFrame = frame,
         currentStyle = style,
         styleName = state.styleName,
@@ -211,7 +200,7 @@ local function CreateMemberFrame(unit)
 
     local UPDATE_INTERVAL = 0.1
     frame:SetScript("OnUpdate", function(self, elapsed)
-        if not NivUI:IsRealTimeUpdates("party") then
+        if not NivUI:IsRealTimeUpdates("arena") then
             memberState.timeSinceLastUpdate = memberState.timeSinceLastUpdate + elapsed
             if memberState.timeSinceLastUpdate < UPDATE_INTERVAL then return end
             memberState.timeSinceLastUpdate = 0
@@ -240,31 +229,31 @@ local function DestroyMemberFrame(unit)
     state.memberStates[unit] = nil
 end
 
-local function BuildPartyFrames()
+local function BuildArenaFrames()
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(unit)
     end
 
-    state.styleName = NivUI:GetAssignment("party")
+    state.styleName = NivUI:GetAssignment("arena")
 
     if not state.container then
-        state.container = CreateFrame("Frame", "NivUI_PartyContainer", UIParent)
+        state.container = CreateFrame("Frame", "NivUI_ArenaContainer", UIParent)
         state.container:SetSize(200, 300)  -- Will be resized by layout
 
-        local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition("party", state.container)
+        local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition("arena", state.container)
         if not positionApplied then
-            state.container:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 20, -200)
+            state.container:SetPoint("RIGHT", UIParent, "RIGHT", -100, 100)
         end
 
         if NivUI.EditMode then
-            NivUI.EditMode:CreateSelectionFrame("party", state.container)
+            NivUI.EditMode:CreateSelectionFrame("arena", state.container)
             if NivUI.EditMode:IsActive() then
-                NivUI.EditMode:ShowSelection("party")
+                NivUI.EditMode:ShowSelection("arena")
             end
         end
     end
 
-    local units = GetPartyUnits()
+    local units = GetArenaUnits()
     for _, unit in ipairs(units) do
         local frame = CreateMemberFrame(unit)
         if frame then
@@ -284,7 +273,7 @@ function UpdateAllMemberFrames()
     end
 end
 
-local function DestroyPartyFrames()
+local function DestroyArenaFrames()
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(unit)
     end
@@ -296,10 +285,10 @@ local function DestroyPartyFrames()
     end
 end
 
-local function OnGroupRosterUpdate()
+local function OnArenaOpponentUpdate()
     if not state.enabled then return end
 
-    if ShouldShowPartyFrames() then
+    if ShouldShowArenaFrames() then
         if state.container then
             state.container:Show()
         end
@@ -312,7 +301,7 @@ local function OnGroupRosterUpdate()
     end
 end
 
-local function HideBlizzardPartyFrames()
+local function HideBlizzardArenaFrames()
     if InCombatLockdown and InCombatLockdown() then
         state.pendingHide = true
         return
@@ -320,54 +309,46 @@ local function HideBlizzardPartyFrames()
 
     state.pendingHide = false
 
-    if CompactPartyFrame then
-        CompactPartyFrame:UnregisterAllEvents()
-        CompactPartyFrame:Hide()
-        CompactPartyFrame:SetScript("OnShow", function(self) self:Hide() end)
+    if CompactArenaFrame then
+        CompactArenaFrame:UnregisterAllEvents()
+        CompactArenaFrame:Hide()
+        CompactArenaFrame:SetScript("OnShow", function(self) self:Hide() end)
 
         -- Neuter RefreshMembers to prevent Edit Mode from triggering secret value errors
-        -- Blizzard's CompactUnitFrame_UpdateInRange does boolean tests on secret values
-        if not CompactPartyFrame.NivUI_Neutered then
-            CompactPartyFrame.NivUI_Neutered = true
-            CompactPartyFrame.RefreshMembers = function() end
-        end
-    end
-
-    for i = 1, 4 do
-        local frame = _G["PartyMemberFrame" .. i]
-        if frame then
-            Base.KillVisual(frame)
+        if not CompactArenaFrame.NivUI_Neutered then
+            CompactArenaFrame.NivUI_Neutered = true
+            CompactArenaFrame.RefreshMembers = function() end
         end
     end
 
     state.blizzardHidden = true
 end
 
-local PartyFrame = {}
-NivUI.UnitFrames.PartyFrame = PartyFrame
+local ArenaFrame = {}
+NivUI.UnitFrames.ArenaFrame = ArenaFrame
 
-function PartyFrame.Enable()
+function ArenaFrame.Enable()
     state.enabled = true
-    BuildPartyFrames()
-    HideBlizzardPartyFrames()
+    BuildArenaFrames()
+    HideBlizzardArenaFrames()
 
-    if ShouldShowPartyFrames() then
+    if ShouldShowArenaFrames() then
         state.container:Show()
     else
         state.container:Hide()
     end
 end
 
-function PartyFrame.Disable()
+function ArenaFrame.Disable()
     state.enabled = false
-    DestroyPartyFrames()
+    DestroyArenaFrames()
     ReloadUI()
 end
 
-function PartyFrame.Refresh()
+function ArenaFrame.Refresh()
     if state.enabled then
-        BuildPartyFrames()
-        if ShouldShowPartyFrames() then
+        BuildArenaFrames()
+        if ShouldShowArenaFrames() then
             state.container:Show()
         else
             state.container:Hide()
@@ -375,7 +356,7 @@ function PartyFrame.Refresh()
     end
 end
 
-function PartyFrame.SetPreviewMode(enabled)
+function ArenaFrame.SetPreviewMode(enabled)
     state.previewMode = enabled
     if state.enabled then
         LayoutMemberFrames()
@@ -383,83 +364,74 @@ function PartyFrame.SetPreviewMode(enabled)
 
         if enabled then
             state.container:Show()
-        elseif not ShouldShowPartyFrames() then
+        elseif not ShouldShowArenaFrames() then
             state.container:Hide()
         end
     end
 end
 
-function PartyFrame.GetState()
+function ArenaFrame.GetState()
     return state
 end
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
-eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+eventFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
+eventFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+eventFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
-eventFrame:SetScript("OnEvent", function(self, event)
+eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
-        if NivUI:IsFrameEnabled("party") then
-            PartyFrame.Enable()
+        if NivUI:IsFrameEnabled("arena") then
+            ArenaFrame.Enable()
         end
-    elseif event == "GROUP_ROSTER_UPDATE"
+    elseif event == "ARENA_OPPONENT_UPDATE"
+        or event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS"
+        or event == "PVP_MATCH_STATE_CHANGED"
         or event == "PLAYER_ENTERING_WORLD"
         or event == "ZONE_CHANGED_NEW_AREA" then
-        OnGroupRosterUpdate()
+        OnArenaOpponentUpdate()
     elseif event == "PLAYER_REGEN_ENABLED" then
         if state.pendingHide then
-            HideBlizzardPartyFrames()
+            HideBlizzardArenaFrames()
         end
     end
 end)
 
 NivUI:RegisterCallback("FrameEnabledChanged", function(data)
-    if data.frameType == "party" then
+    if data.frameType == "arena" then
         if data.enabled then
-            PartyFrame.Enable()
+            ArenaFrame.Enable()
         else
-            PartyFrame.Disable()
+            ArenaFrame.Disable()
         end
     end
 end)
 
 NivUI:RegisterCallback("AssignmentChanged", function(data)
-    if data.frameType == "party" and NivUI:IsFrameEnabled("party") then
-        PartyFrame.Refresh()
+    if data.frameType == "arena" and NivUI:IsFrameEnabled("arena") then
+        ArenaFrame.Refresh()
     end
 end)
 
 NivUI:RegisterCallback("StyleChanged", function(data)
-    if NivUI:IsFrameEnabled("party") then
-        local assignedStyle = NivUI:GetAssignment("party")
+    if NivUI:IsFrameEnabled("arena") then
+        local assignedStyle = NivUI:GetAssignment("arena")
         if data.styleName == assignedStyle then
-            PartyFrame.Refresh()
+            ArenaFrame.Refresh()
         end
     end
 end)
 
-NivUI:RegisterCallback("PartySettingsChanged", function(data)
+NivUI:RegisterCallback("ArenaSettingsChanged", function(data)
     if state.enabled then
-        if data.setting == "includePlayer" then
-            -- Need to rebuild frames since player frame might be added/removed
-            PartyFrame.Refresh()
-        elseif data.setting == "spacing" or data.setting == "orientation" or data.setting == "growthDirection" then
-            LayoutMemberFrames()
-        elseif data.setting == "showWhenSolo" then
-            if ShouldShowPartyFrames() then
-                state.container:Show()
-                LayoutMemberFrames()
-                UpdateAllMemberFrames()
-            else
-                state.container:Hide()
-            end
-        end
+        LayoutMemberFrames()
     end
 end)
 
-NivUI:RegisterCallback("PartyPreviewChanged", function(data)
-    PartyFrame.SetPreviewMode(data.enabled)
+NivUI:RegisterCallback("ArenaPreviewChanged", function(data)
+    ArenaFrame.SetPreviewMode(data.enabled)
 end)

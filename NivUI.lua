@@ -212,6 +212,7 @@ function NivUI:InitializeDB()
             pet = "Default",
             party = "Default",
             boss = "Default",
+            arena = "Default",
             targettarget = "Default",
         }
     end
