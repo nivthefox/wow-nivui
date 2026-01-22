@@ -1211,6 +1211,11 @@ local function CreatePartySettingsPanel(parent, Components)
         RefreshGrowthDropdown()
     end)
 
+    -- Turn off preview when leaving tab
+    frame:SetScript("OnHide", function()
+        NivUI:TriggerEvent("PartyPreviewChanged", { enabled = false })
+    end)
+
     return frame
 end
 
@@ -1447,6 +1452,11 @@ local function CreateRaidSettingsPanel(parent, Components, raidSize, raidLabel)
             end
         end
         RefreshGroupGrowthDropdown()
+    end)
+
+    -- Turn off preview when leaving tab
+    frame:SetScript("OnHide", function()
+        NivUI:TriggerEvent("RaidPreviewChanged", { raidSize = raidSize, enabled = false })
     end)
 
     return frame
