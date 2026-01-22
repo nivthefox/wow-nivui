@@ -279,16 +279,20 @@ function UnitFrameBase.UpdateCastbar(state)
     end
 
     local usedDurationAPI = false
-    if UnitCastingDuration and UnitChannelDuration then
+    if UnitCastingDuration and UnitChannelDuration and widget.SetTimerDuration then
         local duration = isChanneling and UnitChannelDuration(unit) or UnitCastingDuration(unit)
-        if duration and duration.SetTimerDuration then
+        if duration then
             local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
             widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
             usedDurationAPI = true
+            if state.castbarTicking then
+                state.castbarTicking = false
+                widget:SetScript("OnUpdate", nil)
+            end
         end
     end
 
-    if not usedDurationAPI and startTimeMS and endTimeMS then
+    if not usedDurationAPI and startTimeMS and endTimeMS and not issecretvalue(endTimeMS) then
         local durationSec = (endTimeMS - startTimeMS) / 1000
         local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
         local progress = elapsed / durationSec
@@ -312,9 +316,13 @@ function UnitFrameBase.UpdateCastbar(state)
         widget.icon:SetTexture(texture)
     end
 
-    if widget.timer and config.showTimer and startTimeMS and endTimeMS then
-        local remaining = (endTimeMS - GetTime() * 1000) / 1000
-        widget.timer:SetFormattedText("%.1fs", remaining)
+    if widget.timer and config.showTimer then
+        if startTimeMS and endTimeMS and not issecretvalue(endTimeMS) then
+            local remaining = (endTimeMS - GetTime() * 1000) / 1000
+            widget.timer:SetFormattedText("%.1fs", remaining)
+        else
+            widget.timer:SetText("")
+        end
     end
 
     if notInterruptible then
