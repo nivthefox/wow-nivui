@@ -1214,6 +1214,244 @@ local function CreatePartySettingsPanel(parent, Components)
     return frame
 end
 
+local function CreateRaidSettingsPanel(parent, Components, raidSize, raidLabel)
+    local frame = CreateFrame("Frame", nil, parent)
+
+    local allFrames = {}
+    local controls = {}
+
+    local function AddRow(row, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            row:SetPoint("TOP", frame, "TOP", 0, -10)
+        else
+            row:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, row)
+    end
+
+    -- Header
+    local header = Components.GetHeader(frame, raidLabel .. " Frame Settings")
+    AddRow(header)
+
+    -- Preview checkbox
+    local previewRow = CreateFrame("Frame", nil, frame)
+    previewRow:SetHeight(24)
+    previewRow:SetPoint("LEFT", 20, 0)
+    previewRow:SetPoint("RIGHT", -20, 0)
+
+    local previewCheckbox = CreateFrame("CheckButton", nil, previewRow, "SettingsCheckboxTemplate")
+    previewCheckbox:SetPoint("LEFT", 0, 0)
+    previewCheckbox:SetText("")
+    previewCheckbox:SetScript("OnClick", function(self)
+        NivUI:TriggerEvent("RaidPreviewChanged", { raidSize = raidSize, enabled = self:GetChecked() })
+    end)
+    table.insert(controls, { control = previewCheckbox, kind = "preview" })
+
+    local previewLabel = previewRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    previewLabel:SetPoint("LEFT", previewCheckbox, "RIGHT", 4, 0)
+    previewLabel:SetText("Preview")
+
+    local previewDesc = previewRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    previewDesc:SetPoint("LEFT", previewLabel, "RIGHT", 8, 0)
+    previewDesc:SetTextColor(0.6, 0.6, 0.6)
+    previewDesc:SetText("(Show fake raid frames)")
+
+    AddRow(previewRow, 8)
+
+    -- Spacing slider
+    local spacingRow = CreateFrame("Frame", nil, frame)
+    spacingRow:SetHeight(ROW_HEIGHT)
+    spacingRow:SetPoint("LEFT", 20, 0)
+    spacingRow:SetPoint("RIGHT", -20, 0)
+
+    local spacingLabel = spacingRow:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    spacingLabel:SetPoint("LEFT", 0, 0)
+    spacingLabel:SetText("Spacing:")
+
+    local spacingEditBox = CreateFrame("EditBox", nil, spacingRow, "InputBoxTemplate")
+    spacingEditBox:SetSize(50, 20)
+    spacingEditBox:SetPoint("RIGHT", -5, 0)
+    spacingEditBox:SetAutoFocus(false)
+    spacingEditBox:SetMaxLetters(4)
+
+    local spacingSlider = CreateFrame("Slider", nil, spacingRow, "MinimalSliderWithSteppersTemplate")
+    spacingSlider:SetPoint("LEFT", spacingLabel, "RIGHT", 20, 0)
+    spacingSlider:SetPoint("RIGHT", spacingEditBox, "LEFT", -10, 0)
+    spacingSlider:SetHeight(20)
+    spacingSlider:Init(2, 0, 20, 20, {})
+
+    table.insert(controls, { control = spacingSlider, editBox = spacingEditBox, kind = "spacing" })
+
+    local spacingUpdating = false
+
+    spacingSlider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+        if spacingUpdating then return end
+        spacingUpdating = true
+        spacingEditBox:SetText(tostring(math.floor(value)))
+        NivUI:SetRaidSpacing(raidSize, value)
+        spacingUpdating = false
+    end)
+
+    spacingEditBox:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText()) or 0
+        value = math.max(0, math.min(20, value))
+        spacingUpdating = true
+        spacingSlider:SetValue(value)
+        NivUI:SetRaidSpacing(raidSize, value)
+        spacingUpdating = false
+        self:ClearFocus()
+    end)
+
+    spacingEditBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+
+    AddRow(spacingRow, 8)
+
+    -- Group Orientation dropdown
+    local groupOrientationRow = CreateFrame("Frame", nil, frame)
+    groupOrientationRow:SetHeight(ROW_HEIGHT)
+    groupOrientationRow:SetPoint("LEFT", 20, 0)
+    groupOrientationRow:SetPoint("RIGHT", -20, 0)
+
+    local groupOrientationLabel = groupOrientationRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    groupOrientationLabel:SetPoint("LEFT", 0, 0)
+    groupOrientationLabel:SetText("Group Orientation:")
+
+    local groupOrientationDropdown = CreateFrame("DropdownButton", nil, groupOrientationRow, "WowStyle1DropdownTemplate")
+    groupOrientationDropdown:SetWidth(150)
+    groupOrientationDropdown:SetPoint("LEFT", groupOrientationLabel, "RIGHT", 20, 0)
+
+    local groupGrowthDropdown  -- Forward reference
+
+    local function RefreshGroupGrowthDropdown()
+        if not groupGrowthDropdown then return end
+        local orientation = NivUI:GetRaidGroupOrientation(raidSize)
+        local options
+        if orientation == "VERTICAL" then
+            options = {
+                { value = "DOWN", name = "Down" },
+                { value = "UP", name = "Up" },
+            }
+        else
+            options = {
+                { value = "RIGHT", name = "Right" },
+                { value = "LEFT", name = "Left" },
+            }
+        end
+
+        groupGrowthDropdown:SetupMenu(function(_, rootDescription)
+            for _, opt in ipairs(options) do
+                rootDescription:CreateRadio(
+                    opt.name,
+                    function() return NivUI:GetRaidGroupGrowthDirection(raidSize) == opt.value end,
+                    function() NivUI:SetRaidGroupGrowthDirection(raidSize, opt.value) end
+                )
+            end
+        end)
+    end
+
+    groupOrientationDropdown:SetupMenu(function(_, rootDescription)
+        local options = {
+            { value = "VERTICAL", name = "Vertical" },
+            { value = "HORIZONTAL", name = "Horizontal" },
+        }
+        for _, opt in ipairs(options) do
+            rootDescription:CreateRadio(
+                opt.name,
+                function() return NivUI:GetRaidGroupOrientation(raidSize) == opt.value end,
+                function()
+                    NivUI:SetRaidGroupOrientation(raidSize, opt.value)
+                    -- Reset growth direction to sensible default
+                    if opt.value == "VERTICAL" then
+                        NivUI:SetRaidGroupGrowthDirection(raidSize, "DOWN")
+                    else
+                        NivUI:SetRaidGroupGrowthDirection(raidSize, "RIGHT")
+                    end
+                    RefreshGroupGrowthDropdown()
+                end
+            )
+        end
+    end)
+
+    table.insert(controls, { control = groupOrientationDropdown, kind = "groupOrientation", refreshGrowth = RefreshGroupGrowthDropdown })
+
+    AddRow(groupOrientationRow, 4)
+
+    -- Group Growth Direction dropdown
+    local groupGrowthRow = CreateFrame("Frame", nil, frame)
+    groupGrowthRow:SetHeight(ROW_HEIGHT)
+    groupGrowthRow:SetPoint("LEFT", 20, 0)
+    groupGrowthRow:SetPoint("RIGHT", -20, 0)
+
+    local groupGrowthLabel = groupGrowthRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    groupGrowthLabel:SetPoint("LEFT", 0, 0)
+    groupGrowthLabel:SetText("Group Growth:")
+
+    groupGrowthDropdown = CreateFrame("DropdownButton", nil, groupGrowthRow, "WowStyle1DropdownTemplate")
+    groupGrowthDropdown:SetWidth(150)
+    groupGrowthDropdown:SetPoint("LEFT", groupGrowthLabel, "RIGHT", 20, 0)
+
+    table.insert(controls, { control = groupGrowthDropdown, kind = "groupGrowth" })
+
+    AddRow(groupGrowthRow, 4)
+
+    -- Player Growth Direction dropdown
+    local playerGrowthRow = CreateFrame("Frame", nil, frame)
+    playerGrowthRow:SetHeight(ROW_HEIGHT)
+    playerGrowthRow:SetPoint("LEFT", 20, 0)
+    playerGrowthRow:SetPoint("RIGHT", -20, 0)
+
+    local playerGrowthLabel = playerGrowthRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    playerGrowthLabel:SetPoint("LEFT", 0, 0)
+    playerGrowthLabel:SetText("Player Growth:")
+
+    local playerGrowthDropdown = CreateFrame("DropdownButton", nil, playerGrowthRow, "WowStyle1DropdownTemplate")
+    playerGrowthDropdown:SetWidth(150)
+    playerGrowthDropdown:SetPoint("LEFT", playerGrowthLabel, "RIGHT", 20, 0)
+
+    playerGrowthDropdown:SetupMenu(function(_, rootDescription)
+        local options = {
+            { value = "DOWN", name = "Down" },
+            { value = "UP", name = "Up" },
+            { value = "RIGHT", name = "Right" },
+            { value = "LEFT", name = "Left" },
+        }
+        for _, opt in ipairs(options) do
+            rootDescription:CreateRadio(
+                opt.name,
+                function() return NivUI:GetRaidPlayerGrowthDirection(raidSize) == opt.value end,
+                function() NivUI:SetRaidPlayerGrowthDirection(raidSize, opt.value) end
+            )
+        end
+    end)
+
+    table.insert(controls, { control = playerGrowthDropdown, kind = "playerGrowth" })
+
+    AddRow(playerGrowthRow, 4)
+
+    -- Refresh control states when shown
+    frame:SetScript("OnShow", function()
+        for _, entry in ipairs(controls) do
+            if entry.kind == "preview" then
+                entry.control:SetChecked(false)  -- Preview always starts off
+            elseif entry.kind == "spacing" then
+                local value = NivUI:GetRaidSpacing(raidSize)
+                entry.control:SetValue(value)
+                entry.editBox:SetText(tostring(value))
+            elseif entry.kind == "groupOrientation" then
+                if entry.refreshGrowth then
+                    entry.refreshGrowth()
+                end
+            end
+        end
+        RefreshGroupGrowthDropdown()
+    end)
+
+    return frame
+end
+
 function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
     container:SetAllPoints()
@@ -1277,6 +1515,51 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     partyTab:SetPoint("LEFT", assignmentsTab, "RIGHT", 0, 0)
     partyTab:SetScript("OnClick", function() SelectSubTab(3) end)
     table.insert(subTabs, partyTab)
+
+    -- Create Raid (10) sub-tab content
+    local raid10Container = CreateFrame("Frame", nil, container)
+    raid10Container:SetPoint("TOPLEFT", 0, -32)
+    raid10Container:SetPoint("BOTTOMRIGHT", 0, 0)
+    raid10Container:Hide()
+
+    local raid10Panel = CreateRaidSettingsPanel(raid10Container, Components, "raid10", "Raid (10)")
+    raid10Panel:SetAllPoints()
+    table.insert(subTabContainers, raid10Container)
+
+    local raid10Tab = Components.GetTab(container, "Raid (10)")
+    raid10Tab:SetPoint("LEFT", partyTab, "RIGHT", 0, 0)
+    raid10Tab:SetScript("OnClick", function() SelectSubTab(4) end)
+    table.insert(subTabs, raid10Tab)
+
+    -- Create Raid (20) sub-tab content
+    local raid20Container = CreateFrame("Frame", nil, container)
+    raid20Container:SetPoint("TOPLEFT", 0, -32)
+    raid20Container:SetPoint("BOTTOMRIGHT", 0, 0)
+    raid20Container:Hide()
+
+    local raid20Panel = CreateRaidSettingsPanel(raid20Container, Components, "raid20", "Raid (20)")
+    raid20Panel:SetAllPoints()
+    table.insert(subTabContainers, raid20Container)
+
+    local raid20Tab = Components.GetTab(container, "Raid (20)")
+    raid20Tab:SetPoint("LEFT", raid10Tab, "RIGHT", 0, 0)
+    raid20Tab:SetScript("OnClick", function() SelectSubTab(5) end)
+    table.insert(subTabs, raid20Tab)
+
+    -- Create Raid (40) sub-tab content
+    local raid40Container = CreateFrame("Frame", nil, container)
+    raid40Container:SetPoint("TOPLEFT", 0, -32)
+    raid40Container:SetPoint("BOTTOMRIGHT", 0, 0)
+    raid40Container:Hide()
+
+    local raid40Panel = CreateRaidSettingsPanel(raid40Container, Components, "raid40", "Raid (40)")
+    raid40Panel:SetAllPoints()
+    table.insert(subTabContainers, raid40Container)
+
+    local raid40Tab = Components.GetTab(container, "Raid (40)")
+    raid40Tab:SetPoint("LEFT", raid20Tab, "RIGHT", 0, 0)
+    raid40Tab:SetScript("OnClick", function() SelectSubTab(6) end)
+    table.insert(subTabs, raid40Tab)
 
     -- Select first sub-tab when shown
     container:SetScript("OnShow", function()

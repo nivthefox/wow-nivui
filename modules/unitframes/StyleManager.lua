@@ -268,6 +268,73 @@ function NivUI:SetPartyShowWhenSolo(enabled)
     self:TriggerEvent("PartySettingsChanged", { setting = "showWhenSolo", enabled = enabled })
 end
 
+-- Raid Settings (per raid size: "raid10", "raid20", "raid40")
+
+local function EnsureRaidSettings(raidSize)
+    if not NivUI_DB.raidSettings then
+        NivUI_DB.raidSettings = {}
+    end
+    if not NivUI_DB.raidSettings[raidSize] then
+        NivUI_DB.raidSettings[raidSize] = {}
+    end
+end
+
+function NivUI:GetRaidSpacing(raidSize)
+    if not NivUI_DB.raidSettings or not NivUI_DB.raidSettings[raidSize] then
+        return 2
+    end
+    return NivUI_DB.raidSettings[raidSize].spacing or 2
+end
+
+function NivUI:SetRaidSpacing(raidSize, value)
+    EnsureRaidSettings(raidSize)
+    NivUI_DB.raidSettings[raidSize].spacing = value
+
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "spacing", value = value })
+end
+
+function NivUI:GetRaidGroupOrientation(raidSize)
+    if not NivUI_DB.raidSettings or not NivUI_DB.raidSettings[raidSize] then
+        return "VERTICAL"
+    end
+    return NivUI_DB.raidSettings[raidSize].groupOrientation or "VERTICAL"
+end
+
+function NivUI:SetRaidGroupOrientation(raidSize, value)
+    EnsureRaidSettings(raidSize)
+    NivUI_DB.raidSettings[raidSize].groupOrientation = value
+
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "groupOrientation", value = value })
+end
+
+function NivUI:GetRaidGroupGrowthDirection(raidSize)
+    if not NivUI_DB.raidSettings or not NivUI_DB.raidSettings[raidSize] then
+        return "DOWN"
+    end
+    return NivUI_DB.raidSettings[raidSize].groupGrowthDirection or "DOWN"
+end
+
+function NivUI:SetRaidGroupGrowthDirection(raidSize, value)
+    EnsureRaidSettings(raidSize)
+    NivUI_DB.raidSettings[raidSize].groupGrowthDirection = value
+
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "groupGrowthDirection", value = value })
+end
+
+function NivUI:GetRaidPlayerGrowthDirection(raidSize)
+    if not NivUI_DB.raidSettings or not NivUI_DB.raidSettings[raidSize] then
+        return "DOWN"
+    end
+    return NivUI_DB.raidSettings[raidSize].playerGrowthDirection or "DOWN"
+end
+
+function NivUI:SetRaidPlayerGrowthDirection(raidSize, value)
+    EnsureRaidSettings(raidSize)
+    NivUI_DB.raidSettings[raidSize].playerGrowthDirection = value
+
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "playerGrowthDirection", value = value })
+end
+
 function NivUI:GetStyleWithDefaults(name)
     local style = self:GetStyle(name)
     if not style then
