@@ -7,6 +7,7 @@
 
 NivUI.lua
 modules/bars/StaggerBar.lua
+modules/bars/ChiBar.lua
 modules/unitframes/Defaults.lua
 modules/unitframes/StyleManager.lua
 modules/unitframes/WidgetConfigs.lua

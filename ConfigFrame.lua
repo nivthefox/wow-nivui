@@ -734,8 +734,220 @@ local function SetupStaggerBarContent(parent)
     return container
 end
 
--- Creates the Class Bars tab with subtabs (currently just Stagger)
+-- Creates the Chi Bar settings content (used as a subtab)
+local function SetupChiBarContent(parent)
+    local container = CreateFrame("Frame", nil, parent)
+    container:Hide()
+
+    -- ScrollFrame for content
+    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 500)
+    scrollFrame:SetScrollChild(content)
+
+    local allFrames = {}
+
+    local function AddFrame(frame, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            frame:SetPoint("TOP", content, "TOP", 0, 0)
+        else
+            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, frame)
+    end
+
+    local chiDefaults = NivUI.ChiBar and NivUI.ChiBar.defaults or {
+        visibility = "combat",
+        spacing = 2,
+        width = 200,
+        height = 20,
+        locked = true,
+        emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
+        filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },
+        borderColor = { r = 0, g = 0, b = 0, a = 1 },
+        updateInterval = 0.05,
+    }
+
+    ----------------------------------------------------------------------------
+    -- General Section
+    ----------------------------------------------------------------------------
+    local generalHeader = Components.GetHeader(content, "General")
+    AddFrame(generalHeader)
+
+    local visibilityDropdown = Components.GetBasicDropdown(
+        content,
+        "Bar Visible:",
+        function() return NivUI:GetVisibilityOptions() end,
+        function(value)
+            local db = NivUI_DB.chiBar or {}
+            return (db.visibility or chiDefaults.visibility) == value
+        end,
+        function(value)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.visibility = value
+            if NivUI.ChiBar and NivUI.ChiBar.UpdateVisibility then
+                NivUI.ChiBar.UpdateVisibility()
+            end
+        end
+    )
+    AddFrame(visibilityDropdown)
+
+    ----------------------------------------------------------------------------
+    -- Appearance Section
+    ----------------------------------------------------------------------------
+    local appearanceHeader = Components.GetHeader(content, "Appearance")
+    AddFrame(appearanceHeader, SECTION_SPACING)
+
+    local spacingSlider = Components.GetSliderWithInput(
+        content,
+        "Segment Spacing:",
+        0, 10, 1, false,
+        function(value)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.spacing = value
+            if NivUI.ChiBar and NivUI.ChiBar.RebuildSegments then
+                NivUI.ChiBar:RebuildSegments()
+            end
+        end
+    )
+    AddFrame(spacingSlider)
+
+    local emptyColorPicker = Components.GetColorPicker(
+        content,
+        "Empty Color:",
+        true,
+        function(color)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.emptyColor = color
+            if NivUI.ChiBar and NivUI.ChiBar.ApplyColors then
+                NivUI.ChiBar.ApplyColors()
+            end
+        end
+    )
+    AddFrame(emptyColorPicker)
+
+    local filledColorPicker = Components.GetColorPicker(
+        content,
+        "Filled Color:",
+        true,
+        function(color)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.filledColor = color
+            if NivUI.ChiBar and NivUI.ChiBar.ApplyColors then
+                NivUI.ChiBar.ApplyColors()
+            end
+        end
+    )
+    AddFrame(filledColorPicker)
+
+    local borderColorPicker = Components.GetColorPicker(
+        content,
+        "Border Color:",
+        true,
+        function(color)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.borderColor = color
+            if NivUI.ChiBar and NivUI.ChiBar.ApplyBorder then
+                NivUI.ChiBar.ApplyBorder()
+            end
+        end
+    )
+    AddFrame(borderColorPicker)
+
+    ----------------------------------------------------------------------------
+    -- Position Section
+    ----------------------------------------------------------------------------
+    local positionHeader = Components.GetHeader(content, "Position")
+    AddFrame(positionHeader, SECTION_SPACING)
+
+    local lockedCheck = Components.GetCheckbox(
+        content,
+        "Locked",
+        function(checked)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.locked = checked
+            if NivUI.ChiBar and NivUI.ChiBar.ApplyLockState then
+                NivUI.ChiBar.ApplyLockState()
+            end
+        end
+    )
+    AddFrame(lockedCheck)
+
+    local widthSlider = Components.GetSliderWithInput(
+        content,
+        "Width:",
+        60, 400, 10, false,
+        function(value)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.width = value
+            if NivUI.ChiBar and NivUI.ChiBar.LoadPosition then
+                NivUI.ChiBar.LoadPosition()
+            end
+            if NivUI.ChiBar and NivUI.ChiBar.RebuildSegments then
+                NivUI.ChiBar:RebuildSegments()
+            end
+        end
+    )
+    AddFrame(widthSlider)
+
+    local heightSlider = Components.GetSliderWithInput(
+        content,
+        "Height:",
+        5, 60, 1, false,
+        function(value)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.height = value
+            if NivUI.ChiBar and NivUI.ChiBar.LoadPosition then
+                NivUI.ChiBar.LoadPosition()
+            end
+            if NivUI.ChiBar and NivUI.ChiBar.RebuildSegments then
+                NivUI.ChiBar:RebuildSegments()
+            end
+        end
+    )
+    AddFrame(heightSlider)
+
+    local intervalSlider = Components.GetSliderWithInput(
+        content,
+        "Update Interval:",
+        0.05, 1.0, 0.05, true,
+        function(value)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.updateInterval = value
+        end
+    )
+    AddFrame(intervalSlider)
+
+    ----------------------------------------------------------------------------
+    -- Refresh on show
+    ----------------------------------------------------------------------------
+    container:SetScript("OnShow", function()
+        local db = NivUI_DB.chiBar or {}
+
+        visibilityDropdown:SetValue()
+        spacingSlider:SetValue(db.spacing or chiDefaults.spacing)
+        emptyColorPicker:SetValue(db.emptyColor or chiDefaults.emptyColor)
+        filledColorPicker:SetValue(db.filledColor or chiDefaults.filledColor)
+        borderColorPicker:SetValue(db.borderColor or chiDefaults.borderColor)
+        lockedCheck:SetValue(db.locked or false)
+        widthSlider:SetValue(db.width or chiDefaults.width)
+        heightSlider:SetValue(db.height or chiDefaults.height)
+        intervalSlider:SetValue(db.updateInterval or chiDefaults.updateInterval)
+    end)
+
+    container.widthSlider = widthSlider
+    container.heightSlider = heightSlider
+
+    return container
+end
+
+-- Creates the Class Bars tab with subtabs
 local staggerContent  -- Forward declaration for OnBarMoved callback
+local chiContent  -- Forward declaration for OnBarMoved callback
 local function SetupClassBarsTabWithSubtabs()
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
@@ -769,6 +981,17 @@ local function SetupClassBarsTabWithSubtabs()
     staggerTab:SetPoint("TOPLEFT", 0, 0)
     staggerTab:SetScript("OnClick", function() SelectSubTab(1) end)
     table.insert(subTabs, staggerTab)
+
+    -- Create Chi sub-tab content
+    chiContent = SetupChiBarContent(container)
+    chiContent:SetPoint("TOPLEFT", 0, -32)
+    chiContent:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, chiContent)
+
+    local chiTab = Components.GetTab(container, "Chi")
+    chiTab:SetPoint("LEFT", staggerTab, "RIGHT", 0, 0)
+    chiTab:SetScript("OnClick", function() SelectSubTab(2) end)
+    table.insert(subTabs, chiTab)
 
     -- Select first sub-tab when shown
     container:SetScript("OnShow", function()
@@ -810,12 +1033,22 @@ end)
 --------------------------------------------------------------------------------
 
 NivUI.OnBarMoved = function()
-    local db = NivUI_DB.staggerBar
+    -- Update Stagger sliders
+    local staggerDb = NivUI_DB.staggerBar
     if staggerContent and staggerContent.widthSlider then
-        staggerContent.widthSlider:SetValue(db.width or 394)
+        staggerContent.widthSlider:SetValue(staggerDb.width or 394)
     end
     if staggerContent and staggerContent.heightSlider then
-        staggerContent.heightSlider:SetValue(db.height or 20)
+        staggerContent.heightSlider:SetValue(staggerDb.height or 20)
+    end
+
+    -- Update Chi sliders
+    local chiDb = NivUI_DB.chiBar or {}
+    if chiContent and chiContent.widthSlider then
+        chiContent.widthSlider:SetValue(chiDb.width or 200)
+    end
+    if chiContent and chiContent.heightSlider then
+        chiContent.heightSlider:SetValue(chiDb.height or 20)
     end
 end
 
