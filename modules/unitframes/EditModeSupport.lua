@@ -81,27 +81,49 @@ local function SetupMagnetismMethods(frame, selection)
         return centerX * scale, centerY * scale
     end
 
+    -- Safely get scaled selection sides from another frame (may have secret values or be hidden)
+    local function SafeGetOtherFrameSides(otherFrame)
+        local success, left, right, bottom, top = pcall(function()
+            if otherFrame.GetScaledSelectionSides then
+                return otherFrame:GetScaledSelectionSides()
+            else
+                local l, b, w, h = otherFrame:GetRect()
+                if not l then return nil end
+                local scale = otherFrame:GetScale() or 1
+                return l * scale, (l + w) * scale, b * scale, (b + h) * scale
+            end
+        end)
+        if success and left then
+            return left, right, bottom, top
+        end
+        return nil
+    end
+
     function frame:IsToTheLeftOfFrame(systemFrame)
         local _, myRight = self:GetScaledSelectionSides()
-        local otherLeft = systemFrame:GetScaledSelectionSides()
+        local otherLeft = SafeGetOtherFrameSides(systemFrame)
+        if not otherLeft then return false end
         return myRight < otherLeft
     end
 
     function frame:IsAboveFrame(systemFrame)
         local _, _, myBottom = self:GetScaledSelectionSides()
-        local _, _, _, otherTop = systemFrame:GetScaledSelectionSides()
+        local otherLeft, _, otherBottom, otherTop = SafeGetOtherFrameSides(systemFrame)
+        if not otherLeft then return false end
         return myBottom > otherTop
     end
 
     function frame:IsVerticallyAlignedWithFrame(systemFrame)
         local _, _, myBottom, myTop = self:GetScaledSelectionSides()
-        local _, _, otherBottom, otherTop = systemFrame:GetScaledSelectionSides()
+        local otherLeft, _, otherBottom, otherTop = SafeGetOtherFrameSides(systemFrame)
+        if not otherLeft then return false end
         return (myTop >= otherBottom) and (myBottom <= otherTop)
     end
 
     function frame:IsHorizontallyAlignedWithFrame(systemFrame)
         local myLeft, myRight = self:GetScaledSelectionSides()
-        local otherLeft, otherRight = systemFrame:GetScaledSelectionSides()
+        local otherLeft, otherRight = SafeGetOtherFrameSides(systemFrame)
+        if not otherLeft then return false end
         return (myRight >= otherLeft) and (myLeft <= otherRight)
     end
 
@@ -110,20 +132,33 @@ local function SetupMagnetismMethods(frame, selection)
         if otherFrame == self then
             return false, false
         end
-        local horizontalEligible = self:IsVerticallyAlignedWithFrame(otherFrame)
-        local verticalEligible = self:IsHorizontallyAlignedWithFrame(otherFrame)
-        return horizontalEligible, verticalEligible
+        -- Use pcall to safely check alignment - other frame may have secret/nil rect values
+        local hSuccess, horizontalEligible = pcall(function()
+            return self:IsVerticallyAlignedWithFrame(otherFrame)
+        end)
+        local vSuccess, verticalEligible = pcall(function()
+            return self:IsHorizontallyAlignedWithFrame(otherFrame)
+        end)
+        return hSuccess and horizontalEligible or false, vSuccess and verticalEligible or false
     end
 
     -- Get combined center offset from another frame
     function frame:GetCombinedCenterOffset(otherFrame)
         local centerX, centerY = self:GetScaledSelectionCenter()
         local frameCenterX, frameCenterY
-        if otherFrame.GetScaledCenter then
-            frameCenterX, frameCenterY = otherFrame:GetScaledCenter()
-        else
-            frameCenterX, frameCenterY = otherFrame:GetCenter()
+
+        local success = pcall(function()
+            if otherFrame.GetScaledCenter then
+                frameCenterX, frameCenterY = otherFrame:GetScaledCenter()
+            else
+                frameCenterX, frameCenterY = otherFrame:GetCenter()
+            end
+        end)
+
+        if not success or not frameCenterX then
+            return 0, 0
         end
+
         local scale = self:GetScale()
         return (centerX - frameCenterX) / scale, (centerY - frameCenterY) / scale
     end
@@ -138,11 +173,21 @@ local function SetupMagnetismMethods(frame, selection)
             otherRight = EditModeMagnetismManager.uiParentRight
             otherBottom = EditModeMagnetismManager.uiParentBottom
             otherTop = EditModeMagnetismManager.uiParentTop
-        elseif frameInfo.frame.GetScaledSelectionSides then
-            otherLeft, otherRight, otherBottom, otherTop = frameInfo.frame:GetScaledSelectionSides()
         else
-            local left, bottom, width, height = frameInfo.frame:GetRect()
-            otherLeft, otherRight, otherBottom, otherTop = left, left + width, bottom, bottom + height
+            local success = pcall(function()
+                if frameInfo.frame.GetScaledSelectionSides then
+                    otherLeft, otherRight, otherBottom, otherTop = frameInfo.frame:GetScaledSelectionSides()
+                else
+                    local left, bottom, width, height = frameInfo.frame:GetRect()
+                    if left then
+                        otherLeft, otherRight, otherBottom, otherTop = left, left + width, bottom, bottom + height
+                    end
+                end
+            end)
+
+            if not success or not otherLeft then
+                return 0
+            end
         end
 
         local scale = self:GetScale()
