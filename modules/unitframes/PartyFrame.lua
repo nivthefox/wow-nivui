@@ -32,14 +32,16 @@ local function ShouldShowPartyFrames()
         return true
     end
 
-    local showWhenSolo = NivUI:DoesPartyShowWhenSolo()
-    local inGroup = IsInGroup()
+    if IsInRaid() then
+        return false
+    end
 
+    local showWhenSolo = NivUI:DoesPartyShowWhenSolo()
     if showWhenSolo then
         return true
     end
 
-    return inGroup
+    return IsInGroup()
 end
 
 local function ShouldShowUnit(unit)

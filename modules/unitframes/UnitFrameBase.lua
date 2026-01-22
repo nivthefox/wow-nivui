@@ -330,8 +330,8 @@ function UnitFrameBase.UpdateCastbar(state)
     local cast = config.castingColor
     local nonInt = config.nonInterruptibleColor
     widget:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible,
-        cast.r, cast.g, cast.b,
-        nonInt.r, nonInt.g, nonInt.b)
+        CreateColor(nonInt.r, nonInt.g, nonInt.b),
+        CreateColor(cast.r, cast.g, cast.b))
 
     widget:Show()
 end
