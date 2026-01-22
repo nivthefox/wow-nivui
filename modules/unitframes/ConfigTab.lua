@@ -153,15 +153,13 @@ StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
 StaticPopupDialogs["NIVUI_CONFIRM_RELOAD"] = {
     text = "Disabling this frame type requires a UI reload. Reload now?",
     button1 = "Reload",
-    button2 = "Cancel",
+    button2 = "Later",
     OnAccept = function(dialog, data)
         NivUI:SetFrameEnabled(data.frameType, false)
     end,
     OnCancel = function(dialog, data)
-        -- Re-check the checkbox since they cancelled
-        if data.checkbox then
-            data.checkbox:SetChecked(true)
-        end
+        NivUI_DB.unitFrameEnabled = NivUI_DB.unitFrameEnabled or {}
+        NivUI_DB.unitFrameEnabled[data.frameType] = false
     end,
     timeout = 0,
     whileDead = 1,
