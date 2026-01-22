@@ -403,11 +403,102 @@ function NivUI.EditMode:HideSelection(frameType)
     end
 end
 
+-- Calculate projected container size for group frame types based on settings
+-- This allows Edit Mode to show accurate frame sizes even when not in a group
+function NivUI.EditMode:GetProjectedContainerSize(frameType)
+    local styleName = NivUI:GetAssignment(frameType)
+    local style = NivUI:GetStyleWithDefaults(styleName)
+    local frameConfig = style and style.frame or {}
+    local frameWidth = frameConfig.width or 200
+    local frameHeight = frameConfig.height or 60
+
+    if frameType == "party" then
+        local memberCount = NivUI:DoesPartyIncludePlayer() and 5 or 4
+        local orientation = NivUI:GetPartyOrientation()
+        local spacing = NivUI:GetPartySpacing()
+
+        if orientation == "VERTICAL" then
+            return frameWidth, memberCount * frameHeight + (memberCount - 1) * spacing
+        else
+            return memberCount * frameWidth + (memberCount - 1) * spacing, frameHeight
+        end
+
+    elseif frameType == "boss" then
+        local memberCount = 5
+        local orientation = NivUI:GetBossOrientation()
+        local spacing = NivUI:GetBossSpacing()
+
+        if orientation == "VERTICAL" then
+            return frameWidth, memberCount * frameHeight + (memberCount - 1) * spacing
+        else
+            return memberCount * frameWidth + (memberCount - 1) * spacing, frameHeight
+        end
+
+    elseif frameType == "arena" then
+        local memberCount = 5
+        local orientation = NivUI:GetArenaOrientation()
+        local spacing = NivUI:GetArenaSpacing()
+
+        if orientation == "VERTICAL" then
+            return frameWidth, memberCount * frameHeight + (memberCount - 1) * spacing
+        else
+            return memberCount * frameWidth + (memberCount - 1) * spacing, frameHeight
+        end
+
+    elseif frameType == "raid10" or frameType == "raid20" or frameType == "raid40" then
+        local maxGroups = frameType == "raid10" and 2 or (frameType == "raid20" and 4 or 8)
+        local spacing = NivUI:GetRaidSpacing(frameType)
+        local groupOrientation = NivUI:GetRaidGroupOrientation(frameType)
+        local playerGrowth = NivUI:GetRaidPlayerGrowthDirection(frameType)
+
+        -- Raid frames typically use smaller dimensions
+        frameWidth = frameConfig.width or 80
+        frameHeight = frameConfig.height or 40
+
+        -- Calculate group size (5 members per group)
+        local groupWidth, groupHeight
+        if playerGrowth == "DOWN" or playerGrowth == "UP" then
+            groupWidth = frameWidth
+            groupHeight = 5 * frameHeight + 4 * spacing
+        else
+            groupWidth = 5 * frameWidth + 4 * spacing
+            groupHeight = frameHeight
+        end
+
+        -- Calculate container size based on group arrangement
+        if groupOrientation == "VERTICAL" then
+            return groupWidth, maxGroups * groupHeight + (maxGroups - 1) * spacing
+        else
+            return maxGroups * groupWidth + (maxGroups - 1) * spacing, groupHeight
+        end
+    end
+
+    return nil, nil
+end
+
+-- Resize group frame containers to reflect projected size for Edit Mode
+function NivUI.EditMode:UpdateContainerSizes()
+    local groupFrameTypes = {"party", "boss", "arena", "raid10", "raid20", "raid40"}
+
+    for _, frameType in ipairs(groupFrameTypes) do
+        local selection = selectionFrames[frameType]
+        if selection and selection.customFrame then
+            local width, height = self:GetProjectedContainerSize(frameType)
+            if width and height then
+                selection.customFrame:SetSize(width, height)
+            end
+        end
+    end
+end
+
 function NivUI.EditMode:ShowAllSelections()
     -- Update UIParent points for magnetism calculations
     if EditModeMagnetismManager and EditModeMagnetismManager.UpdateUIParentPoints then
         EditModeMagnetismManager:UpdateUIParentPoints()
     end
+
+    -- Resize group frame containers to reflect user settings
+    self:UpdateContainerSizes()
 
     for frameType, selection in pairs(selectionFrames) do
         if selection.customFrame then

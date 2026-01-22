@@ -1,4 +1,3 @@
-[![Release Status](https://github.com/nivthefox/wow-nivui/workflows/release/badge.svg)](https://github.com/nivthefox/wow-nivui/actions)
 [![Latest Release](https://img.shields.io/github/v/release/nivthefox/wow-nivui)](https://github.com/nivthefox/wow-nivui/releases/latest)
 
 # NivUI
