@@ -2063,7 +2063,9 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         -- Update content container positions based on number of tab rows
         local contentOffset = -(numRows * TAB_HEIGHT)
         for _, tabData in ipairs(allTabs) do
+            tabData.container:ClearAllPoints()
             tabData.container:SetPoint("TOPLEFT", 0, contentOffset)
+            tabData.container:SetPoint("BOTTOMRIGHT", 0, 0)
         end
 
         -- If current tab is now hidden, select first visible tab
