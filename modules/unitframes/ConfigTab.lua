@@ -2099,7 +2099,6 @@ end
 
 function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     local container = CreateFrame("Frame", nil, parent)
-    container:Hide()
 
     -- State (use module-level currentStyleName)
     local currentStyle = nil
