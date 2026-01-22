@@ -150,6 +150,24 @@ StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
     showAlert = 1,
 }
 
+StaticPopupDialogs["NIVUI_CONFIRM_RELOAD"] = {
+    text = "Disabling this frame type requires a UI reload. Reload now?",
+    button1 = "Reload",
+    button2 = "Cancel",
+    OnAccept = function(dialog, data)
+        NivUI:SetFrameEnabled(data.frameType, false)
+    end,
+    OnCancel = function(dialog, data)
+        -- Re-check the checkbox since they cancelled
+        if data.checkbox then
+            data.checkbox:SetChecked(true)
+        end
+    end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+}
+
 local function DeepGet(tbl, key)
     local parts = { strsplit(".", key) }
     local current = tbl
@@ -695,7 +713,15 @@ local function CreateAssignmentsPanel(parent, Components)
         checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
         checkbox:SetText("")  -- Required for template to render
         checkbox:SetScript("OnClick", function(self)
-            NivUI:SetFrameEnabled(frameInfo.value, self:GetChecked())
+            if self:GetChecked() then
+                NivUI:SetFrameEnabled(frameInfo.value, true)
+            else
+                -- Show confirmation dialog for disable (requires reload)
+                local dialog = StaticPopup_Show("NIVUI_CONFIRM_RELOAD")
+                if dialog then
+                    dialog.data = { frameType = frameInfo.value, checkbox = self }
+                end
+            end
         end)
 
         -- Store reference for OnShow refresh
@@ -1877,7 +1903,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     container:SetAllPoints()
     container:Hide()
 
-    local TAB_HEIGHT = 32
+    local TAB_HEIGHT = 24
     local allTabs = {}
     local currentSubTab = "designer"
 

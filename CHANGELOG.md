@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Configuration tabs now only appear for enabled frame types
+- Tabs wrap to multiple rows when the window is too narrow
 - Edit Mode overlays now match Blizzard's native visual style
 - Frames snap to screen edges, center, grid lines, and other frames when dragging in Edit Mode
 
