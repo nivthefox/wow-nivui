@@ -789,9 +789,7 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.visibility = value
-            if NivUI.ChiBar and NivUI.ChiBar.UpdateVisibility then
-                NivUI.ChiBar.UpdateVisibility()
-            end
+            NivUI.ChiBar.UpdateVisibility()
         end
     )
     AddFrame(visibilityDropdown)
@@ -809,9 +807,7 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.spacing = value
-            if NivUI.ChiBar and NivUI.ChiBar.RebuildSegments then
-                NivUI.ChiBar:RebuildSegments()
-            end
+            NivUI.ChiBar:RebuildSegments()
         end
     )
     AddFrame(spacingSlider)
@@ -823,9 +819,7 @@ local function SetupChiBarContent(parent)
         function(color)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.emptyColor = color
-            if NivUI.ChiBar and NivUI.ChiBar.ApplyColors then
-                NivUI.ChiBar.ApplyColors()
-            end
+            NivUI.ChiBar.ApplyColors()
         end
     )
     AddFrame(emptyColorPicker)
@@ -837,9 +831,7 @@ local function SetupChiBarContent(parent)
         function(color)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.filledColor = color
-            if NivUI.ChiBar and NivUI.ChiBar.ApplyColors then
-                NivUI.ChiBar.ApplyColors()
-            end
+            NivUI.ChiBar.ApplyColors()
         end
     )
     AddFrame(filledColorPicker)
@@ -851,9 +843,7 @@ local function SetupChiBarContent(parent)
         function(color)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.borderColor = color
-            if NivUI.ChiBar and NivUI.ChiBar.ApplyBorder then
-                NivUI.ChiBar.ApplyBorder()
-            end
+            NivUI.ChiBar.ApplyBorder()
         end
     )
     AddFrame(borderColorPicker)
@@ -870,9 +860,7 @@ local function SetupChiBarContent(parent)
         function(checked)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.locked = checked
-            if NivUI.ChiBar and NivUI.ChiBar.ApplyLockState then
-                NivUI.ChiBar.ApplyLockState()
-            end
+            NivUI.ChiBar.ApplyLockState()
         end
     )
     AddFrame(lockedCheck)
@@ -884,12 +872,8 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.width = value
-            if NivUI.ChiBar and NivUI.ChiBar.LoadPosition then
-                NivUI.ChiBar.LoadPosition()
-            end
-            if NivUI.ChiBar and NivUI.ChiBar.RebuildSegments then
-                NivUI.ChiBar:RebuildSegments()
-            end
+            NivUI.ChiBar.LoadPosition()
+            NivUI.ChiBar:RebuildSegments()
         end
     )
     AddFrame(widthSlider)
@@ -901,12 +885,8 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.height = value
-            if NivUI.ChiBar and NivUI.ChiBar.LoadPosition then
-                NivUI.ChiBar.LoadPosition()
-            end
-            if NivUI.ChiBar and NivUI.ChiBar.RebuildSegments then
-                NivUI.ChiBar:RebuildSegments()
-            end
+            NivUI.ChiBar.LoadPosition()
+            NivUI.ChiBar:RebuildSegments()
         end
     )
     AddFrame(heightSlider)
