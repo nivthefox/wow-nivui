@@ -313,12 +313,6 @@ local function HideBlizzardArenaFrames()
         CompactArenaFrame:UnregisterAllEvents()
         CompactArenaFrame:Hide()
         CompactArenaFrame:SetScript("OnShow", function(self) self:Hide() end)
-
-        -- Neuter RefreshMembers to prevent Edit Mode from triggering secret value errors
-        if not CompactArenaFrame.NivUI_Neutered then
-            CompactArenaFrame.NivUI_Neutered = true
-            CompactArenaFrame.RefreshMembers = function() end
-        end
     end
 
     state.blizzardHidden = true

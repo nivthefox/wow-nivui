@@ -324,13 +324,6 @@ local function HideBlizzardPartyFrames()
         CompactPartyFrame:UnregisterAllEvents()
         CompactPartyFrame:Hide()
         CompactPartyFrame:SetScript("OnShow", function(self) self:Hide() end)
-
-        -- Neuter RefreshMembers to prevent Edit Mode from triggering secret value errors
-        -- Blizzard's CompactUnitFrame_UpdateInRange does boolean tests on secret values
-        if not CompactPartyFrame.NivUI_Neutered then
-            CompactPartyFrame.NivUI_Neutered = true
-            CompactPartyFrame.RefreshMembers = function() end
-        end
     end
 
     for i = 1, 4 do
