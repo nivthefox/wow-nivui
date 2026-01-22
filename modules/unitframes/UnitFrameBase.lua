@@ -230,7 +230,7 @@ function UnitFrameBase.UpdateNameText(state)
 
     local name = UnitName(unit) or state.defaultName or "Unit"
     if config.truncateLength and #name > config.truncateLength then
-        name = name:sub(1, config.truncateLength) .. "..."
+        name = name:sub(1, config.truncateLength)
     end
     widget.text:SetText(name)
 
