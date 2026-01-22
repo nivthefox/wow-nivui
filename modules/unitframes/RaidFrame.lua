@@ -543,6 +543,8 @@ local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
 eventFrame:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
@@ -551,7 +553,9 @@ eventFrame:SetScript("OnEvent", function(self, event)
                 RaidFrame.Enable(raidSize)
             end
         end
-    elseif event == "GROUP_ROSTER_UPDATE" then
+    elseif event == "GROUP_ROSTER_UPDATE"
+        or event == "PLAYER_ENTERING_WORLD"
+        or event == "ZONE_CHANGED_NEW_AREA" then
         OnGroupRosterUpdate()
     elseif event == "PLAYER_REGEN_ENABLED" then
         HideBlizzardRaidFrames()

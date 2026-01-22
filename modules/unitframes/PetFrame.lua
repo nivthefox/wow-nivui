@@ -70,13 +70,9 @@ NivUI.UnitFrames.PetFrame = Base.CreateModule({
     onEvent = function(frame, event, unit)
         if event == "UNIT_PET" or event == "PET_BAR_UPDATE" then
             local state = NivUI.UnitFrames.PetFrame.GetState()
-            if not state.customFrame then return end
-
-            if UnitExists("pet") then
-                state.customFrame:Show()
+            Base.CheckVisibility(state)
+            if state.customFrame and state.customFrame:IsShown() then
                 Base.UpdateAllWidgets(state)
-            else
-                state.customFrame:Hide()
             end
         end
     end,

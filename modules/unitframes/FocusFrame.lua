@@ -82,13 +82,9 @@ NivUI.UnitFrames.FocusFrame = Base.CreateModule({
     onEvent = function(frame, event, unit)
         if event == "PLAYER_FOCUS_CHANGED" then
             local state = NivUI.UnitFrames.FocusFrame.GetState()
-            if not state.customFrame then return end
-
-            if UnitExists("focus") then
-                state.customFrame:Show()
+            Base.CheckVisibility(state)
+            if state.customFrame and state.customFrame:IsShown() then
                 Base.UpdateAllWidgets(state)
-            else
-                state.customFrame:Hide()
             end
         end
     end,

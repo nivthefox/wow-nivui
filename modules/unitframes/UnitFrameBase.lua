@@ -485,6 +485,14 @@ function UnitFrameBase.BuildCustomFrame(state)
         state.registerEvents(customFrame)
     end
 
+    customFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    customFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+    customFrame:RegisterEvent("ENCOUNTER_START")
+    customFrame:RegisterEvent("ENCOUNTER_END")
+    customFrame:RegisterEvent("PLAYER_ALIVE")
+    customFrame:RegisterEvent("PLAYER_DEAD")
+    customFrame:RegisterEvent("PLAYER_UNGHOST")
+
     customFrame:SetScript("OnEvent", function(self, event, eventUnit)
         if event == "UNIT_MAXHEALTH" then
             UnitFrameBase.UpdateHealthBar(state)
@@ -505,6 +513,14 @@ function UnitFrameBase.BuildCustomFrame(state)
             UnitFrameBase.UpdateStatusIndicators(state)
         elseif event:find("SPELLCAST") then
             UnitFrameBase.UpdateCastbar(state)
+        elseif event == "PLAYER_ENTERING_WORLD"
+            or event == "ZONE_CHANGED_NEW_AREA"
+            or event == "ENCOUNTER_START"
+            or event == "ENCOUNTER_END"
+            or event == "PLAYER_ALIVE"
+            or event == "PLAYER_DEAD"
+            or event == "PLAYER_UNGHOST" then
+            UnitFrameBase.CheckVisibility(state)
         end
 
         if state.onEvent then
@@ -514,10 +530,8 @@ function UnitFrameBase.BuildCustomFrame(state)
 
     state.timeSinceLastUpdate = 0
     customFrame:SetScript("OnUpdate", function(self, elapsed)
-        if state.shouldShow and not state.shouldShow() then
-            self:Hide()
-            return
-        end
+        UnitFrameBase.CheckVisibility(state)
+        if not self:IsShown() then return end
 
         if not NivUI:IsRealTimeUpdates(state.frameType) then
             state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
@@ -539,16 +553,23 @@ function UnitFrameBase.BuildCustomFrame(state)
         end
     end
 
-    if state.shouldShow then
-        if state.shouldShow() then
-            customFrame:Show()
+    UnitFrameBase.CheckVisibility(state)
+end
+
+function UnitFrameBase.CheckVisibility(state)
+    if not state.customFrame then return end
+
+    local shouldBeVisible = not state.shouldShow or state.shouldShow()
+
+    if shouldBeVisible then
+        if not state.customFrame:IsShown() then
+            state.customFrame:Show()
             UnitFrameBase.UpdateAllWidgets(state)
-        else
-            customFrame:Hide()
         end
     else
-        customFrame:Show()
-        UnitFrameBase.UpdateAllWidgets(state)
+        if state.customFrame:IsShown() then
+            state.customFrame:Hide()
+        end
     end
 end
 

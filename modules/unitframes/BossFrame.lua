@@ -380,13 +380,22 @@ eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
 eventFrame:RegisterEvent("UNIT_TARGETABLE_CHANGED")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:RegisterEvent("ENCOUNTER_START")
+eventFrame:RegisterEvent("ENCOUNTER_END")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         if NivUI:IsFrameEnabled("boss") then
             BossFrame.Enable()
         end
-    elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" or event == "UNIT_TARGETABLE_CHANGED" then
+    elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT"
+        or event == "UNIT_TARGETABLE_CHANGED"
+        or event == "ENCOUNTER_START"
+        or event == "ENCOUNTER_END"
+        or event == "PLAYER_ENTERING_WORLD"
+        or event == "ZONE_CHANGED_NEW_AREA" then
         OnInstanceEncounterEngageUnit()
     elseif event == "PLAYER_REGEN_ENABLED" then
         if state.pendingHide then

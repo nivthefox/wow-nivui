@@ -72,13 +72,9 @@ NivUI.UnitFrames.TargetOfTargetFrame = Base.CreateModule({
     onEvent = function(frame, event, unit)
         if event == "PLAYER_TARGET_CHANGED" or event == "UNIT_TARGET" then
             local state = NivUI.UnitFrames.TargetOfTargetFrame.GetState()
-            if not state.customFrame then return end
-
-            if UnitExists("targettarget") then
-                state.customFrame:Show()
+            Base.CheckVisibility(state)
+            if state.customFrame and state.customFrame:IsShown() then
                 Base.UpdateAllWidgets(state)
-            else
-                state.customFrame:Hide()
             end
         end
     end,
