@@ -13,7 +13,7 @@ local function HideBlizzardPlayerFrame(state)
 
     state.pendingHide = false
 
-    -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
+    -- Do NOT call UnregisterAllEvents here - it breaks Edit Mode
     if PlayerFrame.EnableMouse then
         PlayerFrame:EnableMouse(false)
     end

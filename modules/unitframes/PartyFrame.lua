@@ -3,7 +3,6 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
--- Party frame state
 local state = {
     enabled = false,
     previewMode = false,
@@ -13,7 +12,6 @@ local state = {
     styleName = nil,
 }
 
--- Get the list of units to display based on current settings
 local function GetPartyUnits()
     local units = {}
     local includePlayer = NivUI:DoesPartyIncludePlayer()
@@ -29,7 +27,6 @@ local function GetPartyUnits()
     return units
 end
 
--- Check if we should show party frames at all
 local function ShouldShowPartyFrames()
     if state.previewMode then
         return true
@@ -45,10 +42,9 @@ local function ShouldShowPartyFrames()
     return inGroup
 end
 
--- Check if a specific unit should be visible
 local function ShouldShowUnit(unit)
     if state.previewMode then
-        return true  -- Show all frames in preview mode
+        return true
     end
 
     if unit == "player" then
@@ -58,7 +54,6 @@ local function ShouldShowUnit(unit)
     return UnitExists(unit)
 end
 
--- Layout all visible member frames
 local function LayoutMemberFrames()
     if not state.container then return end
 
@@ -106,7 +101,6 @@ local function LayoutMemberFrames()
         end
     end
 
-    -- Update container size for Edit Mode
     local totalFrames = visibleIndex
     if totalFrames > 0 then
         local containerWidth, containerHeight
@@ -123,7 +117,6 @@ local function LayoutMemberFrames()
     end
 end
 
--- Create a single member frame
 local function CreateMemberFrame(unit)
     local style = NivUI:GetStyleWithDefaults(state.styleName)
     if not style then return nil end
@@ -159,7 +152,6 @@ local function CreateMemberFrame(unit)
     frame.widgets = Base.CreateWidgets(frame, style, unit)
     Base.ApplyAnchors(frame, frame.widgets, style)
 
-    -- Create state object for this member
     local memberState = {
         unit = unit,
         frameType = "party",
@@ -173,7 +165,6 @@ local function CreateMemberFrame(unit)
 
     state.memberStates[unit] = memberState
 
-    -- Register events
     frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
     frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
     frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
@@ -184,7 +175,6 @@ local function CreateMemberFrame(unit)
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 
-    -- Castbar events
     frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
@@ -217,7 +207,6 @@ local function CreateMemberFrame(unit)
         end
     end)
 
-    -- OnUpdate for health/power polling
     local UPDATE_INTERVAL = 0.1
     frame:SetScript("OnUpdate", function(self, elapsed)
         if not NivUI:IsRealTimeUpdates("party") then
@@ -236,7 +225,6 @@ local function CreateMemberFrame(unit)
     return frame
 end
 
--- Destroy a single member frame
 local function DestroyMemberFrame(unit)
     local frame = state.memberFrames[unit]
     if frame then
@@ -250,27 +238,22 @@ local function DestroyMemberFrame(unit)
     state.memberStates[unit] = nil
 end
 
--- Build all party frames
 local function BuildPartyFrames()
-    -- Destroy existing frames
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(unit)
     end
 
     state.styleName = NivUI:GetAssignment("party")
 
-    -- Create container if needed
     if not state.container then
         state.container = CreateFrame("Frame", "NivUI_PartyContainer", UIParent)
         state.container:SetSize(200, 300)  -- Will be resized by layout
 
-        -- Position from Edit Mode or default
         local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition("party", state.container)
         if not positionApplied then
             state.container:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 20, -200)
         end
 
-        -- Create Edit Mode selection frame for the container
         if NivUI.EditMode then
             NivUI.EditMode:CreateSelectionFrame("party", state.container)
             if NivUI.EditMode:IsActive() then
@@ -279,7 +262,6 @@ local function BuildPartyFrames()
         end
     end
 
-    -- Create member frames
     local units = GetPartyUnits()
     for _, unit in ipairs(units) do
         local frame = CreateMemberFrame(unit)
@@ -288,12 +270,10 @@ local function BuildPartyFrames()
         end
     end
 
-    -- Initial layout and update
     LayoutMemberFrames()
     UpdateAllMemberFrames()
 end
 
--- Update all visible member frames
 function UpdateAllMemberFrames()
     for unit, memberState in pairs(state.memberStates) do
         if state.memberFrames[unit] and state.memberFrames[unit]:IsShown() then
@@ -302,7 +282,6 @@ function UpdateAllMemberFrames()
     end
 end
 
--- Destroy all party frames
 local function DestroyPartyFrames()
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(unit)
@@ -315,7 +294,6 @@ local function DestroyPartyFrames()
     end
 end
 
--- Handle party membership changes
 local function OnGroupRosterUpdate()
     if not state.enabled then return end
 
@@ -332,7 +310,6 @@ local function OnGroupRosterUpdate()
     end
 end
 
--- Hide Blizzard party frames
 local function HideBlizzardPartyFrames()
     if InCombatLockdown and InCombatLockdown() then
         state.pendingHide = true
@@ -341,14 +318,12 @@ local function HideBlizzardPartyFrames()
 
     state.pendingHide = false
 
-    -- Hide compact party frame (the default party UI)
     if CompactPartyFrame then
         CompactPartyFrame:UnregisterAllEvents()
         CompactPartyFrame:Hide()
         CompactPartyFrame:SetScript("OnShow", function(self) self:Hide() end)
     end
 
-    -- Hide individual party member frames
     for i = 1, 4 do
         local frame = _G["PartyMemberFrame" .. i]
         if frame then
@@ -359,7 +334,6 @@ local function HideBlizzardPartyFrames()
     state.blizzardHidden = true
 end
 
--- Public API
 local PartyFrame = {}
 NivUI.UnitFrames.PartyFrame = PartyFrame
 
@@ -410,7 +384,6 @@ function PartyFrame.GetState()
     return state
 end
 
--- Event frame for initialization and roster updates
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -430,7 +403,6 @@ eventFrame:SetScript("OnEvent", function(self, event)
     end
 end)
 
--- Register callbacks for settings changes
 NivUI:RegisterCallback("FrameEnabledChanged", function(data)
     if data.frameType == "party" then
         if data.enabled then

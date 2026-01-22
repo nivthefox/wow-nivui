@@ -6,8 +6,6 @@ NivUI.UnitFrames.Base = UnitFrameBase
 
 local UPDATE_INTERVAL = 0.1
 
--- Shared utilities
-
 local function GetClassColor(unit)
     return NivUI.WidgetFactories.GetClassColor(unit)
 end
@@ -39,8 +37,6 @@ function UnitFrameBase.KillVisual(frame)
     end
     if frame.SetAlpha then frame:SetAlpha(0) end
 end
-
--- Update functions (all take frame state table with unit, customFrame, currentStyle)
 
 function UnitFrameBase.UpdateHealthBar(state)
     if not state.customFrame or not state.customFrame.widgets.healthBar then return end
@@ -265,7 +261,6 @@ function UnitFrameBase.UpdateCastbar(state)
     local config = state.currentStyle.castbar
     local unit = state.unit
 
-    -- Check for active cast using CastingInfo/ChannelInfo (returns nil if no cast)
     local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID = UnitCastingInfo(unit)
     local isChanneling = false
 
@@ -283,7 +278,6 @@ function UnitFrameBase.UpdateCastbar(state)
         return
     end
 
-    -- Try Duration API (12.0+) for display
     local usedDurationAPI = false
     if UnitCastingDuration and UnitChannelDuration then
         local duration = isChanneling and UnitChannelDuration(unit) or UnitCastingDuration(unit)
@@ -294,7 +288,6 @@ function UnitFrameBase.UpdateCastbar(state)
         end
     end
 
-    -- Legacy fallback for progress display
     if not usedDurationAPI and startTimeMS and endTimeMS then
         local durationSec = (endTimeMS - startTimeMS) / 1000
         local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
@@ -303,7 +296,6 @@ function UnitFrameBase.UpdateCastbar(state)
         widget:SetMinMaxValues(0, 1)
         widget:SetValue(isChanneling and (1 - progress) or progress)
 
-        -- Set up OnUpdate for legacy API
         if not state.castbarTicking then
             state.castbarTicking = true
             widget:SetScript("OnUpdate", function()
@@ -325,7 +317,6 @@ function UnitFrameBase.UpdateCastbar(state)
         widget.timer:SetFormattedText("%.1fs", remaining)
     end
 
-    -- notInterruptible might be secret for enemy casts, use SetVertexColorFromBoolean if available
     if notInterruptible then
         local color = config.nonInterruptibleColor
         widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
@@ -348,8 +339,6 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateStatusIndicators(state)
     UnitFrameBase.UpdateCastbar(state)
 end
-
--- Shared widget creation and anchoring (used by both live frames and Designer preview)
 
 function UnitFrameBase.CreateWidgets(parent, style, unit, options)
     options = options or {}
@@ -409,8 +398,6 @@ function UnitFrameBase.ApplyAnchors(parent, widgets, style)
     end
 end
 
--- Frame building
-
 function UnitFrameBase.BuildCustomFrame(state)
     UnitFrameBase.DestroyCustomFrame(state)
 
@@ -436,7 +423,6 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:SetAttribute("type2", "togglemenu")
     customFrame:RegisterForClicks("AnyUp")
 
-    -- Position: use saved Edit Mode position or default anchor
     local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition(state.frameType, customFrame)
 
     if not positionApplied then
@@ -468,7 +454,6 @@ function UnitFrameBase.BuildCustomFrame(state)
 
     state.customFrame = customFrame
 
-    -- Register common events
     customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", state.unit)
     customFrame:RegisterUnitEvent("UNIT_MAXPOWER", state.unit)
     customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", state.unit)
@@ -479,7 +464,6 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 
-    -- Castbar events
     customFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", state.unit)
     customFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", state.unit)
     customFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", state.unit)
@@ -489,13 +473,11 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", state.unit)
     customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", state.unit)
 
-    -- Let module register additional events
     if state.registerEvents then
         state.registerEvents(customFrame)
     end
 
     customFrame:SetScript("OnEvent", function(self, event, eventUnit)
-        -- Common event handling
         if event == "UNIT_MAXHEALTH" then
             UnitFrameBase.UpdateHealthBar(state)
             UnitFrameBase.UpdateHealthText(state)
@@ -517,13 +499,11 @@ function UnitFrameBase.BuildCustomFrame(state)
             UnitFrameBase.UpdateCastbar(state)
         end
 
-        -- Module-specific event handling
         if state.onEvent then
             state.onEvent(self, event, eventUnit)
         end
     end)
 
-    -- OnUpdate for health/power polling
     state.timeSinceLastUpdate = 0
     customFrame:SetScript("OnUpdate", function(self, elapsed)
         if not NivUI:IsRealTimeUpdates(state.frameType) then
@@ -539,7 +519,6 @@ function UnitFrameBase.BuildCustomFrame(state)
         UnitFrameBase.UpdateCastbar(state)
     end)
 
-    -- Create Edit Mode Selection frame
     if NivUI.EditMode then
         NivUI.EditMode:CreateSelectionFrame(state.frameType, customFrame)
         if NivUI.EditMode:IsActive() then
@@ -547,7 +526,6 @@ function UnitFrameBase.BuildCustomFrame(state)
         end
     end
 
-    -- Initial visibility check
     if state.shouldShow then
         if state.shouldShow() then
             customFrame:Show()
@@ -573,8 +551,6 @@ function UnitFrameBase.DestroyCustomFrame(state)
     state.timeSinceLastUpdate = 0
     state.castbarTicking = false
 end
-
--- Module creation helper
 
 function UnitFrameBase.CreateModule(config)
     local state = {
@@ -622,7 +598,6 @@ function UnitFrameBase.CreateModule(config)
         return state
     end
 
-    -- Set up event frame for PLAYER_LOGIN and pending hide handling
     local eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("PLAYER_LOGIN")
     eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -638,7 +613,6 @@ function UnitFrameBase.CreateModule(config)
         end
     end)
 
-    -- Register callbacks
     NivUI:RegisterCallback("FrameEnabledChanged", function(data)
         if data.frameType == state.frameType then
             if data.enabled then

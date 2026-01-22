@@ -44,7 +44,6 @@ resizeHandle:SetScript("OnMouseUp", function(self, button)
     local db = NivUI_DB.staggerBar
     db.width = StaggerBar:GetWidth()
     db.height = StaggerBar:GetHeight()
-    -- Notify config frame if it's listening
     if NivUI.OnBarMoved then NivUI.OnBarMoved() end
 end)
 
@@ -190,19 +189,12 @@ end
 local function ShouldShow()
     local visibility = NivUI:GetSetting("visibility")
 
-    -- "never" always hides
     if visibility == "never" then return false end
-
-    -- When unlocked, always show for positioning
     if not NivUI:GetSetting("locked") then return true end
-
-    -- Must be brewmaster to show when locked
     if not isBrewmaster then return false end
-
-    -- "always" shows whenever we're a brewmaster
     if visibility == "always" then return true end
 
-    -- "combat" mode: show in combat or with active stagger
+    -- Combat mode: show in combat or with active stagger
     if inCombat then return true end
     local stagger = UnitStagger("player")
     if stagger and stagger > 0 then return true end
@@ -259,7 +251,6 @@ local function EnableDragging()
         db.point = point
         db.x = x
         db.y = y
-        -- Notify config frame if it's listening
         if NivUI.OnBarMoved then NivUI.OnBarMoved() end
     end)
 end
@@ -292,7 +283,6 @@ local function ApplyBarTexture()
     local textureName = NivUI:GetSetting("foregroundTexture") or NivUI:GetSetting("barTexture")
     local texturePath = NivUI:GetTexturePath(textureName)
     StaggerBar.bar:SetStatusBarTexture(texturePath)
-    -- Re-anchor spark to the new texture
     StaggerBar.spark:ClearAllPoints()
     StaggerBar.spark:SetPoint("CENTER", StaggerBar.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 end
@@ -346,7 +336,6 @@ local function ApplyFontSettings()
     local g = fontColor.g or 1
     local b = fontColor.b or 1
 
-    -- Apply to all three text elements
     for _, text in ipairs({StaggerBar.textLeft, StaggerBar.textCenter, StaggerBar.textRight}) do
         text:SetFont(fontPath, fontSize, flags)
         text:SetTextColor(r, g, b, 1)
@@ -359,7 +348,6 @@ local function ApplyLockState()
         StaggerBar.resizeHandle:Hide()
     else
         StaggerBar.resizeHandle:Show()
-        -- Show preview when unlocked
         local colors = NivUI:GetColors()
         StaggerBar.bar:SetMinMaxValues(0, 1)
         StaggerBar.bar:SetValue(0)
@@ -389,7 +377,6 @@ local function OnEvent(self, event, ...)
         local addon = ...
         if addon == "NivUI" then
             NivUI:InitializeDB()
-            -- Initialize default unit frame style if it exists
             if NivUI.InitializeDefaultStyle then
                 NivUI:InitializeDefaultStyle()
             end
@@ -435,7 +422,6 @@ SlashCmdList["NIVUI"] = function(msg)
     local cmd = args[2]
 
     if not module or module == "" then
-        -- No args: open config frame
         if NivUIConfigFrame then
             if NivUIConfigFrame:IsShown() then
                 NivUIConfigFrame:Hide()

@@ -8,17 +8,14 @@ ChiBar:SetResizable(true)
 ChiBar:SetResizeBounds(60, 5, 400, 60)
 ChiBar:Hide()
 
--- Click background for dragging
 local clickBg = ChiBar:CreateTexture(nil, "BACKGROUND", nil, -1)
 clickBg:SetAllPoints()
 clickBg:SetColorTexture(0, 0, 0, 0)
 
--- Container for the segments
 local segmentContainer = CreateFrame("Frame", nil, ChiBar)
 segmentContainer:SetAllPoints()
 ChiBar.segmentContainer = segmentContainer
 
--- Resize handle
 local resizeHandle = CreateFrame("Button", nil, ChiBar)
 resizeHandle:SetSize(16, 16)
 resizeHandle:SetPoint("BOTTOMRIGHT", ChiBar, "BOTTOMRIGHT", 0, 0)
@@ -43,7 +40,6 @@ resizeHandle:SetScript("OnMouseUp", function(self, button)
     if NivUI.OnBarMoved then NivUI.OnBarMoved() end
 end)
 
--- Border around the whole bar
 local border = CreateFrame("Frame", nil, ChiBar, "BackdropTemplate")
 border:SetPoint("TOPLEFT", -1, 1)
 border:SetPoint("BOTTOMRIGHT", 1, -1)
@@ -54,14 +50,12 @@ border:SetBackdrop({
 border:SetBackdropBorderColor(0, 0, 0, 1)
 ChiBar.border = border
 
--- Segment storage
 ChiBar.segments = {}
 
 local lastUpdate = 0
 local isWindwalker = false
 local inCombat = false
 
--- Defaults
 local defaults = {
     point = "CENTER",
     x = 0,
@@ -77,7 +71,6 @@ local defaults = {
     updateInterval = 0.05,
 }
 
--- Get setting with fallback to defaults
 local function GetSetting(key)
     local db = NivUI_DB and NivUI_DB.chiBar
     if db and db[key] ~= nil then
@@ -108,7 +101,6 @@ local function SafeIsActive(index, chi)
 end
 
 function ChiBar:RebuildSegments()
-    -- Clear existing segments
     for _, seg in ipairs(self.segments) do
         seg.bg:Hide()
         seg.bar:Hide()
@@ -120,7 +112,6 @@ function ChiBar:RebuildSegments()
     local height = self:GetHeight()
     local spacing = GetSetting("spacing")
 
-    -- Calculate segment width: total width minus all spacing, divided by segment count
     local totalSpacing = spacing * (maxChi - 1)
     local segmentWidth = (width - totalSpacing) / maxChi
 
@@ -130,13 +121,11 @@ function ChiBar:RebuildSegments()
     for i = 1, maxChi do
         local xOffset = (i - 1) * (segmentWidth + spacing)
 
-        -- Background (empty state)
         local bg = self.segmentContainer:CreateTexture(nil, "BACKGROUND")
         bg:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
         bg:SetSize(segmentWidth, height)
         bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
 
-        -- Foreground bar (filled state)
         local bar = self.segmentContainer:CreateTexture(nil, "ARTWORK")
         bar:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
         bar:SetSize(segmentWidth, height)
@@ -155,7 +144,6 @@ function ChiBar:UpdateSegments()
     local chi = SafeGetChi()
     local maxChi = SafeGetMaxChi()
 
-    -- If we can't read chi at all, hide everything
     if chi == nil or maxChi == nil then
         for _, seg in ipairs(self.segments) do
             seg.bar:Hide()
@@ -163,12 +151,10 @@ function ChiBar:UpdateSegments()
         return
     end
 
-    -- Rebuild if max chi changed (talent change)
     if #self.segments ~= maxChi then
         self:RebuildSegments()
     end
 
-    -- Update each segment
     for i, seg in ipairs(self.segments) do
         local shouldBeActive = SafeIsActive(i, chi)
         if shouldBeActive ~= seg.active then
@@ -187,21 +173,13 @@ local function ShouldShow()
 
     if visibility == "never" then return false end
 
-    -- When unlocked, always show for positioning
     if not GetSetting("locked") then return true end
-
-    -- Must be windwalker to show when locked
     if not isWindwalker then return false end
 
     if visibility == "always" then return true end
 
-    -- "combat" mode: show in combat or with chi
-    if inCombat then return true end
-
-    local chi = SafeGetChi()
-    if chi and chi > 0 then return true end
-
-    return false
+    -- "combat" mode: show only in combat (chi doesn't decay like stagger)
+    return inCombat
 end
 
 local function UpdateVisibility()
@@ -315,7 +293,6 @@ local function InitializeDB()
     if not NivUI_DB then NivUI_DB = {} end
     if not NivUI_DB.chiBar then NivUI_DB.chiBar = {} end
 
-    -- Apply defaults for any missing values
     for k, v in pairs(defaults) do
         if NivUI_DB.chiBar[k] == nil then
             if type(v) == "table" then
@@ -370,7 +347,6 @@ ChiBar:RegisterEvent("UNIT_MAXPOWER")
 ChiBar:SetScript("OnEvent", OnEvent)
 ChiBar:SetScript("OnUpdate", OnUpdate)
 
--- Export for config access
 NivUI = NivUI or {}
 NivUI.ChiBar = ChiBar
 NivUI.ChiBar.defaults = defaults

@@ -4,10 +4,7 @@ NivUI_DB = NivUI_DB or {}
 NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}  -- Legacy, kept for migration
 
 NivUI.staggerBarDefaults = {
-    -- General
-    visibility = "combat",  -- "always", "combat", "never"
-
-    -- Position and size
+    visibility = "combat",
     updateInterval = 0.2,
     width = 394,
     height = 20,
@@ -29,8 +26,6 @@ NivUI.staggerBarDefaults = {
     fontSize = 12,
     fontColor = { r = 1, g = 1, b = 1 },
     fontShadow = true,
-
-    -- Stagger colors
     colors = {
         light = { r = 0, g = 1, b = 0 },
         moderate = { r = 1, g = 1, b = 0 },
@@ -125,7 +120,6 @@ function NivUI:GetTexturePath(nameOrPath)
         local path = LSM:Fetch("statusbar", nameOrPath)
         if path then return path end
     end
-    -- Fallback: check builtin textures or assume it's already a path
     for _, item in ipairs(BUILTIN_TEXTURES) do
         if item.name == nameOrPath then return item.path end
     end
@@ -138,7 +132,6 @@ function NivUI:GetFontPath(nameOrPath)
         local path = LSM:Fetch("font", nameOrPath)
         if path then return path end
     end
-    -- Fallback: check builtin fonts or assume it's already a path
     for _, item in ipairs(BUILTIN_FONTS) do
         if item.name == nameOrPath then return item.path end
     end
@@ -156,11 +149,9 @@ end
 
 function NivUI:ApplySettings(settingName)
     if settingName then
-        -- Apply specific setting
         local callback = self.applyCallbacks[settingName]
         if callback then callback() end
     else
-        -- Apply all settings
         for _, callback in pairs(self.applyCallbacks) do
             callback()
         end
@@ -193,27 +184,22 @@ local function DeepCopy(src)
 end
 
 function NivUI:InitializeDB()
-    -- Initialize NivUI_DB structure
     NivUI_DB.version = NivUI_DB.version or 1
 
-    -- Migrate from legacy NivUI_StaggerBarDB if needed
     if not NivUI_DB.staggerBar then
         if next(NivUI_StaggerBarDB) then
-            -- Migration: copy old data to new location
             NivUI_DB.staggerBar = DeepCopy(NivUI_StaggerBarDB)
         else
             NivUI_DB.staggerBar = {}
         end
     end
 
-    -- Initialize stagger bar defaults
     for k, v in pairs(self.staggerBarDefaults) do
         if NivUI_DB.staggerBar[k] == nil then
             NivUI_DB.staggerBar[k] = DeepCopy(v)
         end
     end
 
-    -- Initialize unit frame structures
     if not NivUI_DB.unitFrameStyles then
         NivUI_DB.unitFrameStyles = {}
     end

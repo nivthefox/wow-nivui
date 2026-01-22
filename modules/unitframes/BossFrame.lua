@@ -5,7 +5,6 @@ local Base = NivUI.UnitFrames.Base
 
 local MAX_BOSS_FRAMES = 5
 
--- Boss frame state
 local state = {
     enabled = false,
     previewMode = false,
@@ -15,7 +14,6 @@ local state = {
     styleName = nil,
 }
 
--- Get the list of boss units
 local function GetBossUnits()
     local units = {}
     for i = 1, MAX_BOSS_FRAMES do
@@ -24,7 +22,6 @@ local function GetBossUnits()
     return units
 end
 
--- Check if we should show boss frames at all
 local function ShouldShowBossFrames()
     if state.previewMode then
         return true
@@ -40,7 +37,6 @@ local function ShouldShowBossFrames()
     return false
 end
 
--- Check if a specific unit should be visible
 local function ShouldShowUnit(unit)
     if state.previewMode then
         return true
@@ -49,7 +45,6 @@ local function ShouldShowUnit(unit)
     return UnitExists(unit)
 end
 
--- Layout all visible member frames
 local function LayoutMemberFrames()
     if not state.container then return end
 
@@ -97,7 +92,6 @@ local function LayoutMemberFrames()
         end
     end
 
-    -- Update container size for Edit Mode
     local totalFrames = visibleIndex
     if totalFrames > 0 then
         local containerWidth, containerHeight
@@ -114,7 +108,6 @@ local function LayoutMemberFrames()
     end
 end
 
--- Create a single member frame
 local function CreateMemberFrame(unit)
     local style = NivUI:GetStyleWithDefaults(state.styleName)
     if not style then return nil end
@@ -150,7 +143,6 @@ local function CreateMemberFrame(unit)
     frame.widgets = Base.CreateWidgets(frame, style, unit)
     Base.ApplyAnchors(frame, frame.widgets, style)
 
-    -- Create state object for this member
     local memberState = {
         unit = unit,
         frameType = "boss",
@@ -164,7 +156,6 @@ local function CreateMemberFrame(unit)
 
     state.memberStates[unit] = memberState
 
-    -- Register events
     frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
     frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
     frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
@@ -175,7 +166,6 @@ local function CreateMemberFrame(unit)
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 
-    -- Castbar events
     frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
@@ -208,7 +198,6 @@ local function CreateMemberFrame(unit)
         end
     end)
 
-    -- OnUpdate for health/power polling
     local UPDATE_INTERVAL = 0.1
     frame:SetScript("OnUpdate", function(self, elapsed)
         if not NivUI:IsRealTimeUpdates("boss") then
@@ -227,7 +216,6 @@ local function CreateMemberFrame(unit)
     return frame
 end
 
--- Destroy a single member frame
 local function DestroyMemberFrame(unit)
     local frame = state.memberFrames[unit]
     if frame then
@@ -241,27 +229,22 @@ local function DestroyMemberFrame(unit)
     state.memberStates[unit] = nil
 end
 
--- Build all boss frames
 local function BuildBossFrames()
-    -- Destroy existing frames
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(unit)
     end
 
     state.styleName = NivUI:GetAssignment("boss")
 
-    -- Create container if needed
     if not state.container then
         state.container = CreateFrame("Frame", "NivUI_BossContainer", UIParent)
         state.container:SetSize(200, 300)  -- Will be resized by layout
 
-        -- Position from Edit Mode or default
         local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition("boss", state.container)
         if not positionApplied then
             state.container:SetPoint("RIGHT", UIParent, "RIGHT", -100, 0)
         end
 
-        -- Create Edit Mode selection frame for the container
         if NivUI.EditMode then
             NivUI.EditMode:CreateSelectionFrame("boss", state.container)
             if NivUI.EditMode:IsActive() then
@@ -270,7 +253,6 @@ local function BuildBossFrames()
         end
     end
 
-    -- Create member frames
     local units = GetBossUnits()
     for _, unit in ipairs(units) do
         local frame = CreateMemberFrame(unit)
@@ -279,12 +261,10 @@ local function BuildBossFrames()
         end
     end
 
-    -- Initial layout and update
     LayoutMemberFrames()
     UpdateAllMemberFrames()
 end
 
--- Update all visible member frames
 function UpdateAllMemberFrames()
     for unit, memberState in pairs(state.memberStates) do
         if state.memberFrames[unit] and state.memberFrames[unit]:IsShown() then
@@ -293,7 +273,6 @@ function UpdateAllMemberFrames()
     end
 end
 
--- Destroy all boss frames
 local function DestroyBossFrames()
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(unit)
@@ -306,7 +285,6 @@ local function DestroyBossFrames()
     end
 end
 
--- Handle boss changes
 local function OnInstanceEncounterEngageUnit()
     if not state.enabled then return end
 
@@ -323,7 +301,6 @@ local function OnInstanceEncounterEngageUnit()
     end
 end
 
--- Hide Blizzard boss frames
 local function HideBlizzardBossFrames()
     if InCombatLockdown and InCombatLockdown() then
         state.pendingHide = true
@@ -332,14 +309,12 @@ local function HideBlizzardBossFrames()
 
     state.pendingHide = false
 
-    -- Hide BossTargetFrameContainer
     if BossTargetFrameContainer then
         BossTargetFrameContainer:UnregisterAllEvents()
         BossTargetFrameContainer:Hide()
         BossTargetFrameContainer:SetScript("OnShow", function(self) self:Hide() end)
     end
 
-    -- Hide individual boss frames
     for i = 1, MAX_BOSS_FRAMES do
         local frame = _G["Boss" .. i .. "TargetFrame"]
         if frame then
@@ -350,7 +325,6 @@ local function HideBlizzardBossFrames()
     state.blizzardHidden = true
 end
 
--- Public API
 local BossFrame = {}
 NivUI.UnitFrames.BossFrame = BossFrame
 
@@ -401,7 +375,6 @@ function BossFrame.GetState()
     return state
 end
 
--- Event frame for initialization and boss updates
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
@@ -422,7 +395,6 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
     end
 end)
 
--- Register callbacks for settings changes
 NivUI:RegisterCallback("FrameEnabledChanged", function(data)
     if data.frameType == "boss" then
         if data.enabled then

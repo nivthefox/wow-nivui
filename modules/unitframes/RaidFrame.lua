@@ -3,7 +3,6 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
--- Raid frame state (one per raid size)
 local states = {
     raid10 = {
         enabled = false,
@@ -37,19 +36,16 @@ local states = {
     },
 }
 
--- Determine which raid size should be active based on current group composition
 local function GetActiveRaidSize()
     if not IsInRaid() then
         return nil
     end
 
-    -- Check for Mythic raid (always use raid20)
     local _, _, difficultyID = GetInstanceInfo()
-    if difficultyID == 16 then  -- Mythic Raid
-        return "raid20"
+    if difficultyID == 16 then
+        return "raid20"  -- Mythic always uses raid20
     end
 
-    -- Count occupied groups
     local occupiedGroups = {}
     for i = 1, GetNumGroupMembers() do
         local _, _, subgroup = GetRaidRosterInfo(i)
@@ -63,7 +59,6 @@ local function GetActiveRaidSize()
         groupCount = groupCount + 1
     end
 
-    -- Determine raid size based on group count
     if groupCount <= 2 then
         return "raid10"
     elseif groupCount <= 4 then
@@ -73,7 +68,6 @@ local function GetActiveRaidSize()
     end
 end
 
--- Get units for a specific group
 local function GetGroupUnits(groupNum)
     local units = {}
     for i = 1, 40 do
@@ -88,7 +82,6 @@ local function GetGroupUnits(groupNum)
     return units
 end
 
--- Check if we should show raid frames for a given size
 local function ShouldShowRaidFrames(raidSize)
     local state = states[raidSize]
     if state.previewMode then
@@ -99,7 +92,6 @@ local function ShouldShowRaidFrames(raidSize)
     return activeSize == raidSize
 end
 
--- Layout member frames within a group
 local function LayoutGroupMembers(raidSize, groupNum)
     local state = states[raidSize]
     local groupFrame = state.groupFrames[groupNum]
@@ -126,7 +118,6 @@ local function LayoutGroupMembers(raidSize, groupNum)
         xStep = -(frameWidth + spacing)
     end
 
-    -- Get units in this group (or fake ones for preview)
     local units
     if state.previewMode then
         units = {}
@@ -152,7 +143,6 @@ local function LayoutGroupMembers(raidSize, groupNum)
         end
     end
 
-    -- Update group frame size
     local groupWidth, groupHeight
     if playerGrowth == "DOWN" or playerGrowth == "UP" then
         groupWidth = frameWidth
@@ -166,7 +156,6 @@ local function LayoutGroupMembers(raidSize, groupNum)
     return visibleCount > 0
 end
 
--- Layout all group frames within the container
 local function LayoutGroupFrames(raidSize)
     local state = states[raidSize]
     if not state.container then return end
@@ -190,7 +179,6 @@ local function LayoutGroupFrames(raidSize)
 
                 visibleGroups = visibleGroups + 1
 
-                -- Calculate next position based on this group's size
                 local groupWidth = groupFrame:GetWidth()
                 local groupHeight = groupFrame:GetHeight()
 
@@ -213,7 +201,6 @@ local function LayoutGroupFrames(raidSize)
         end
     end
 
-    -- Update container size
     if visibleGroups > 0 then
         local style = NivUI:GetStyleWithDefaults(state.styleName)
         local frameConfig = style.frame or {}
@@ -243,7 +230,6 @@ local function LayoutGroupFrames(raidSize)
     end
 end
 
--- Create a single member frame
 local function CreateMemberFrame(raidSize, unit, parentGroup)
     local state = states[raidSize]
     local style = NivUI:GetStyleWithDefaults(state.styleName)
@@ -280,7 +266,6 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     frame.widgets = Base.CreateWidgets(frame, style, unit)
     Base.ApplyAnchors(frame, frame.widgets, style)
 
-    -- Create state object for this member
     local memberState = {
         unit = unit,
         frameType = raidSize,
@@ -294,7 +279,6 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
 
     state.memberStates[unit] = memberState
 
-    -- Register events
     frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
     frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
     frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
@@ -305,7 +289,6 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 
-    -- Castbar events
     frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
@@ -338,7 +321,6 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
         end
     end)
 
-    -- OnUpdate for health/power polling
     local UPDATE_INTERVAL = 0.1
     frame:SetScript("OnUpdate", function(self, elapsed)
         if not NivUI:IsRealTimeUpdates(raidSize) then
@@ -357,7 +339,6 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     return frame
 end
 
--- Destroy a single member frame
 local function DestroyMemberFrame(raidSize, unit)
     local state = states[raidSize]
     local frame = state.memberFrames[unit]
@@ -372,11 +353,9 @@ local function DestroyMemberFrame(raidSize, unit)
     state.memberStates[unit] = nil
 end
 
--- Build all raid frames for a given size
 local function BuildRaidFrames(raidSize)
     local state = states[raidSize]
 
-    -- Destroy existing frames
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(raidSize, unit)
     end
@@ -390,18 +369,15 @@ local function BuildRaidFrames(raidSize)
 
     state.styleName = NivUI:GetAssignment(raidSize)
 
-    -- Create container if needed
     if not state.container then
         state.container = CreateFrame("Frame", "NivUI_RaidContainer_" .. raidSize, UIParent)
         state.container:SetSize(400, 200)  -- Will be resized by layout
 
-        -- Position from Edit Mode or default
         local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition(raidSize, state.container)
         if not positionApplied then
             state.container:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         end
 
-        -- Create Edit Mode selection frame for the container
         if NivUI.EditMode then
             NivUI.EditMode:CreateSelectionFrame(raidSize, state.container)
             if NivUI.EditMode:IsActive() then
@@ -410,13 +386,11 @@ local function BuildRaidFrames(raidSize)
         end
     end
 
-    -- Create group frames and member frames
     for groupNum = 1, state.maxGroups do
         local groupFrame = CreateFrame("Frame", "NivUI_RaidGroup_" .. raidSize .. "_" .. groupNum, state.container)
         groupFrame:SetSize(80, 200)  -- Will be resized by layout
         state.groupFrames[groupNum] = groupFrame
 
-        -- Create 5 member frames per group
         for memberIndex = 1, 5 do
             local unitIndex = (groupNum - 1) * 5 + memberIndex
             local unit = "raid" .. unitIndex
@@ -427,12 +401,10 @@ local function BuildRaidFrames(raidSize)
         end
     end
 
-    -- Initial layout and update
     LayoutGroupFrames(raidSize)
     UpdateAllRaidMembers(raidSize)
 end
 
--- Update all visible member frames
 function UpdateAllRaidMembers(raidSize)
     local state = states[raidSize]
     for unit, memberState in pairs(state.memberStates) do
@@ -442,7 +414,6 @@ function UpdateAllRaidMembers(raidSize)
     end
 end
 
--- Destroy all raid frames for a given size
 local function DestroyRaidFrames(raidSize)
     local state = states[raidSize]
 
@@ -465,29 +436,24 @@ local function DestroyRaidFrames(raidSize)
     end
 end
 
--- Handle raid roster changes
 local function OnGroupRosterUpdate()
     local activeSize = GetActiveRaidSize()
 
     for raidSize, state in pairs(states) do
         if not state.enabled then
-            -- Do nothing for disabled sizes
         elseif state.previewMode then
-            -- Preview mode overrides normal visibility
             if state.container then
                 state.container:Show()
             end
             LayoutGroupFrames(raidSize)
             UpdateAllRaidMembers(raidSize)
         elseif raidSize == activeSize then
-            -- This size should be shown
             if state.container then
                 state.container:Show()
             end
             LayoutGroupFrames(raidSize)
             UpdateAllRaidMembers(raidSize)
         else
-            -- This size should be hidden
             if state.container then
                 state.container:Hide()
             end
@@ -495,20 +461,17 @@ local function OnGroupRosterUpdate()
     end
 end
 
--- Hide Blizzard raid frames
 local function HideBlizzardRaidFrames()
     if InCombatLockdown and InCombatLockdown() then
         return
     end
 
-    -- Hide CompactRaidFrameContainer
     if CompactRaidFrameContainer then
         CompactRaidFrameContainer:UnregisterAllEvents()
         CompactRaidFrameContainer:Hide()
         CompactRaidFrameContainer:SetScript("OnShow", function(self) self:Hide() end)
     end
 
-    -- Hide CompactRaidFrameManager
     if CompactRaidFrameManager then
         CompactRaidFrameManager:UnregisterAllEvents()
         CompactRaidFrameManager:Hide()
@@ -516,7 +479,6 @@ local function HideBlizzardRaidFrames()
     end
 end
 
--- Public API
 local RaidFrame = {}
 NivUI.UnitFrames.RaidFrame = RaidFrame
 
@@ -577,7 +539,6 @@ function RaidFrame.GetState(raidSize)
     return states[raidSize]
 end
 
--- Event frame for initialization and roster updates
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -597,7 +558,6 @@ eventFrame:SetScript("OnEvent", function(self, event)
     end
 end)
 
--- Register callbacks for settings changes
 NivUI:RegisterCallback("FrameEnabledChanged", function(data)
     if states[data.frameType] then
         if data.enabled then
