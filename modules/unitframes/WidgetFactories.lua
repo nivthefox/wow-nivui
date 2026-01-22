@@ -71,7 +71,7 @@ function WF.healthBar(parent, config, style, unit)
     -- StatusBar accepts secret values directly
     local health = UnitHealth(unit)
     local maxHealth = UnitHealthMax(unit)
-    if maxHealth and maxHealth > 0 then
+    if issecretvalue(maxHealth) or (maxHealth and maxHealth > 0) then
         frame:SetMinMaxValues(0, maxHealth)
         frame:SetValue(health)
     else
@@ -115,7 +115,7 @@ function WF.powerBar(parent, config, style, unit)
     local powerType = UnitPowerType(unit)
     local power = UnitPower(unit, powerType)
     local maxPower = UnitPowerMax(unit, powerType)
-    if maxPower and maxPower > 0 then
+    if issecretvalue(maxPower) or (maxPower and maxPower > 0) then
         frame:SetMinMaxValues(0, maxPower)
         frame:SetValue(power)
     else
@@ -262,8 +262,8 @@ function WF.healthText(parent, config, style, unit)
     end
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
-    local healthStr = health and abbrev(health) or "71000"
-    local maxHealthStr = maxHealth and abbrev(maxHealth) or "100000"
+    local healthStr = health ~= nil and abbrev(health) or "71000"
+    local maxHealthStr = maxHealth ~= nil and abbrev(maxHealth) or "100000"
 
     if config.format == "current" then
         text = healthStr
@@ -274,11 +274,15 @@ function WF.healthText(parent, config, style, unit)
     elseif config.format == "current_max" then
         text = healthStr .. " / " .. maxHealthStr
     elseif config.format == "deficit" then
-        local ok, deficit = pcall(function() return maxHealth - health end)
-        if ok and deficit and deficit > 0 then
-            text = "-" .. abbrev(deficit)
-        else
+        if issecretvalue(health) then
             text = ""
+        else
+            local deficit = (maxHealth or 0) - (health or 0)
+            if deficit > 0 then
+                text = "-" .. abbrev(deficit)
+            else
+                text = ""
+            end
         end
     end
 
@@ -301,8 +305,8 @@ function WF.powerText(parent, config, style, unit)
     end
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
-    local powerStr = power and abbrev(power) or "80"
-    local maxPowerStr = maxPower and abbrev(maxPower) or "100"
+    local powerStr = power ~= nil and abbrev(power) or "80"
+    local maxPowerStr = maxPower ~= nil and abbrev(maxPower) or "100"
 
     if config.format == "current" then
         text = powerStr

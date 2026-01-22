@@ -106,20 +106,21 @@ function UnitFrameBase.UpdateHealthText(state)
 
     local health = UnitHealth(unit)
     local maxHealth = UnitHealthMax(unit)
-    local pct = UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100
-        and UnitHealthPercent(unit, true, CurveConstants.ScaleTo100) or nil
-
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local healthStr = abbrev(health)
     local maxHealthStr = abbrev(maxHealth)
 
     if config.format == "percent" then
+        local pct = UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100
+            and UnitHealthPercent(unit, true, CurveConstants.ScaleTo100) or nil
         if pct then
             widget.text:SetFormattedText("%.0f%%", pct)
         else
             widget.text:SetText(healthStr)
         end
     elseif config.format == "current_percent" then
+        local pct = UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100
+            and UnitHealthPercent(unit, true, CurveConstants.ScaleTo100) or nil
         if pct then
             widget.text:SetFormattedText("%s (%.0f%%)", healthStr, pct)
         else
@@ -130,11 +131,15 @@ function UnitFrameBase.UpdateHealthText(state)
     elseif config.format == "current_max" then
         widget.text:SetText(healthStr .. " / " .. maxHealthStr)
     elseif config.format == "deficit" then
-        local ok, deficit = pcall(function() return maxHealth - health end)
-        if ok and deficit and deficit > 0 then
-            widget.text:SetText("-" .. abbrev(deficit))
-        else
+        if issecretvalue(health) then
             widget.text:SetText("")
+        else
+            local deficit = maxHealth - health
+            if deficit > 0 then
+                widget.text:SetText("-" .. abbrev(deficit))
+            else
+                widget.text:SetText("")
+            end
         end
     end
 end
@@ -148,20 +153,21 @@ function UnitFrameBase.UpdatePowerText(state)
     local powerType = UnitPowerType(unit)
     local power = UnitPower(unit, powerType)
     local maxPower = UnitPowerMax(unit, powerType)
-    local pct = UnitPowerPercent and CurveConstants and CurveConstants.ScaleTo100
-        and UnitPowerPercent(unit, powerType, false, CurveConstants.ScaleTo100) or nil
-
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local powerStr = abbrev(power)
     local maxPowerStr = abbrev(maxPower)
 
     if config.format == "percent" then
+        local pct = UnitPowerPercent and CurveConstants and CurveConstants.ScaleTo100
+            and UnitPowerPercent(unit, powerType, false, CurveConstants.ScaleTo100) or nil
         if pct then
             widget.text:SetFormattedText("%.0f%%", pct)
         else
             widget.text:SetText(powerStr)
         end
     elseif config.format == "current_percent" then
+        local pct = UnitPowerPercent and CurveConstants and CurveConstants.ScaleTo100
+            and UnitPowerPercent(unit, powerType, false, CurveConstants.ScaleTo100) or nil
         if pct then
             widget.text:SetFormattedText("%s (%.0f%%)", powerStr, pct)
         else
@@ -278,32 +284,37 @@ function UnitFrameBase.UpdateCastbar(state)
         return
     end
 
-    local usedDurationAPI = false
-    if UnitCastingDuration and UnitChannelDuration and widget.SetTimerDuration then
+    if issecretvalue(startTimeMS) then
         local duration = isChanneling and UnitChannelDuration(unit) or UnitCastingDuration(unit)
-        if duration then
-            local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
-            widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
-            usedDurationAPI = true
-            if state.castbarTicking then
-                state.castbarTicking = false
-                widget:SetScript("OnUpdate", nil)
+        local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
+        widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
+
+        if widget.timer and config.showTimer then
+            if not state.castbarTicking then
+                state.castbarTicking = true
+                widget:SetScript("OnUpdate", function()
+                    widget.timer:SetFormattedText("%.1fs", duration:GetRemainingDuration())
+                end)
             end
+        elseif state.castbarTicking then
+            state.castbarTicking = false
+            widget:SetScript("OnUpdate", nil)
         end
-    end
-
-    if not usedDurationAPI and startTimeMS and endTimeMS and not issecretvalue(endTimeMS) then
+    else
         local durationSec = (endTimeMS - startTimeMS) / 1000
-        local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
-        local progress = elapsed / durationSec
-
         widget:SetMinMaxValues(0, 1)
-        widget:SetValue(isChanneling and (1 - progress) or progress)
 
         if not state.castbarTicking then
             state.castbarTicking = true
             widget:SetScript("OnUpdate", function()
-                UnitFrameBase.UpdateCastbar(state)
+                local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
+                local progress = elapsed / durationSec
+                widget:SetValue(isChanneling and (1 - progress) or progress)
+
+                if widget.timer and config.showTimer then
+                    local remaining = (endTimeMS - GetTime() * 1000) / 1000
+                    widget.timer:SetFormattedText("%.1fs", remaining)
+                end
             end)
         end
     end
@@ -316,22 +327,14 @@ function UnitFrameBase.UpdateCastbar(state)
         widget.icon:SetTexture(texture)
     end
 
-    if widget.timer and config.showTimer then
-        if startTimeMS and endTimeMS and not issecretvalue(endTimeMS) then
-            local remaining = (endTimeMS - GetTime() * 1000) / 1000
-            widget.timer:SetFormattedText("%.1fs", remaining)
-        else
-            widget.timer:SetText("")
-        end
-    end
-
-    if notInterruptible then
-        local color = config.nonInterruptibleColor
-        widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-    else
-        local color = config.castingColor
-        widget:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-    end
+    local cast = config.castingColor
+    local nonInt = config.nonInterruptibleColor
+    widget:SetStatusBarColor(
+        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.r, nonInt.r),
+        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.g, nonInt.g),
+        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.b, nonInt.b),
+        C_CurveUtil.EvaluateColorValueFromBoolean(notInterruptible, cast.a or 1, nonInt.a or 1)
+    )
 
     widget:Show()
 end
