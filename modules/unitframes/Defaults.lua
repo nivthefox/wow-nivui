@@ -33,11 +33,11 @@ NivUI.UnitFrames.FRAME_TYPES = {
     { value = "pet", name = "Pet" },
     { value = "targettarget", name = "Target of Target" },
     { value = "party", name = "Party" },
-    { value = "boss", name = "Boss" },
-    { value = "arena", name = "Arena" },
     { value = "raid10", name = "Raid (10)" },
     { value = "raid20", name = "Raid (20)" },
     { value = "raid40", name = "Raid (40)" },
+    { value = "boss", name = "Boss" },
+    { value = "arena", name = "Arena" },
 }
 
 NivUI.UnitFrames.HEALTH_COLOR_MODES = {

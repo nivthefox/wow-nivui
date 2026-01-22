@@ -1877,143 +1877,205 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     container:SetAllPoints()
     container:Hide()
 
-    -- Sub-tab system
-    local subTabs = {}
-    local subTabContainers = {}
-    local currentSubTab = 1
+    local TAB_HEIGHT = 32
+    local allTabs = {}
+    local currentSubTab = "designer"
 
-    local function SelectSubTab(index)
-        for i, tab in ipairs(subTabs) do
-            if i == index then
-                PanelTemplates_SelectTab(tab)
-                subTabContainers[i]:Show()
-            else
-                PanelTemplates_DeselectTab(tab)
-                subTabContainers[i]:Hide()
+    -- Tab definitions: id, name, frameType (nil = always show), createPanel function
+    local tabDefinitions = {
+        {
+            id = "designer",
+            name = "Designer",
+            frameType = nil,
+            createPanel = function(parent)
+                return self:SetupDesignerContent(parent, Components)
             end
-        end
-        currentSubTab = index
+        },
+        {
+            id = "assignments",
+            name = "Assignments",
+            frameType = nil,
+            createPanel = function(parent)
+                return CreateAssignmentsPanel(parent, Components)
+            end
+        },
+        {
+            id = "party",
+            name = "Party",
+            frameType = "party",
+            createPanel = function(parent)
+                return CreatePartySettingsPanel(parent, Components)
+            end
+        },
+        {
+            id = "raid10",
+            name = "Raid (10)",
+            frameType = "raid10",
+            createPanel = function(parent)
+                return CreateRaidSettingsPanel(parent, Components, "raid10", "Raid (10)")
+            end
+        },
+        {
+            id = "raid20",
+            name = "Raid (20)",
+            frameType = "raid20",
+            createPanel = function(parent)
+                return CreateRaidSettingsPanel(parent, Components, "raid20", "Raid (20)")
+            end
+        },
+        {
+            id = "raid40",
+            name = "Raid (40)",
+            frameType = "raid40",
+            createPanel = function(parent)
+                return CreateRaidSettingsPanel(parent, Components, "raid40", "Raid (40)")
+            end
+        },
+        {
+            id = "boss",
+            name = "Boss",
+            frameType = "boss",
+            createPanel = function(parent)
+                return CreateBossSettingsPanel(parent, Components)
+            end
+        },
+        {
+            id = "arena",
+            name = "Arena",
+            frameType = "arena",
+            createPanel = function(parent)
+                return CreateArenaSettingsPanel(parent, Components)
+            end
+        },
+    }
+
+    -- Create all tabs and their containers
+    for _, def in ipairs(tabDefinitions) do
+        local tabContainer = CreateFrame("Frame", nil, container)
+        tabContainer:SetPoint("BOTTOMRIGHT", 0, 0)
+        tabContainer:Hide()
+
+        local panel = def.createPanel(tabContainer)
+        panel:SetAllPoints()
+
+        local tab = Components.GetTab(container, def.name)
+
+        local tabData = {
+            id = def.id,
+            frameType = def.frameType,
+            tab = tab,
+            container = tabContainer,
+        }
+
+        tab:SetScript("OnClick", function()
+            SelectSubTab(def.id)
+        end)
+
+        table.insert(allTabs, tabData)
     end
 
-    -- Create Designer sub-tab content
-    local designerContainer = self:SetupDesignerContent(container, Components)
-    designerContainer:SetPoint("TOPLEFT", 0, -32)
-    designerContainer:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, designerContainer)
+    -- Find tab data by id
+    local function FindTabById(tabId)
+        for _, tabData in ipairs(allTabs) do
+            if tabData.id == tabId then
+                return tabData
+            end
+        end
+        return nil
+    end
 
-    local designerTab = Components.GetTab(container, "Designer")
-    designerTab:SetPoint("TOPLEFT", 0, 0)
-    designerTab:SetScript("OnClick", function() SelectSubTab(1) end)
-    table.insert(subTabs, designerTab)
+    -- Find first visible tab
+    local function FindFirstVisibleTab()
+        for _, tabData in ipairs(allTabs) do
+            if tabData.tab:IsShown() then
+                return tabData
+            end
+        end
+        return nil
+    end
 
-    -- Create Assignments sub-tab content
-    local assignmentsContainer = CreateFrame("Frame", nil, container)
-    assignmentsContainer:SetPoint("TOPLEFT", 0, -32)
-    assignmentsContainer:SetPoint("BOTTOMRIGHT", 0, 0)
-    assignmentsContainer:Hide()
+    -- Select a tab by id
+    function SelectSubTab(tabId)
+        for _, tabData in ipairs(allTabs) do
+            if tabData.id == tabId and tabData.tab:IsShown() then
+                PanelTemplates_SelectTab(tabData.tab)
+                tabData.container:Show()
+                currentSubTab = tabId
+            else
+                PanelTemplates_DeselectTab(tabData.tab)
+                tabData.container:Hide()
+            end
+        end
+    end
 
-    local assignmentsPanel = CreateAssignmentsPanel(assignmentsContainer, Components)
-    assignmentsPanel:SetAllPoints()
-    table.insert(subTabContainers, assignmentsContainer)
+    -- Layout tabs with wrapping
+    local function LayoutTabs()
+        local containerWidth = container:GetWidth()
+        if containerWidth == 0 then
+            containerWidth = 600  -- Fallback width
+        end
 
-    local assignmentsTab = Components.GetTab(container, "Assignments")
-    assignmentsTab:SetPoint("LEFT", designerTab, "RIGHT", 0, 0)
-    assignmentsTab:SetScript("OnClick", function() SelectSubTab(2) end)
-    table.insert(subTabs, assignmentsTab)
+        local x, y = 0, 0
+        local numRows = 1
 
-    -- Create Party sub-tab content
-    local partyContainer = CreateFrame("Frame", nil, container)
-    partyContainer:SetPoint("TOPLEFT", 0, -32)
-    partyContainer:SetPoint("BOTTOMRIGHT", 0, 0)
-    partyContainer:Hide()
+        for _, tabData in ipairs(allTabs) do
+            local shouldShow = tabData.frameType == nil or NivUI:IsFrameEnabled(tabData.frameType)
 
-    local partyPanel = CreatePartySettingsPanel(partyContainer, Components)
-    partyPanel:SetAllPoints()
-    table.insert(subTabContainers, partyContainer)
+            if shouldShow then
+                tabData.tab:Show()
 
-    local partyTab = Components.GetTab(container, "Party")
-    partyTab:SetPoint("LEFT", assignmentsTab, "RIGHT", 0, 0)
-    partyTab:SetScript("OnClick", function() SelectSubTab(3) end)
-    table.insert(subTabs, partyTab)
+                -- Get tab width after it's shown (triggers resize)
+                local tabWidth = tabData.tab:GetWidth()
 
-    -- Create Raid (10) sub-tab content
-    local raid10Container = CreateFrame("Frame", nil, container)
-    raid10Container:SetPoint("TOPLEFT", 0, -32)
-    raid10Container:SetPoint("BOTTOMRIGHT", 0, 0)
-    raid10Container:Hide()
+                -- Check if we need to wrap to next row
+                if x + tabWidth > containerWidth and x > 0 then
+                    x = 0
+                    y = y - TAB_HEIGHT
+                    numRows = numRows + 1
+                end
 
-    local raid10Panel = CreateRaidSettingsPanel(raid10Container, Components, "raid10", "Raid (10)")
-    raid10Panel:SetAllPoints()
-    table.insert(subTabContainers, raid10Container)
+                -- Position tab
+                tabData.tab:ClearAllPoints()
+                tabData.tab:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
 
-    local raid10Tab = Components.GetTab(container, "Raid (10)")
-    raid10Tab:SetPoint("LEFT", partyTab, "RIGHT", 0, 0)
-    raid10Tab:SetScript("OnClick", function() SelectSubTab(4) end)
-    table.insert(subTabs, raid10Tab)
+                x = x + tabWidth
+            else
+                tabData.tab:Hide()
+            end
+        end
 
-    -- Create Raid (20) sub-tab content
-    local raid20Container = CreateFrame("Frame", nil, container)
-    raid20Container:SetPoint("TOPLEFT", 0, -32)
-    raid20Container:SetPoint("BOTTOMRIGHT", 0, 0)
-    raid20Container:Hide()
+        -- Update content container positions based on number of tab rows
+        local contentOffset = -(numRows * TAB_HEIGHT)
+        for _, tabData in ipairs(allTabs) do
+            tabData.container:SetPoint("TOPLEFT", 0, contentOffset)
+        end
 
-    local raid20Panel = CreateRaidSettingsPanel(raid20Container, Components, "raid20", "Raid (20)")
-    raid20Panel:SetAllPoints()
-    table.insert(subTabContainers, raid20Container)
+        -- If current tab is now hidden, select first visible tab
+        local currentTabData = FindTabById(currentSubTab)
+        if not currentTabData or not currentTabData.tab:IsShown() then
+            local firstVisible = FindFirstVisibleTab()
+            if firstVisible then
+                SelectSubTab(firstVisible.id)
+            end
+        end
+    end
 
-    local raid20Tab = Components.GetTab(container, "Raid (20)")
-    raid20Tab:SetPoint("LEFT", raid10Tab, "RIGHT", 0, 0)
-    raid20Tab:SetScript("OnClick", function() SelectSubTab(5) end)
-    table.insert(subTabs, raid20Tab)
+    -- Handle container resize
+    container:SetScript("OnSizeChanged", function()
+        LayoutTabs()
+    end)
 
-    -- Create Raid (40) sub-tab content
-    local raid40Container = CreateFrame("Frame", nil, container)
-    raid40Container:SetPoint("TOPLEFT", 0, -32)
-    raid40Container:SetPoint("BOTTOMRIGHT", 0, 0)
-    raid40Container:Hide()
-
-    local raid40Panel = CreateRaidSettingsPanel(raid40Container, Components, "raid40", "Raid (40)")
-    raid40Panel:SetAllPoints()
-    table.insert(subTabContainers, raid40Container)
-
-    local raid40Tab = Components.GetTab(container, "Raid (40)")
-    raid40Tab:SetPoint("LEFT", raid20Tab, "RIGHT", 0, 0)
-    raid40Tab:SetScript("OnClick", function() SelectSubTab(6) end)
-    table.insert(subTabs, raid40Tab)
-
-    -- Create Boss sub-tab content
-    local bossContainer = CreateFrame("Frame", nil, container)
-    bossContainer:SetPoint("TOPLEFT", 0, -32)
-    bossContainer:SetPoint("BOTTOMRIGHT", 0, 0)
-    bossContainer:Hide()
-
-    local bossPanel = CreateBossSettingsPanel(bossContainer, Components)
-    bossPanel:SetAllPoints()
-    table.insert(subTabContainers, bossContainer)
-
-    local bossTab = Components.GetTab(container, "Boss")
-    bossTab:SetPoint("LEFT", raid40Tab, "RIGHT", 0, 0)
-    bossTab:SetScript("OnClick", function() SelectSubTab(7) end)
-    table.insert(subTabs, bossTab)
-
-    -- Create Arena sub-tab content
-    local arenaContainer = CreateFrame("Frame", nil, container)
-    arenaContainer:SetPoint("TOPLEFT", 0, -32)
-    arenaContainer:SetPoint("BOTTOMRIGHT", 0, 0)
-    arenaContainer:Hide()
-
-    local arenaPanel = CreateArenaSettingsPanel(arenaContainer, Components)
-    arenaPanel:SetAllPoints()
-    table.insert(subTabContainers, arenaContainer)
-
-    local arenaTab = Components.GetTab(container, "Arena")
-    arenaTab:SetPoint("LEFT", bossTab, "RIGHT", 0, 0)
-    arenaTab:SetScript("OnClick", function() SelectSubTab(8) end)
-    table.insert(subTabs, arenaTab)
-
-    -- Select first sub-tab when shown
+    -- Handle show - layout tabs and select current
     container:SetScript("OnShow", function()
+        LayoutTabs()
         SelectSubTab(currentSubTab)
+    end)
+
+    -- Listen for frame enabled changes
+    NivUI:RegisterCallback("FrameEnabledChanged", function(data)
+        if container:IsShown() then
+            LayoutTabs()
+        end
     end)
 
     return container
