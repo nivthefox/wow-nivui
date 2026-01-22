@@ -225,7 +225,7 @@ end
 function WF.nameText(parent, config, style, unit)
     unit = unit or "player"
     local name = UnitName(unit) or "Player"
-    if config.truncateLength and #name > config.truncateLength then
+    if not issecretvalue(name) and config.truncateLength and #name > config.truncateLength then
         name = name:sub(1, config.truncateLength)
     end
     return CreateTextWidget(parent, config, name, "nameText", unit)

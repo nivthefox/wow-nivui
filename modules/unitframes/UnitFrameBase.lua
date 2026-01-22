@@ -231,7 +231,7 @@ function UnitFrameBase.UpdateNameText(state)
     local unit = state.unit
 
     local name = UnitName(unit) or state.defaultName or "Unit"
-    if config.truncateLength and #name > config.truncateLength then
+    if not issecretvalue(name) and config.truncateLength and #name > config.truncateLength then
         name = name:sub(1, config.truncateLength)
     end
     widget.text:SetText(name)
