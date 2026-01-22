@@ -2,8 +2,9 @@ NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local ROW_HEIGHT = 32
-local SECTION_SPACING = 20
 local WIDGET_LIST_WIDTH = 140
+
+local SelectSubTab
 
 NivUI.UnitFrames.currentStyleName = "Default"
 NivUI.UnitFrames.refreshCallback = nil
@@ -154,10 +155,10 @@ StaticPopupDialogs["NIVUI_CONFIRM_RELOAD"] = {
     text = "Disabling this frame type requires a UI reload. Reload now?",
     button1 = "Reload",
     button2 = "Later",
-    OnAccept = function(dialog, data)
+    OnAccept = function(_dialog, data)
         NivUI:SetFrameEnabled(data.frameType, false)
     end,
-    OnCancel = function(dialog, data)
+    OnCancel = function(_dialog, data)
         NivUI_DB.unitFrameEnabled = NivUI_DB.unitFrameEnabled or {}
         NivUI_DB.unitFrameEnabled[data.frameType] = false
     end,
@@ -187,15 +188,6 @@ local function DeepSet(tbl, key, value)
         current = current[part]
     end
     current[parts[#parts]] = value
-end
-
-local function DeepCopy(src)
-    if type(src) ~= "table" then return src end
-    local copy = {}
-    for k, v in pairs(src) do
-        copy[k] = DeepCopy(v)
-    end
-    return copy
 end
 
 local function CreateWidgetList(parent, onSelect)
@@ -738,7 +730,7 @@ local function CreateAssignmentsPanel(parent, Components)
         dropdown:SetWidth(150)
         dropdown:SetDefaultText("Select Style")
 
-        dropdown:SetupMenu(function(owner, rootDescription)
+        dropdown:SetupMenu(function(_owner, rootDescription)
             local names = NivUI:GetStyleNames()
             for _, name in ipairs(names) do
                 rootDescription:CreateRadio(
@@ -792,7 +784,7 @@ local function CreateAssignmentsPanel(parent, Components)
     return frame
 end
 
-function NivUI.UnitFrames:SetupConfigTab(parent, Components)
+function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
     local container = CreateFrame("Frame", nil, parent)
     container:SetPoint("TOPLEFT", 8, -60)
     container:SetPoint("BOTTOMRIGHT", -8, 8)
@@ -2096,7 +2088,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     end)
 
     -- Listen for frame enabled changes
-    NivUI:RegisterCallback("FrameEnabledChanged", function(data)
+    NivUI:RegisterCallback("FrameEnabledChanged", function(_data)
         if container:IsShown() then
             LayoutTabs()
         end
@@ -2105,7 +2097,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     return container
 end
 
-function NivUI.UnitFrames:SetupDesignerContent(parent, Components)
+function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     local container = CreateFrame("Frame", nil, parent)
     container:Hide()
 

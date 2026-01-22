@@ -36,6 +36,8 @@ local states = {
     },
 }
 
+local UpdateAllRaidMembers
+
 local function GetActiveRaidSize()
     if not IsInRaid() then
         return nil
@@ -298,7 +300,7 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
 
-    frame:SetScript("OnEvent", function(self, event, eventUnit)
+    frame:SetScript("OnEvent", function(self, event, _eventUnit)
         if event == "UNIT_MAXHEALTH" then
             Base.UpdateHealthBar(memberState)
             Base.UpdateHealthText(memberState)
@@ -440,22 +442,23 @@ local function OnGroupRosterUpdate()
     local activeSize = GetActiveRaidSize()
 
     for raidSize, state in pairs(states) do
-        if not state.enabled then
-        elseif state.previewMode then
-            if state.container then
-                state.container:Show()
-            end
-            LayoutGroupFrames(raidSize)
-            UpdateAllRaidMembers(raidSize)
-        elseif raidSize == activeSize then
-            if state.container then
-                state.container:Show()
-            end
-            LayoutGroupFrames(raidSize)
-            UpdateAllRaidMembers(raidSize)
-        else
-            if state.container then
-                state.container:Hide()
+        if state.enabled then
+            if state.previewMode then
+                if state.container then
+                    state.container:Show()
+                end
+                LayoutGroupFrames(raidSize)
+                UpdateAllRaidMembers(raidSize)
+            elseif raidSize == activeSize then
+                if state.container then
+                    state.container:Show()
+                end
+                LayoutGroupFrames(raidSize)
+                UpdateAllRaidMembers(raidSize)
+            else
+                if state.container then
+                    state.container:Hide()
+                end
             end
         end
     end
@@ -579,7 +582,7 @@ NivUI:RegisterCallback("AssignmentChanged", function(data)
 end)
 
 NivUI:RegisterCallback("StyleChanged", function(data)
-    for raidSize, state in pairs(states) do
+    for raidSize, _state in pairs(states) do
         if NivUI:IsFrameEnabled(raidSize) then
             local assignedStyle = NivUI:GetAssignment(raidSize)
             if data.styleName == assignedStyle then

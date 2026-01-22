@@ -108,7 +108,7 @@ local function SetupMagnetismMethods(frame, selection)
 
     function frame:IsAboveFrame(systemFrame)
         local _, _, myBottom = self:GetScaledSelectionSides()
-        local otherLeft, _, otherBottom, otherTop = SafeGetOtherFrameSides(systemFrame)
+        local otherLeft, _, _, otherTop = SafeGetOtherFrameSides(systemFrame)
         if not otherLeft then return false end
         return myBottom > otherTop
     end

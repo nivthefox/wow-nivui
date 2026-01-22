@@ -69,7 +69,7 @@ NivUI.UnitFrames.TargetOfTargetFrame = Base.CreateModule({
         frame:RegisterUnitEvent("UNIT_TARGET", "target")
     end,
 
-    onEvent = function(frame, event, unit)
+    onEvent = function(_frame, event, _unit)
         if event == "PLAYER_TARGET_CHANGED" or event == "UNIT_TARGET" then
             local state = NivUI.UnitFrames.TargetOfTargetFrame.GetState()
             Base.CheckVisibility(state)

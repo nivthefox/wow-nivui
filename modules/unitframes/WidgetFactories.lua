@@ -37,7 +37,7 @@ end
 
 local WF = NivUI.WidgetFactories
 
-function WF.healthBar(parent, config, style, unit)
+function WF.healthBar(parent, config, _style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
@@ -83,7 +83,7 @@ function WF.healthBar(parent, config, style, unit)
     return frame
 end
 
-function WF.powerBar(parent, config, style, unit)
+function WF.powerBar(parent, config, _style, unit)
     unit = unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
@@ -127,7 +127,7 @@ function WF.powerBar(parent, config, style, unit)
     return frame
 end
 
-function WF.portrait(parent, config, style, unit)
+function WF.portrait(parent, config, _style, unit)
     unit = unit or "player"
     local frame
 
@@ -222,7 +222,7 @@ local function CreateTextWidget(parent, config, textValue, widgetType, unit)
     return frame
 end
 
-function WF.nameText(parent, config, style, unit)
+function WF.nameText(parent, config, _style, unit)
     unit = unit or "player"
     local name = UnitName(unit) or "Player"
     if not issecretvalue(name) and config.truncateLength and #name > config.truncateLength then
@@ -231,7 +231,7 @@ function WF.nameText(parent, config, style, unit)
     return CreateTextWidget(parent, config, name, "nameText", unit)
 end
 
-function WF.levelText(parent, config, style, unit)
+function WF.levelText(parent, config, _style, unit)
     unit = unit or "player"
     local level = UnitLevel(unit)
     local text = level == -1 and "??" or tostring(level)
@@ -247,7 +247,7 @@ function WF.levelText(parent, config, style, unit)
     return frame
 end
 
-function WF.healthText(parent, config, style, unit)
+function WF.healthText(parent, config, _style, unit)
     unit = unit or "player"
     local health = UnitHealth(unit)
     local maxHealth = UnitHealthMax(unit)
@@ -289,7 +289,7 @@ function WF.healthText(parent, config, style, unit)
     return CreateTextWidget(parent, config, text, "healthText", unit)
 end
 
-function WF.powerText(parent, config, style, unit)
+function WF.powerText(parent, config, _style, unit)
     unit = unit or "player"
     local powerType = UnitPowerType(unit)
     local power = UnitPower(unit, powerType)
@@ -321,7 +321,7 @@ function WF.powerText(parent, config, style, unit)
     return CreateTextWidget(parent, config, text, "powerText", unit)
 end
 
-function WF.statusIndicators(parent, config, style, unit)
+function WF.statusIndicators(parent, config, _style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.iconSize * 3, config.iconSize)
@@ -345,7 +345,7 @@ function WF.statusIndicators(parent, config, style, unit)
     return frame
 end
 
-function WF.leaderIcon(parent, config, style, unit)
+function WF.leaderIcon(parent, config, _style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
@@ -365,7 +365,7 @@ function WF.leaderIcon(parent, config, style, unit)
     return frame
 end
 
-function WF.raidMarker(parent, config, style, unit)
+function WF.raidMarker(parent, config, _style, unit)
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
@@ -388,8 +388,8 @@ function WF.raidMarker(parent, config, style, unit)
     return frame
 end
 
-function WF.castbar(parent, config, style, unit)
-    unit = unit or "player"
+function WF.castbar(parent, config, _style, _unit)
+    _unit = _unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
     if config.strata then frame:SetFrameStrata(config.strata) end
@@ -442,8 +442,8 @@ function WF.castbar(parent, config, style, unit)
     return frame
 end
 
-local function CreateAuraWidget(parent, config, widgetType, testAuras, unit)
-    unit = unit or "player"
+local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
+    _unit = _unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
@@ -467,7 +467,8 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, unit)
         local row = math.floor((i - 1) / perRow)
         local col = (i - 1) % perRow
 
-        local xOffset, yOffset = 0, 0
+        local xOffset = 0
+        local yOffset
         if config.growth == "RIGHT" then
             xOffset = col * (iconSize + spacing)
         elseif config.growth == "LEFT" then
@@ -507,7 +508,7 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, unit)
     return frame
 end
 
-function WF.buffs(parent, config, style, unit)
+function WF.buffs(parent, config, _style, unit)
     local testBuffs = {
         "Interface\\Icons\\Spell_Holy_WordFortitude",
         "Interface\\Icons\\Spell_Nature_Regeneration",
@@ -517,7 +518,7 @@ function WF.buffs(parent, config, style, unit)
     return CreateAuraWidget(parent, config, "buffs", testBuffs, unit)
 end
 
-function WF.debuffs(parent, config, style, unit)
+function WF.debuffs(parent, config, _style, unit)
     local testDebuffs = {
         "Interface\\Icons\\Spell_Shadow_CurseOfTounAA",
         "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",

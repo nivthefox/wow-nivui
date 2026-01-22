@@ -39,8 +39,8 @@ local function HideBlizzardPetFrame(state)
 
     state.blizzardHidden = true
 
-    if not PetFrame.NivUI_SoftHideHooked then
-        PetFrame.NivUI_SoftHideHooked = true
+    if not state.softHideHooked then
+        state.softHideHooked = true
         PetFrame:HookScript("OnShow", function()
             if state.blizzardHidden then
                 HideBlizzardPetFrame(state)
@@ -67,7 +67,7 @@ NivUI.UnitFrames.PetFrame = Base.CreateModule({
         frame:RegisterEvent("PET_BAR_UPDATE")
     end,
 
-    onEvent = function(frame, event, unit)
+    onEvent = function(_frame, event, _unit)
         if event == "UNIT_PET" or event == "PET_BAR_UPDATE" then
             local state = NivUI.UnitFrames.PetFrame.GetState()
             Base.CheckVisibility(state)

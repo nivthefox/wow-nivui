@@ -5,6 +5,8 @@ local Base = NivUI.UnitFrames.Base
 
 local MAX_BOSS_FRAMES = 5
 
+local UpdateAllMemberFrames
+
 local state = {
     enabled = false,
     previewMode = false,
@@ -175,7 +177,7 @@ local function CreateMemberFrame(unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
 
-    frame:SetScript("OnEvent", function(self, event, eventUnit)
+    frame:SetScript("OnEvent", function(self, event, _eventUnit)
         if event == "UNIT_MAXHEALTH" then
             Base.UpdateHealthBar(memberState)
             Base.UpdateHealthText(memberState)
@@ -385,7 +387,7 @@ eventFrame:RegisterEvent("ENCOUNTER_END")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
-eventFrame:SetScript("OnEvent", function(self, event, ...)
+eventFrame:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_LOGIN" then
         if NivUI:IsFrameEnabled("boss") then
             BossFrame.Enable()
@@ -429,7 +431,7 @@ NivUI:RegisterCallback("StyleChanged", function(data)
     end
 end)
 
-NivUI:RegisterCallback("BossSettingsChanged", function(data)
+NivUI:RegisterCallback("BossSettingsChanged", function(_data)
     if state.enabled then
         LayoutMemberFrames()
     end

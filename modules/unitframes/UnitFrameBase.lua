@@ -267,11 +267,11 @@ function UnitFrameBase.UpdateCastbar(state)
     local config = state.currentStyle.castbar
     local unit = state.unit
 
-    local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellID = UnitCastingInfo(unit)
+    local name, _text, texture, startTimeMS, endTimeMS, _isTradeSkill, _castID, notInterruptible, _spellID = UnitCastingInfo(unit)
     local isChanneling = false
 
     if not name then
-        name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible, spellID = UnitChannelInfo(unit)
+        name, _text, texture, startTimeMS, endTimeMS, _isTradeSkill, notInterruptible, _spellID = UnitChannelInfo(unit)
         isChanneling = true
     end
 

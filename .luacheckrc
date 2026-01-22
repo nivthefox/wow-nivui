@@ -10,6 +10,12 @@ ignore = {
 	-- "113/LE_.*", -- Accessing an undefined (Lua ENUM type) global variable
 	-- "113/NUM_LE_.*", -- Accessing an undefined (Lua ENUM type) global variable
 	"122/StaticPopupDialogs", -- Setting a read-only field of a global variable "StaticPopupDialogs"
+	"122/FocusFrame", -- Modifying Blizzard's FocusFrame
+	"122/TargetFrame", -- Modifying Blizzard's TargetFrame
+	"112/SlashCmdList", -- Standard WoW slash command registration
+	"21./_.*", -- Unused variable/argument/loop variable starting with _
+	"231/_.*", -- Variable set but never accessed for _ prefixed
+	"311/_.*", -- Value assigned but unused for _ prefixed variables
 	-- "211", -- Unused local variable
 	-- "212", -- Unused argument
 	"212/self", -- Unused argument "self"
@@ -22,13 +28,8 @@ ignore = {
 	-- "542", -- An empty if branch
 }
 globals = {
-	-- NivUI addon globals
 	"NivUI",
-	"NivUIDB",
-	"NivUICharDB",
-	"NivUIConfigFrame",
 	"NivUI_DB",
-	"NivUI_StaggerBarDB",
 }
 read_globals = {
 	-- WoW 12.0 Midnight APIs (not yet in upstream luacheckrc)
@@ -40868,6 +40869,10 @@ read_globals = {
 	"Enum.StatusBarOverrideBarTextShownType.Never",
 	"Enum.StatusBarOverrideBarTextShownType.OnlyNotOnMouseover",
 	"Enum.StatusBarOverrideBarTextShownType.OnlyOnMouseover",
+	"Enum.StatusBarInterpolation.ExponentialEaseOut",
+	"Enum.StatusBarInterpolation.Immediate",
+	"Enum.StatusBarTimerDirection.ElapsedTime",
+	"Enum.StatusBarTimerDirection.RemainingTime",
 	"Enum.StatusBarValueTextType.Hidden",
 	"Enum.StatusBarValueTextType.Percentage",
 	"Enum.StatusBarValueTextType.Time",

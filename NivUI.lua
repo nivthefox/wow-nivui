@@ -1,7 +1,6 @@
 NivUI = NivUI or {}
 
 NivUI_DB = NivUI_DB or {}
-NivUI_StaggerBarDB = NivUI_StaggerBarDB or {}  -- Legacy, kept for migration
 
 NivUI.staggerBarDefaults = {
     visibility = "combat",
@@ -187,11 +186,7 @@ function NivUI:InitializeDB()
     NivUI_DB.version = NivUI_DB.version or 1
 
     if not NivUI_DB.staggerBar then
-        if next(NivUI_StaggerBarDB) then
-            NivUI_DB.staggerBar = DeepCopy(NivUI_StaggerBarDB)
-        else
-            NivUI_DB.staggerBar = {}
-        end
+        NivUI_DB.staggerBar = {}
     end
 
     for k, v in pairs(self.staggerBarDefaults) do

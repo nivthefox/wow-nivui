@@ -45,8 +45,8 @@ local function HideBlizzardPlayerFrame(state)
 
     state.blizzardHidden = true
 
-    if not PlayerFrame.NivUI_SoftHideHooked then
-        PlayerFrame.NivUI_SoftHideHooked = true
+    if not state.softHideHooked then
+        state.softHideHooked = true
         PlayerFrame:HookScript("OnShow", function()
             if state.blizzardHidden then
                 HideBlizzardPlayerFrame(state)

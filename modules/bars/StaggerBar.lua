@@ -1,4 +1,3 @@
-local SPEC_MONK_BREWMASTER = 268
 local STAGGER_LIGHT = 124273
 local STAGGER_MODERATE = 124274
 local STAGGER_HEAVY = 124275
@@ -39,7 +38,7 @@ resizeHandle:SetScript("OnMouseDown", function(self, button)
     end
 end)
 
-resizeHandle:SetScript("OnMouseUp", function(self, button)
+resizeHandle:SetScript("OnMouseUp", function(self, _button)
     StaggerBar:StopMovingOrSizing()
     local db = NivUI_DB.staggerBar
     db.width = StaggerBar:GetWidth()
@@ -297,7 +296,6 @@ end
 local function ApplyBorder()
     local borderStyle = NivUI:GetSetting("borderStyle")
     local borderColor = NivUI:GetSetting("borderColor")
-    local borderWidth = NivUI:GetSetting("borderWidth") or 1
 
     if borderStyle == "none" then
         StaggerBar.border:SetBackdrop(nil)
@@ -422,11 +420,11 @@ SlashCmdList["NIVUI"] = function(msg)
     local cmd = args[2]
 
     if not module or module == "" then
-        if NivUIConfigFrame then
-            if NivUIConfigFrame:IsShown() then
-                NivUIConfigFrame:Hide()
+        if NivUI.ConfigFrame then
+            if NivUI.ConfigFrame:IsShown() then
+                NivUI.ConfigFrame:Hide()
             else
-                NivUIConfigFrame:Show()
+                NivUI.ConfigFrame:Show()
             end
         else
             print("NivUI: Config frame not loaded")

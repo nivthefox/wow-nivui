@@ -1,6 +1,3 @@
-local SPEC_MONK_WINDWALKER = 269
-local MAX_CHI = 6  -- Maximum possible with talents
-
 local ChiBar = CreateFrame("Frame", "NivUIChiBar", UIParent)
 ChiBar:SetSize(200, 20)
 ChiBar:SetPoint("CENTER", UIParent, "CENTER", 0, -250)
@@ -31,7 +28,7 @@ resizeHandle:SetScript("OnMouseDown", function(self, button)
     end
 end)
 
-resizeHandle:SetScript("OnMouseUp", function(self, button)
+resizeHandle:SetScript("OnMouseUp", function(self, _button)
     ChiBar:StopMovingOrSizing()
     local db = NivUI_DB.chiBar
     db.width = ChiBar:GetWidth()

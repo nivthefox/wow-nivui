@@ -36,8 +36,8 @@ local function HideBlizzardFocusFrame(state)
 
     if FocusFrame.auraPools then
         FocusFrame.auraPools:ReleaseAll()
-        if not FocusFrame.NivUI_AurasDisabled then
-            FocusFrame.NivUI_AurasDisabled = true
+        if not state.aurasDisabled then
+            state.aurasDisabled = true
             FocusFrame.UpdateAuras = function() end
         end
     end
@@ -52,8 +52,8 @@ local function HideBlizzardFocusFrame(state)
 
     state.blizzardHidden = true
 
-    if not FocusFrame.NivUI_SoftHideHooked then
-        FocusFrame.NivUI_SoftHideHooked = true
+    if not state.softHideHooked then
+        state.softHideHooked = true
         FocusFrame:HookScript("OnShow", function()
             if state.blizzardHidden then
                 HideBlizzardFocusFrame(state)
@@ -79,7 +79,7 @@ NivUI.UnitFrames.FocusFrame = Base.CreateModule({
         frame:RegisterEvent("PLAYER_FOCUS_CHANGED")
     end,
 
-    onEvent = function(frame, event, unit)
+    onEvent = function(_frame, event, _unit)
         if event == "PLAYER_FOCUS_CHANGED" then
             local state = NivUI.UnitFrames.FocusFrame.GetState()
             Base.CheckVisibility(state)

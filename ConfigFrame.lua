@@ -1034,3 +1034,4 @@ end
 
 -- Export components for other modules
 NivUI.Components = Components
+NivUI.ConfigFrame = ConfigFrame

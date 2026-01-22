@@ -3,6 +3,8 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
+local UpdateAllMemberFrames
+
 local state = {
     enabled = false,
     previewMode = false,
@@ -186,7 +188,7 @@ local function CreateMemberFrame(unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
 
-    frame:SetScript("OnEvent", function(self, event, eventUnit)
+    frame:SetScript("OnEvent", function(self, event, _eventUnit)
         if event == "UNIT_MAXHEALTH" then
             Base.UpdateHealthBar(memberState)
             Base.UpdateHealthText(memberState)
