@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Raid marker, leader icon, and role icon widgets now update dynamically
+- Role icon widget for displaying tank/healer/dps assignments
+
 ### Fixed
 
 - Style designer tab now loads correctly
+- Raid markers now display correctly in preview and on live frames
+- Unit frames now show and hide properly during combat (focus, target, pet, etc.)
 
 ## [1.1.2](https://github.com/nivthefox/wow-nivui/releases/tag/v1.1.2) - 2026-01-22
 
