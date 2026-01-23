@@ -345,7 +345,8 @@ function WF.statusIndicators(parent, config, _style, unit)
     return frame
 end
 
-function WF.leaderIcon(parent, config, _style, unit)
+function WF.leaderIcon(parent, config, _style, unit, options)
+    options = options or {}
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
@@ -357,15 +358,24 @@ function WF.leaderIcon(parent, config, _style, unit)
     frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-LeaderIcon")
 
     local isLeader = UnitIsGroupLeader(unit)
-    if not isLeader then
+    local isAssist = UnitIsGroupAssistant and UnitIsGroupAssistant(unit)
+    if isLeader or isAssist then
+        -- Show appropriate icon
+        if isAssist and not isLeader then
+            frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-AssistantIcon")
+        end
+    elseif options.forPreview then
         frame.icon:SetAlpha(0.3)  -- Dim in preview when not leader
+    else
+        frame:Hide()  -- Runtime: hide until unit becomes leader/assist
     end
 
     frame.widgetType = "leaderIcon"
     return frame
 end
 
-function WF.raidMarker(parent, config, _style, unit)
+function WF.raidMarker(parent, config, _style, unit, options)
+    options = options or {}
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
@@ -379,17 +389,21 @@ function WF.raidMarker(parent, config, _style, unit)
     local index = GetRaidTargetIndex(unit)
     if index then
         SetRaidTargetIconTexture(frame.icon, index)
-    else
-        -- Show skull as preview
+    elseif options.forPreview then
+        -- Show skull as preview in designer only
         SetRaidTargetIconTexture(frame.icon, 8)
         frame.icon:SetAlpha(0.3)
+    else
+        -- Runtime: hide until unit gets a marker
+        frame:Hide()
     end
 
     frame.widgetType = "raidMarker"
     return frame
 end
 
-function WF.roleIcon(parent, config, _style, unit)
+function WF.roleIcon(parent, config, _style, unit, options)
+    options = options or {}
     unit = unit or "player"
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(config.size, config.size)
@@ -405,12 +419,15 @@ function WF.roleIcon(parent, config, _style, unit)
         if atlas then
             frame.icon:SetAtlas(atlas)
         end
-    else
-        -- Show tank icon as preview
+    elseif options.forPreview then
+        -- Show tank icon as preview in designer only
         if GetMicroIconForRole then
             frame.icon:SetAtlas(GetMicroIconForRole("TANK"))
         end
         frame.icon:SetAlpha(0.3)
+    else
+        -- Runtime: hide until unit has a role
+        frame:Hide()
     end
 
     frame.widgetType = "roleIcon"

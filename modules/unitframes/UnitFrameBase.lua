@@ -427,7 +427,7 @@ function UnitFrameBase.CreateWidgets(parent, style, unit, options)
                     end
                 end
 
-                local success, widget = pcall(WF[widgetType], parent, widgetConfig, style, unit)
+                local success, widget = pcall(WF[widgetType], parent, widgetConfig, style, unit, options)
                 if success and widget then
                     widgets[widgetType] = widget
                 elseif not success then
