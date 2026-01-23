@@ -539,8 +539,9 @@ function UnitFrameBase.BuildCustomFrame(state)
         local debugFrame = CreateFrame("Frame")
         debugFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
         debugFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-        debugFrame:SetScript("OnEvent", function(_, event)
-            print("NivUI DEBUG:", event, "- frame shown:", customFrame:IsShown(), "- statehidden:", customFrame:GetAttribute("statehidden"))
+        debugFrame:RegisterEvent("PLAYER_IN_COMBAT_CHANGED")
+        debugFrame:SetScript("OnEvent", function(_, event, ...)
+            print("NivUI DEBUG:", event, "args:", ..., "- frame shown:", customFrame:IsShown(), "- statehidden:", customFrame:GetAttribute("statehidden"))
         end)
     end
 
