@@ -79,7 +79,7 @@ local function ShouldShowPowerBar(unit, visibility)
         return UnitIsUnit(unit, "player")
     elseif visibility == "healers" then
         local role = UnitGroupRolesAssigned(unit)
-        return role == "HEALER" or UnitIsUnit(unit, "player")
+        return role == "HEALER"
     end
     return true
 end
