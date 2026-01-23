@@ -1,0 +1,531 @@
+NivUI = NivUI or {}
+NivUI.EditMode = NivUI.EditMode or {}
+
+local DIALOG_WIDTH = 300
+local SETTING_HEIGHT = 32
+local LABEL_WIDTH = 120
+
+-- Setting type constants (matching Blizzard's pattern)
+local SettingType = {
+    Dropdown = "dropdown",
+    Slider = "slider",
+    Checkbox = "checkbox",
+}
+
+-- Settings definitions per frame type
+local FrameSettings = {
+    party = {
+        {
+            key = "orientation",
+            name = "Orientation",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "VERTICAL", text = "Vertical" },
+                { value = "HORIZONTAL", text = "Horizontal" },
+            },
+            get = function() return NivUI:GetPartyOrientation() end,
+            set = function(value)
+                NivUI:SetPartyOrientation(value)
+                -- Reset growth direction to sensible default
+                if value == "VERTICAL" then
+                    NivUI:SetPartyGrowthDirection("DOWN")
+                else
+                    NivUI:SetPartyGrowthDirection("RIGHT")
+                end
+            end,
+        },
+        {
+            key = "growthDirection",
+            name = "Growth Direction",
+            type = SettingType.Dropdown,
+            options = function()
+                local orientation = NivUI:GetPartyOrientation()
+                if orientation == "VERTICAL" then
+                    return {
+                        { value = "DOWN", text = "Down" },
+                        { value = "UP", text = "Up" },
+                    }
+                else
+                    return {
+                        { value = "RIGHT", text = "Right" },
+                        { value = "LEFT", text = "Left" },
+                    }
+                end
+            end,
+            get = function() return NivUI:GetPartyGrowthDirection() end,
+            set = function(value) NivUI:SetPartyGrowthDirection(value) end,
+        },
+        {
+            key = "spacing",
+            name = "Spacing",
+            type = SettingType.Slider,
+            min = 0,
+            max = 20,
+            step = 1,
+            get = function() return NivUI:GetPartySpacing() end,
+            set = function(value) NivUI:SetPartySpacing(value) end,
+        },
+        {
+            key = "includePlayer",
+            name = "Include Player",
+            type = SettingType.Checkbox,
+            get = function() return NivUI:DoesPartyIncludePlayer() end,
+            set = function(value) NivUI:SetPartyIncludePlayer(value) end,
+        },
+        {
+            key = "showWhenSolo",
+            name = "Show When Solo",
+            type = SettingType.Checkbox,
+            get = function() return NivUI:DoesPartyShowWhenSolo() end,
+            set = function(value) NivUI:SetPartyShowWhenSolo(value) end,
+        },
+    },
+
+    boss = {
+        {
+            key = "orientation",
+            name = "Orientation",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "VERTICAL", text = "Vertical" },
+                { value = "HORIZONTAL", text = "Horizontal" },
+            },
+            get = function() return NivUI:GetBossOrientation() end,
+            set = function(value)
+                NivUI:SetBossOrientation(value)
+                if value == "VERTICAL" then
+                    NivUI:SetBossGrowthDirection("DOWN")
+                else
+                    NivUI:SetBossGrowthDirection("RIGHT")
+                end
+            end,
+        },
+        {
+            key = "growthDirection",
+            name = "Growth Direction",
+            type = SettingType.Dropdown,
+            options = function()
+                local orientation = NivUI:GetBossOrientation()
+                if orientation == "VERTICAL" then
+                    return {
+                        { value = "DOWN", text = "Down" },
+                        { value = "UP", text = "Up" },
+                    }
+                else
+                    return {
+                        { value = "RIGHT", text = "Right" },
+                        { value = "LEFT", text = "Left" },
+                    }
+                end
+            end,
+            get = function() return NivUI:GetBossGrowthDirection() end,
+            set = function(value) NivUI:SetBossGrowthDirection(value) end,
+        },
+        {
+            key = "spacing",
+            name = "Spacing",
+            type = SettingType.Slider,
+            min = 0,
+            max = 20,
+            step = 1,
+            get = function() return NivUI:GetBossSpacing() end,
+            set = function(value) NivUI:SetBossSpacing(value) end,
+        },
+    },
+
+    arena = {
+        {
+            key = "orientation",
+            name = "Orientation",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "VERTICAL", text = "Vertical" },
+                { value = "HORIZONTAL", text = "Horizontal" },
+            },
+            get = function() return NivUI:GetArenaOrientation() end,
+            set = function(value)
+                NivUI:SetArenaOrientation(value)
+                if value == "VERTICAL" then
+                    NivUI:SetArenaGrowthDirection("DOWN")
+                else
+                    NivUI:SetArenaGrowthDirection("RIGHT")
+                end
+            end,
+        },
+        {
+            key = "growthDirection",
+            name = "Growth Direction",
+            type = SettingType.Dropdown,
+            options = function()
+                local orientation = NivUI:GetArenaOrientation()
+                if orientation == "VERTICAL" then
+                    return {
+                        { value = "DOWN", text = "Down" },
+                        { value = "UP", text = "Up" },
+                    }
+                else
+                    return {
+                        { value = "RIGHT", text = "Right" },
+                        { value = "LEFT", text = "Left" },
+                    }
+                end
+            end,
+            get = function() return NivUI:GetArenaGrowthDirection() end,
+            set = function(value) NivUI:SetArenaGrowthDirection(value) end,
+        },
+        {
+            key = "spacing",
+            name = "Spacing",
+            type = SettingType.Slider,
+            min = 0,
+            max = 20,
+            step = 1,
+            get = function() return NivUI:GetArenaSpacing() end,
+            set = function(value) NivUI:SetArenaSpacing(value) end,
+        },
+    },
+}
+
+-- Raid settings are parameterized by raid size
+local function CreateRaidSettings(raidSize)
+    return {
+        {
+            key = "groupOrientation",
+            name = "Group Orientation",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "VERTICAL", text = "Vertical" },
+                { value = "HORIZONTAL", text = "Horizontal" },
+            },
+            get = function() return NivUI:GetRaidGroupOrientation(raidSize) end,
+            set = function(value)
+                NivUI:SetRaidGroupOrientation(raidSize, value)
+                if value == "VERTICAL" then
+                    NivUI:SetRaidGroupGrowthDirection(raidSize, "DOWN")
+                else
+                    NivUI:SetRaidGroupGrowthDirection(raidSize, "RIGHT")
+                end
+            end,
+        },
+        {
+            key = "groupGrowthDirection",
+            name = "Group Growth",
+            type = SettingType.Dropdown,
+            options = function()
+                local orientation = NivUI:GetRaidGroupOrientation(raidSize)
+                if orientation == "VERTICAL" then
+                    return {
+                        { value = "DOWN", text = "Down" },
+                        { value = "UP", text = "Up" },
+                    }
+                else
+                    return {
+                        { value = "RIGHT", text = "Right" },
+                        { value = "LEFT", text = "Left" },
+                    }
+                end
+            end,
+            get = function() return NivUI:GetRaidGroupGrowthDirection(raidSize) end,
+            set = function(value) NivUI:SetRaidGroupGrowthDirection(raidSize, value) end,
+        },
+        {
+            key = "playerGrowthDirection",
+            name = "Player Growth",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "DOWN", text = "Down" },
+                { value = "UP", text = "Up" },
+                { value = "RIGHT", text = "Right" },
+                { value = "LEFT", text = "Left" },
+            },
+            get = function() return NivUI:GetRaidPlayerGrowthDirection(raidSize) end,
+            set = function(value) NivUI:SetRaidPlayerGrowthDirection(raidSize, value) end,
+        },
+        {
+            key = "spacing",
+            name = "Spacing",
+            type = SettingType.Slider,
+            min = 0,
+            max = 20,
+            step = 1,
+            get = function() return NivUI:GetRaidSpacing(raidSize) end,
+            set = function(value) NivUI:SetRaidSpacing(raidSize, value) end,
+        },
+    }
+end
+
+FrameSettings.raid10 = CreateRaidSettings("raid10")
+FrameSettings.raid20 = CreateRaidSettings("raid20")
+FrameSettings.raid40 = CreateRaidSettings("raid40")
+
+-- Frame display names
+local FrameNames = {
+    party = "Party Frames",
+    boss = "Boss Frames",
+    arena = "Arena Frames",
+    raid10 = "Raid Frames (10)",
+    raid20 = "Raid Frames (20)",
+    raid40 = "Raid Frames (40)",
+}
+
+-- The dialog singleton
+local dialog = nil
+local settingControls = {}
+local currentFrameType = nil
+
+local function CreateSettingControl(parent, settingDef, index)
+    local control = CreateFrame("Frame", nil, parent)
+    control:SetHeight(SETTING_HEIGHT)
+    control:SetPoint("LEFT", 0, 0)
+    control:SetPoint("RIGHT", 0, 0)
+    control.layoutIndex = index
+    control.settingDef = settingDef
+
+    local label = control:CreateFontString(nil, "ARTWORK", "GameFontHighlightMedium")
+    label:SetPoint("LEFT", 0, 0)
+    label:SetWidth(LABEL_WIDTH)
+    label:SetJustifyH("LEFT")
+    label:SetText(settingDef.name)
+    control.label = label
+
+    if settingDef.type == SettingType.Dropdown then
+        local dropdown = CreateFrame("DropdownButton", nil, control, "WowStyle1DropdownTemplate")
+        dropdown:SetPoint("LEFT", label, "RIGHT", 10, 0)
+        dropdown:SetWidth(130)
+        control.dropdown = dropdown
+
+        function control:Refresh()
+            local options = self.settingDef.options
+            if type(options) == "function" then
+                options = options()
+            end
+
+            self.dropdown:SetupMenu(function(_, rootDescription)
+                for _, opt in ipairs(options) do
+                    rootDescription:CreateRadio(
+                        opt.text,
+                        function() return self.settingDef.get() == opt.value end,
+                        function()
+                            self.settingDef.set(opt.value)
+                            -- Refresh all controls since options may have changed
+                            NivUI.EditMode:RefreshSettingsDialog()
+                        end
+                    )
+                end
+            end)
+        end
+
+    elseif settingDef.type == SettingType.Slider then
+        local slider = CreateFrame("Slider", nil, control, "MinimalSliderWithSteppersTemplate")
+        slider:SetPoint("LEFT", label, "RIGHT", 10, 0)
+        slider:SetWidth(120)
+        slider:SetHeight(20)
+
+        local steps = math.floor((settingDef.max - settingDef.min) / (settingDef.step or 1))
+        slider:Init(settingDef.get(), settingDef.min, settingDef.max, steps, {})
+
+        control.slider = slider
+
+        local valueText = control:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        valueText:SetPoint("LEFT", slider, "RIGHT", 8, 0)
+        valueText:SetWidth(30)
+        control.valueText = valueText
+
+        local updating = false
+        slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+            if updating then return end
+            updating = true
+            value = math.floor(value + 0.5)
+            valueText:SetText(tostring(value))
+            settingDef.set(value)
+            updating = false
+        end)
+
+        function control:Refresh()
+            local value = self.settingDef.get()
+            self.slider:SetValue(value)
+            self.valueText:SetText(tostring(value))
+        end
+
+    elseif settingDef.type == SettingType.Checkbox then
+        local checkbox = CreateFrame("CheckButton", nil, control)
+        checkbox:SetPoint("LEFT", label, "RIGHT", 10, 0)
+        checkbox:SetSize(24, 24)
+        checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
+        checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
+        checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight", "ADD")
+        checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+        checkbox:SetDisabledCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check-Disabled")
+
+        checkbox:SetScript("OnClick", function(self)
+            settingDef.set(self:GetChecked())
+        end)
+
+        control.checkbox = checkbox
+
+        function control:Refresh()
+            self.checkbox:SetChecked(self.settingDef.get())
+        end
+    end
+
+    control:Show()
+    return control
+end
+
+local function CreateDialog()
+    local frame = CreateFrame("Frame", "NivUI_EditModeSettingsDialog", UIParent, "BackdropTemplate")
+    frame:SetSize(DIALOG_WIDTH, 200)
+    frame:SetPoint("CENTER")
+    frame:SetFrameStrata("DIALOG")
+    frame:SetFrameLevel(200)
+    frame:SetMovable(true)
+    frame:SetClampedToScreen(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:Hide()
+
+    -- Use the translucent dialog border like Blizzard does
+    frame:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    })
+    frame:SetBackdropColor(0, 0, 0, 0.8)
+
+    frame:SetScript("OnDragStart", function(self)
+        self:StartMoving()
+    end)
+
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+    end)
+
+    -- Title
+    local title = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
+    title:SetPoint("TOP", 0, -15)
+    frame.title = title
+
+    -- Close button
+    local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    closeButton:SetPoint("TOPRIGHT", -3, -3)
+    closeButton:SetScript("OnClick", function()
+        frame:Hide()
+        NivUI.EditMode:ClearSelection()
+    end)
+
+    -- Settings container
+    local settingsContainer = CreateFrame("Frame", nil, frame)
+    settingsContainer:SetPoint("TOPLEFT", 20, -45)
+    settingsContainer:SetPoint("BOTTOMRIGHT", -20, 20)
+    frame.settingsContainer = settingsContainer
+
+    frame:SetScript("OnHide", function()
+        currentFrameType = nil
+    end)
+
+    return frame
+end
+
+function NivUI.EditMode:GetSettingsDialog()
+    if not dialog then
+        dialog = CreateDialog()
+    end
+    return dialog
+end
+
+function NivUI.EditMode:RefreshSettingsDialog()
+    if not dialog or not dialog:IsShown() or not currentFrameType then
+        return
+    end
+
+    for _, control in ipairs(settingControls) do
+        control:Refresh()
+    end
+end
+
+function NivUI.EditMode:ShowSettingsDialog(frameType, targetFrame)
+    local settings = FrameSettings[frameType]
+    if not settings then
+        return
+    end
+
+    local dlg = self:GetSettingsDialog()
+
+    -- Clear old controls
+    for _, control in ipairs(settingControls) do
+        control:Hide()
+        control:SetParent(nil)
+    end
+    wipe(settingControls)
+
+    currentFrameType = frameType
+
+    -- Set title
+    dlg.title:SetText(FrameNames[frameType] or frameType)
+
+    -- Create setting controls
+    local yOffset = 0
+    for i, settingDef in ipairs(settings) do
+        local control = CreateSettingControl(dlg.settingsContainer, settingDef, i)
+        control:SetPoint("TOPLEFT", dlg.settingsContainer, "TOPLEFT", 0, -yOffset)
+        control:SetPoint("TOPRIGHT", dlg.settingsContainer, "TOPRIGHT", 0, -yOffset)
+        control:Refresh()
+        table.insert(settingControls, control)
+        yOffset = yOffset + SETTING_HEIGHT + 2
+    end
+
+    -- Resize dialog to fit content
+    local contentHeight = yOffset + 65  -- padding for title and bottom
+    dlg:SetHeight(math.max(contentHeight, 120))
+
+    -- Position near the target frame if provided
+    if targetFrame then
+        dlg:ClearAllPoints()
+        local left = targetFrame:GetLeft()
+        local right = targetFrame:GetRight()
+        local screenWidth = GetScreenWidth()
+
+        if left and right then
+            -- Position to the right of the frame if there's room, otherwise to the left
+            if right + DIALOG_WIDTH + 20 < screenWidth then
+                dlg:SetPoint("TOPLEFT", targetFrame, "TOPRIGHT", 10, 10)
+            else
+                dlg:SetPoint("TOPRIGHT", targetFrame, "TOPLEFT", -10, 10)
+            end
+        else
+            dlg:SetPoint("CENTER")
+        end
+    end
+
+    dlg:Show()
+end
+
+function NivUI.EditMode:HideSettingsDialog()
+    if dialog then
+        dialog:Hide()
+    end
+end
+
+function NivUI.EditMode:IsSettingsDialogShown()
+    return dialog and dialog:IsShown()
+end
+
+-- Check if a frame type has Edit Mode settings
+function NivUI.EditMode:HasSettings(frameType)
+    return FrameSettings[frameType] ~= nil
+end
+
+-- Update container sizes when settings change during Edit Mode
+local function OnSettingsChanged()
+    if NivUI.EditMode:IsActive() then
+        NivUI.EditMode:UpdateContainerSizes()
+    end
+end
+
+NivUI:RegisterCallback("PartySettingsChanged", OnSettingsChanged)
+NivUI:RegisterCallback("BossSettingsChanged", OnSettingsChanged)
+NivUI:RegisterCallback("ArenaSettingsChanged", OnSettingsChanged)
+NivUI:RegisterCallback("RaidSettingsChanged", OnSettingsChanged)

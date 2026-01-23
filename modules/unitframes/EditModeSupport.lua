@@ -327,7 +327,11 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
     end)
 
     selection:SetScript("OnMouseDown", function(self)
-        NivUI.EditMode:SelectFrame(self.frameType)
+        -- Clear Blizzard's selection first
+        if EditModeManagerFrame and EditModeManagerFrame.ClearSelectedSystem then
+            EditModeManagerFrame:ClearSelectedSystem()
+        end
+        NivUI.EditMode:SelectFrame(self.frameType, self.customFrame)
     end)
 
     selection:SetScript("OnEnter", function(self)
@@ -370,7 +374,7 @@ function NivUI.EditMode:ShowSelected(frameType)
     selection:Show()
 end
 
-function NivUI.EditMode:SelectFrame(frameType)
+function NivUI.EditMode:SelectFrame(frameType, targetFrame)
     -- Deselect previous
     if selectedFrame and selectedFrame ~= frameType then
         self:ShowHighlighted(selectedFrame)
@@ -379,6 +383,11 @@ function NivUI.EditMode:SelectFrame(frameType)
     -- Select new
     selectedFrame = frameType
     self:ShowSelected(frameType)
+
+    -- Show settings dialog if this frame type has settings
+    if self:HasSettings(frameType) then
+        self:ShowSettingsDialog(frameType, targetFrame)
+    end
 end
 
 function NivUI.EditMode:ClearSelection()
@@ -386,6 +395,7 @@ function NivUI.EditMode:ClearSelection()
         self:ShowHighlighted(selectedFrame)
         selectedFrame = nil
     end
+    self:HideSettingsDialog()
 end
 
 function NivUI.EditMode:ShowSelection(frameType)
@@ -516,6 +526,8 @@ end
 
 function NivUI.EditMode:HideAllSelections()
     selectedFrame = nil
+    self:HideSettingsDialog()
+
     for frameType, selection in pairs(selectionFrames) do
         selection:Hide()
         selection.textureShown = nil
