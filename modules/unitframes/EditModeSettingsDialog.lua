@@ -1,7 +1,7 @@
 NivUI = NivUI or {}
 NivUI.EditMode = NivUI.EditMode or {}
 
-local DIALOG_WIDTH = 300
+local DIALOG_WIDTH = 320
 local SETTING_HEIGHT = 32
 local LABEL_WIDTH = 120
 
