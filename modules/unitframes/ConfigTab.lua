@@ -1363,16 +1363,9 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         table.insert(allTabs, tabData)
     end
 
-    -- Create [+] button for adding custom groups
-    addButton = CreateFrame("Button", nil, container)
-    addButton:SetSize(24, 24)
-    addButton:SetNormalFontObject("GameFontNormalLarge")
-    addButton:SetHighlightFontObject("GameFontHighlightLarge")
-    addButton:SetText("+")
-
-    local addBg = addButton:CreateTexture(nil, "BACKGROUND")
-    addBg:SetAllPoints()
-    addBg:SetColorTexture(0.15, 0.15, 0.15, 0.8)
+    -- Create [+] button styled as a tab
+    addButton = Components.GetTab(container, "+")
+    PanelTemplates_DeselectTab(addButton)
 
     addButton:SetScript("OnClick", function()
         StaticPopup_Show("NIVUI_NEW_CUSTOM_RAID_GROUP")
@@ -1514,7 +1507,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end
 
         -- Position the [+] button after all tabs
-        local addBtnWidth = 24
+        local addBtnWidth = addButton:GetWidth()
         if x + addBtnWidth > containerWidth and x > 0 then
             x = 0
             y = y - TAB_HEIGHT
