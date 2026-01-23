@@ -1,5 +1,5 @@
 NivUI = NivUI or {}
-NivUI.EditMode = {}
+NivUI.EditMode = NivUI.EditMode or {}
 
 local editModeActive = false
 local selectionFrames = {}
