@@ -1,43 +1,43 @@
-local ChiBar = CreateFrame("Frame", "NivUIChiBar", UIParent)
-ChiBar:SetSize(200, 20)
-ChiBar:SetPoint("CENTER", UIParent, "CENTER", 0, -250)
-ChiBar:SetResizable(true)
-ChiBar:SetResizeBounds(60, 5, 400, 60)
-ChiBar:Hide()
+local EssenceBar = CreateFrame("Frame", "NivUIEssenceBar", UIParent)
+EssenceBar:SetSize(200, 20)
+EssenceBar:SetPoint("CENTER", UIParent, "CENTER", 0, -280)
+EssenceBar:SetResizable(true)
+EssenceBar:SetResizeBounds(60, 5, 400, 60)
+EssenceBar:Hide()
 
-local clickBg = ChiBar:CreateTexture(nil, "BACKGROUND", nil, -1)
+local clickBg = EssenceBar:CreateTexture(nil, "BACKGROUND", nil, -1)
 clickBg:SetAllPoints()
 clickBg:SetColorTexture(0, 0, 0, 0)
 
-local segmentContainer = CreateFrame("Frame", nil, ChiBar)
+local segmentContainer = CreateFrame("Frame", nil, EssenceBar)
 segmentContainer:SetAllPoints()
-ChiBar.segmentContainer = segmentContainer
+EssenceBar.segmentContainer = segmentContainer
 
-local resizeHandle = CreateFrame("Button", nil, ChiBar)
+local resizeHandle = CreateFrame("Button", nil, EssenceBar)
 resizeHandle:SetSize(16, 16)
-resizeHandle:SetPoint("BOTTOMRIGHT", ChiBar, "BOTTOMRIGHT", 0, 0)
+resizeHandle:SetPoint("BOTTOMRIGHT", EssenceBar, "BOTTOMRIGHT", 0, 0)
 resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
 resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
 resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
 resizeHandle:Hide()
-ChiBar.resizeHandle = resizeHandle
+EssenceBar.resizeHandle = resizeHandle
 
 resizeHandle:SetScript("OnMouseDown", function(self, button)
     if button == "LeftButton" then
-        ChiBar:StartSizing("BOTTOMRIGHT")
+        EssenceBar:StartSizing("BOTTOMRIGHT")
     end
 end)
 
 resizeHandle:SetScript("OnMouseUp", function(self, _button)
-    ChiBar:StopMovingOrSizing()
-    local db = NivUI_DB.chiBar
-    db.width = ChiBar:GetWidth()
-    db.height = ChiBar:GetHeight()
-    ChiBar:RebuildSegments()
+    EssenceBar:StopMovingOrSizing()
+    local db = NivUI_DB.essenceBar
+    db.width = EssenceBar:GetWidth()
+    db.height = EssenceBar:GetHeight()
+    EssenceBar:RebuildSegments()
     if NivUI.OnBarMoved then NivUI.OnBarMoved() end
 end)
 
-local border = CreateFrame("Frame", nil, ChiBar, "BackdropTemplate")
+local border = CreateFrame("Frame", nil, EssenceBar, "BackdropTemplate")
 border:SetPoint("TOPLEFT", -1, 1)
 border:SetPoint("BOTTOMRIGHT", 1, -1)
 border:SetBackdrop({
@@ -45,79 +45,77 @@ border:SetBackdrop({
     edgeSize = 1,
 })
 border:SetBackdropBorderColor(0, 0, 0, 1)
-ChiBar.border = border
+EssenceBar.border = border
 
-ChiBar.segments = {}
+EssenceBar.segments = {}
 
 local lastUpdate = 0
-local isWindwalker = false
+local hasEssence = false
 local inCombat = false
 
 local defaults = {
     point = "CENTER",
     x = 0,
-    y = -250,
+    y = -280,
     width = 200,
     height = 20,
     spacing = 2,
     locked = true,
-    visibility = "combat",  -- "always", "combat", "never"
+    visibility = "combat",
     emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },  -- Jade green
+    filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },  -- Teal/cyan
     borderColor = { r = 0, g = 0, b = 0, a = 1 },
     updateInterval = 0.05,
     useBlizzardTexture = false,
 }
 
 local function GetSetting(key)
-    local db = NivUI_DB and NivUI_DB.chiBar
+    local db = NivUI_DB and NivUI_DB.essenceBar
     if db and db[key] ~= nil then
         return db[key]
     end
     return defaults[key]
 end
 
--- Safe UnitPower call (defensive against secret values)
-local function SafeGetChi()
-    local ok, chi = pcall(UnitPower, "player", Enum.PowerType.Chi)
+local function SafeGetEssence()
+    local ok, essence = pcall(UnitPower, "player", Enum.PowerType.Essence)
     if not ok then return nil end
-    return chi
+    return essence
 end
 
-local function SafeGetMaxChi()
-    local ok, maxChi = pcall(UnitPowerMax, "player", Enum.PowerType.Chi)
+local function SafeGetMaxEssence()
+    local ok, maxEssence = pcall(UnitPowerMax, "player", Enum.PowerType.Essence)
     if not ok then return nil end
-    return maxChi
+    return maxEssence
 end
 
--- Safe comparison (defensive against secret values)
-local function SafeIsActive(index, chi)
-    if chi == nil then return false end
-    local ok, result = pcall(function() return index <= chi end)
+local function SafeIsActive(index, essence)
+    if essence == nil then return false end
+    local ok, result = pcall(function() return index <= essence end)
     if not ok then return false end
     return result
 end
 
-function ChiBar:RebuildSegments()
+function EssenceBar:RebuildSegments()
     for _, seg in ipairs(self.segments) do
         seg.bg:Hide()
         seg.bar:Hide()
     end
     wipe(self.segments)
 
-    local maxChi = SafeGetMaxChi() or 5
+    local maxEssence = SafeGetMaxEssence() or 5
     local width = self:GetWidth()
     local height = self:GetHeight()
     local spacing = GetSetting("spacing")
     local useBlizzard = GetSetting("useBlizzardTexture")
 
-    local totalSpacing = spacing * (maxChi - 1)
-    local segmentWidth = (width - totalSpacing) / maxChi
+    local totalSpacing = spacing * (maxEssence - 1)
+    local segmentWidth = (width - totalSpacing) / maxEssence
 
     local emptyColor = GetSetting("emptyColor")
     local filledColor = GetSetting("filledColor")
 
-    for i = 1, maxChi do
+    for i = 1, maxEssence do
         local xOffset = (i - 1) * (segmentWidth + spacing)
 
         local bg = self.segmentContainer:CreateTexture(nil, "BACKGROUND")
@@ -130,8 +128,8 @@ function ChiBar:RebuildSegments()
         bar:Hide()
 
         if useBlizzard then
-            bg:SetAtlas("uf-chi-bg")
-            bar:SetAtlas("uf-chi-icon")
+            bg:SetAtlas("UF-Essence-BG")
+            bar:SetAtlas("UF-Essence-Icon-Active")
         else
             bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
             bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
@@ -145,23 +143,23 @@ function ChiBar:RebuildSegments()
     end
 end
 
-function ChiBar:UpdateSegments()
-    local chi = SafeGetChi()
-    local maxChi = SafeGetMaxChi()
+function EssenceBar:UpdateSegments()
+    local essence = SafeGetEssence()
+    local maxEssence = SafeGetMaxEssence()
 
-    if chi == nil or maxChi == nil then
+    if essence == nil or maxEssence == nil then
         for _, seg in ipairs(self.segments) do
             seg.bar:Hide()
         end
         return
     end
 
-    if #self.segments ~= maxChi then
+    if #self.segments ~= maxEssence then
         self:RebuildSegments()
     end
 
     for i, seg in ipairs(self.segments) do
-        local shouldBeActive = SafeIsActive(i, chi)
+        local shouldBeActive = SafeIsActive(i, essence)
         if shouldBeActive ~= seg.active then
             seg.active = shouldBeActive
             if shouldBeActive then
@@ -179,36 +177,29 @@ local function ShouldShow()
     if visibility == "never" then return false end
 
     if not GetSetting("locked") then return true end
-    if not isWindwalker then return false end
+    if not hasEssence then return false end
 
     if visibility == "always" then return true end
 
-    -- "combat" mode: show only in combat (chi doesn't decay like stagger)
     return inCombat
 end
 
 local function UpdateVisibility()
     if ShouldShow() then
-        ChiBar:Show()
+        EssenceBar:Show()
     else
-        ChiBar:Hide()
+        EssenceBar:Hide()
     end
 end
 
-local function CheckSpec()
-    local _, class = UnitClass("player")
-    if class ~= "MONK" then
-        isWindwalker = false
-        return
-    end
+local function CheckResource()
+    local maxEssence = SafeGetMaxEssence()
+    hasEssence = maxEssence and maxEssence > 0
 
-    local spec = GetSpecialization()
-    isWindwalker = (spec == 3)  -- Windwalker is spec 3
     UpdateVisibility()
 
-    -- Rebuild segments when spec changes (max chi might differ)
-    if isWindwalker then
-        ChiBar:RebuildSegments()
+    if hasEssence then
+        EssenceBar:RebuildSegments()
     end
 end
 
@@ -224,19 +215,19 @@ local function OnUpdate(self, elapsed)
 end
 
 local function EnableDragging()
-    ChiBar:SetMovable(true)
-    ChiBar:EnableMouse(true)
-    ChiBar:RegisterForDrag("LeftButton")
+    EssenceBar:SetMovable(true)
+    EssenceBar:EnableMouse(true)
+    EssenceBar:RegisterForDrag("LeftButton")
 
-    ChiBar:SetScript("OnDragStart", function(self)
+    EssenceBar:SetScript("OnDragStart", function(self)
         if not GetSetting("locked") then
             self:StartMoving()
         end
     end)
 
-    ChiBar:SetScript("OnDragStop", function(self)
+    EssenceBar:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        local db = NivUI_DB.chiBar
+        local db = NivUI_DB.essenceBar
         local point, _, _, x, y = self:GetPoint()
         db.point = point
         db.x = x
@@ -246,25 +237,25 @@ local function EnableDragging()
 end
 
 local function LoadPosition()
-    local db = NivUI_DB.chiBar or {}
+    local db = NivUI_DB.essenceBar or {}
 
-    ChiBar:ClearAllPoints()
-    ChiBar:SetPoint(
+    EssenceBar:ClearAllPoints()
+    EssenceBar:SetPoint(
         db.point or defaults.point,
         UIParent,
         db.point or defaults.point,
         db.x or defaults.x,
         db.y or defaults.y
     )
-    ChiBar:SetSize(
+    EssenceBar:SetSize(
         db.width or defaults.width,
         db.height or defaults.height
     )
 
     if GetSetting("locked") then
-        ChiBar.resizeHandle:Hide()
+        EssenceBar.resizeHandle:Hide()
     else
-        ChiBar.resizeHandle:Show()
+        EssenceBar.resizeHandle:Show()
     end
 end
 
@@ -276,7 +267,7 @@ local function ApplyColors()
     local emptyColor = GetSetting("emptyColor")
     local filledColor = GetSetting("filledColor")
 
-    for _, seg in ipairs(ChiBar.segments) do
+    for _, seg in ipairs(EssenceBar.segments) do
         seg.bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
         seg.bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
     end
@@ -284,33 +275,33 @@ end
 
 local function ApplyBorder()
     local borderColor = GetSetting("borderColor")
-    ChiBar.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+    EssenceBar.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
 end
 
 local function ApplyLockState()
     local locked = GetSetting("locked")
     if locked then
-        ChiBar.resizeHandle:Hide()
+        EssenceBar.resizeHandle:Hide()
     else
-        ChiBar.resizeHandle:Show()
-        ChiBar:Show()
+        EssenceBar.resizeHandle:Show()
+        EssenceBar:Show()
     end
     UpdateVisibility()
 end
 
 local function InitializeDB()
     if not NivUI_DB then NivUI_DB = {} end
-    if not NivUI_DB.chiBar then NivUI_DB.chiBar = {} end
+    if not NivUI_DB.essenceBar then NivUI_DB.essenceBar = {} end
 
     for k, v in pairs(defaults) do
-        if NivUI_DB.chiBar[k] == nil then
+        if NivUI_DB.essenceBar[k] == nil then
             if type(v) == "table" then
-                NivUI_DB.chiBar[k] = {}
+                NivUI_DB.essenceBar[k] = {}
                 for k2, v2 in pairs(v) do
-                    NivUI_DB.chiBar[k][k2] = v2
+                    NivUI_DB.essenceBar[k][k2] = v2
                 end
             else
-                NivUI_DB.chiBar[k] = v
+                NivUI_DB.essenceBar[k] = v
             end
         end
     end
@@ -324,11 +315,11 @@ local function OnEvent(self, event, ...)
             LoadPosition()
             ApplyBorder()
             EnableDragging()
-            CheckSpec()
-            ChiBar:RebuildSegments()
+            CheckResource()
+            EssenceBar:RebuildSegments()
         end
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-        CheckSpec()
+        CheckResource()
     elseif event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
         UpdateVisibility()
@@ -336,31 +327,31 @@ local function OnEvent(self, event, ...)
         inCombat = false
         UpdateVisibility()
     elseif event == "PLAYER_ENTERING_WORLD" then
-        CheckSpec()
+        CheckResource()
         inCombat = UnitAffectingCombat("player")
         UpdateVisibility()
     elseif event == "UNIT_MAXPOWER" then
         local unit = ...
         if unit == "player" then
-            ChiBar:RebuildSegments()
+            CheckResource()
         end
     end
 end
 
-ChiBar:RegisterEvent("ADDON_LOADED")
-ChiBar:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-ChiBar:RegisterEvent("PLAYER_REGEN_DISABLED")
-ChiBar:RegisterEvent("PLAYER_REGEN_ENABLED")
-ChiBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-ChiBar:RegisterEvent("UNIT_MAXPOWER")
-ChiBar:SetScript("OnEvent", OnEvent)
-ChiBar:SetScript("OnUpdate", OnUpdate)
+EssenceBar:RegisterEvent("ADDON_LOADED")
+EssenceBar:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+EssenceBar:RegisterEvent("PLAYER_REGEN_DISABLED")
+EssenceBar:RegisterEvent("PLAYER_REGEN_ENABLED")
+EssenceBar:RegisterEvent("PLAYER_ENTERING_WORLD")
+EssenceBar:RegisterEvent("UNIT_MAXPOWER")
+EssenceBar:SetScript("OnEvent", OnEvent)
+EssenceBar:SetScript("OnUpdate", OnUpdate)
 
 NivUI = NivUI or {}
-NivUI.ChiBar = ChiBar
-NivUI.ChiBar.defaults = defaults
-NivUI.ChiBar.UpdateVisibility = UpdateVisibility
-NivUI.ChiBar.ApplyColors = ApplyColors
-NivUI.ChiBar.ApplyBorder = ApplyBorder
-NivUI.ChiBar.ApplyLockState = ApplyLockState
-NivUI.ChiBar.LoadPosition = LoadPosition
+NivUI.EssenceBar = EssenceBar
+NivUI.EssenceBar.defaults = defaults
+NivUI.EssenceBar.UpdateVisibility = UpdateVisibility
+NivUI.EssenceBar.ApplyColors = ApplyColors
+NivUI.EssenceBar.ApplyBorder = ApplyBorder
+NivUI.EssenceBar.ApplyLockState = ApplyLockState
+NivUI.EssenceBar.LoadPosition = LoadPosition

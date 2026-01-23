@@ -770,6 +770,7 @@ local function SetupChiBarContent(parent)
         filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
         updateInterval = 0.05,
+        useBlizzardTexture = false,
     }
 
     ----------------------------------------------------------------------------
@@ -799,6 +800,17 @@ local function SetupChiBarContent(parent)
     ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
     AddFrame(appearanceHeader, SECTION_SPACING)
+
+    local blizzardTextureCheck = Components.GetCheckbox(
+        content,
+        "Use Blizzard Textures",
+        function(checked)
+            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
+            NivUI_DB.chiBar.useBlizzardTexture = checked
+            NivUI.ChiBar:RebuildSegments()
+        end
+    )
+    AddFrame(blizzardTextureCheck)
 
     local spacingSlider = Components.GetSliderWithInput(
         content,
@@ -909,6 +921,8 @@ local function SetupChiBarContent(parent)
         local db = NivUI_DB.chiBar or {}
 
         visibilityDropdown:SetValue()
+        local useBlizzard = db.useBlizzardTexture or false
+        blizzardTextureCheck:SetValue(useBlizzard)
         spacingSlider:SetValue(db.spacing or chiDefaults.spacing)
         emptyColorPicker:SetValue(db.emptyColor or chiDefaults.emptyColor)
         filledColorPicker:SetValue(db.filledColor or chiDefaults.filledColor)
@@ -925,9 +939,214 @@ local function SetupChiBarContent(parent)
     return container
 end
 
+-- Creates the Essence Bar settings content (used as a subtab)
+local function SetupEssenceBarContent(parent)
+    local container = CreateFrame("Frame", nil, parent)
+    container:Hide()
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 500)
+    scrollFrame:SetScrollChild(content)
+
+    local allFrames = {}
+
+    local function AddFrame(frame, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            frame:SetPoint("TOP", content, "TOP", 0, 0)
+        else
+            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, frame)
+    end
+
+    local essenceDefaults = NivUI.EssenceBar and NivUI.EssenceBar.defaults or {
+        visibility = "combat",
+        spacing = 2,
+        width = 200,
+        height = 20,
+        locked = true,
+        emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
+        filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },
+        borderColor = { r = 0, g = 0, b = 0, a = 1 },
+        updateInterval = 0.05,
+        useBlizzardTexture = false,
+    }
+
+    ----------------------------------------------------------------------------
+    -- General Section
+    ----------------------------------------------------------------------------
+    local generalHeader = Components.GetHeader(content, "General")
+    AddFrame(generalHeader)
+
+    local visibilityDropdown = Components.GetBasicDropdown(
+        content,
+        "Bar Visible:",
+        function() return NivUI:GetVisibilityOptions() end,
+        function(value)
+            local db = NivUI_DB.essenceBar or {}
+            return (db.visibility or essenceDefaults.visibility) == value
+        end,
+        function(value)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.visibility = value
+            NivUI.EssenceBar.UpdateVisibility()
+        end
+    )
+    AddFrame(visibilityDropdown)
+
+    ----------------------------------------------------------------------------
+    -- Appearance Section
+    ----------------------------------------------------------------------------
+    local appearanceHeader = Components.GetHeader(content, "Appearance")
+    AddFrame(appearanceHeader, SECTION_SPACING)
+
+    local blizzardTextureCheck = Components.GetCheckbox(
+        content,
+        "Use Blizzard Textures",
+        function(checked)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.useBlizzardTexture = checked
+            NivUI.EssenceBar:RebuildSegments()
+        end
+    )
+    AddFrame(blizzardTextureCheck)
+
+    local spacingSlider = Components.GetSliderWithInput(
+        content,
+        "Segment Spacing:",
+        0, 10, 1, false,
+        function(value)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.spacing = value
+            NivUI.EssenceBar:RebuildSegments()
+        end
+    )
+    AddFrame(spacingSlider)
+
+    local emptyColorPicker = Components.GetColorPicker(
+        content,
+        "Empty Color:",
+        true,
+        function(color)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.emptyColor = color
+            NivUI.EssenceBar.ApplyColors()
+        end
+    )
+    AddFrame(emptyColorPicker)
+
+    local filledColorPicker = Components.GetColorPicker(
+        content,
+        "Filled Color:",
+        true,
+        function(color)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.filledColor = color
+            NivUI.EssenceBar.ApplyColors()
+        end
+    )
+    AddFrame(filledColorPicker)
+
+    local borderColorPicker = Components.GetColorPicker(
+        content,
+        "Border Color:",
+        true,
+        function(color)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.borderColor = color
+            NivUI.EssenceBar.ApplyBorder()
+        end
+    )
+    AddFrame(borderColorPicker)
+
+    ----------------------------------------------------------------------------
+    -- Position Section
+    ----------------------------------------------------------------------------
+    local positionHeader = Components.GetHeader(content, "Position")
+    AddFrame(positionHeader, SECTION_SPACING)
+
+    local lockedCheck = Components.GetCheckbox(
+        content,
+        "Locked",
+        function(checked)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.locked = checked
+            NivUI.EssenceBar.ApplyLockState()
+        end
+    )
+    AddFrame(lockedCheck)
+
+    local widthSlider = Components.GetSliderWithInput(
+        content,
+        "Width:",
+        60, 400, 10, false,
+        function(value)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.width = value
+            NivUI.EssenceBar.LoadPosition()
+            NivUI.EssenceBar:RebuildSegments()
+        end
+    )
+    AddFrame(widthSlider)
+
+    local heightSlider = Components.GetSliderWithInput(
+        content,
+        "Height:",
+        5, 60, 1, false,
+        function(value)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.height = value
+            NivUI.EssenceBar.LoadPosition()
+            NivUI.EssenceBar:RebuildSegments()
+        end
+    )
+    AddFrame(heightSlider)
+
+    local intervalSlider = Components.GetSliderWithInput(
+        content,
+        "Update Interval:",
+        0.05, 1.0, 0.05, true,
+        function(value)
+            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
+            NivUI_DB.essenceBar.updateInterval = value
+        end
+    )
+    AddFrame(intervalSlider)
+
+    ----------------------------------------------------------------------------
+    -- Refresh on show
+    ----------------------------------------------------------------------------
+    container:SetScript("OnShow", function()
+        local db = NivUI_DB.essenceBar or {}
+
+        visibilityDropdown:SetValue()
+        local useBlizzard = db.useBlizzardTexture or false
+        blizzardTextureCheck:SetValue(useBlizzard)
+        spacingSlider:SetValue(db.spacing or essenceDefaults.spacing)
+        emptyColorPicker:SetValue(db.emptyColor or essenceDefaults.emptyColor)
+        filledColorPicker:SetValue(db.filledColor or essenceDefaults.filledColor)
+        borderColorPicker:SetValue(db.borderColor or essenceDefaults.borderColor)
+        lockedCheck:SetValue(db.locked or false)
+        widthSlider:SetValue(db.width or essenceDefaults.width)
+        heightSlider:SetValue(db.height or essenceDefaults.height)
+        intervalSlider:SetValue(db.updateInterval or essenceDefaults.updateInterval)
+    end)
+
+    container.widthSlider = widthSlider
+    container.heightSlider = heightSlider
+
+    return container
+end
+
 -- Creates the Class Bars tab with subtabs
 local staggerContent  -- Forward declaration for OnBarMoved callback
 local chiContent  -- Forward declaration for OnBarMoved callback
+local essenceContent  -- Forward declaration for OnBarMoved callback
 local function SetupClassBarsTabWithSubtabs()
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
@@ -972,6 +1191,17 @@ local function SetupClassBarsTabWithSubtabs()
     chiTab:SetPoint("LEFT", staggerTab, "RIGHT", 0, 0)
     chiTab:SetScript("OnClick", function() SelectSubTab(2) end)
     table.insert(subTabs, chiTab)
+
+    -- Create Essence sub-tab content
+    essenceContent = SetupEssenceBarContent(container)
+    essenceContent:SetPoint("TOPLEFT", 0, -32)
+    essenceContent:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, essenceContent)
+
+    local essenceTab = Components.GetTab(container, "Essence")
+    essenceTab:SetPoint("LEFT", chiTab, "RIGHT", 0, 0)
+    essenceTab:SetScript("OnClick", function() SelectSubTab(3) end)
+    table.insert(subTabs, essenceTab)
 
     -- Select first sub-tab when shown
     container:SetScript("OnShow", function()
@@ -1029,6 +1259,15 @@ NivUI.OnBarMoved = function()
     end
     if chiContent and chiContent.heightSlider then
         chiContent.heightSlider:SetValue(chiDb.height or 20)
+    end
+
+    -- Update Essence sliders
+    local essenceDb = NivUI_DB.essenceBar or {}
+    if essenceContent and essenceContent.widthSlider then
+        essenceContent.widthSlider:SetValue(essenceDb.width or 200)
+    end
+    if essenceContent and essenceContent.heightSlider then
+        essenceContent.heightSlider:SetValue(essenceDb.height or 20)
     end
 end
 
