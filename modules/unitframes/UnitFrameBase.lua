@@ -481,9 +481,22 @@ function UnitFrameBase.ApplyAnchors(parent, widgets, style)
     end
 end
 
-function UnitFrameBase.BuildCustomFrame(state)
-    UnitFrameBase.DestroyCustomFrame(state)
+local function ClearFrameWidgets(frame)
+    if frame.widgets then
+        for _, widget in pairs(frame.widgets) do
+            if widget.Hide then widget:Hide() end
+            if widget.SetParent then widget:SetParent(nil) end
+        end
+        wipe(frame.widgets)
+    end
+    if frame.border then
+        frame.border:Hide()
+        frame.border:SetParent(nil)
+        frame.border = nil
+    end
+end
 
+function UnitFrameBase.BuildCustomFrame(state)
     local style = NivUI:GetStyleWithDefaults(state.styleName)
     if not style then
         print("NivUI " .. state.frameType .. ": No style found for", state.styleName)
@@ -496,7 +509,17 @@ function UnitFrameBase.BuildCustomFrame(state)
     local frameWidth = frameConfig.width or 200
     local frameHeight = frameConfig.height or 60
 
-    local customFrame = CreateFrame("Button", "NivUI_" .. state.frameType .. "Frame", UIParent, "SecureUnitButtonTemplate")
+    local frameName = "NivUI_" .. state.frameType .. "Frame"
+    local customFrame = _G[frameName]
+    local isNewFrame = not customFrame
+
+    if isNewFrame then
+        customFrame = CreateFrame("Button", frameName, UIParent, "SecureUnitButtonTemplate")
+    else
+        ClearFrameWidgets(customFrame)
+        customFrame:SetParent(UIParent)
+    end
+
     customFrame:SetSize(frameWidth, frameHeight)
     if frameConfig.strata then customFrame:SetFrameStrata(frameConfig.strata) end
     if frameConfig.frameLevel then customFrame:SetFrameLevel(frameConfig.frameLevel) end
@@ -537,121 +560,119 @@ function UnitFrameBase.BuildCustomFrame(state)
 
     state.customFrame = customFrame
 
-    -- Use secure state driver for visibility (works in combat)
-    -- User override takes priority over default driver
-    local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
-    state.effectiveVisibilityDriver = visibilityDriver  -- Store so CheckVisibility knows to defer
-    if visibilityDriver then
-        RegisterStateDriver(customFrame, "visibility", visibilityDriver)
-        -- Update widgets when visibility driver shows the frame
-        customFrame:HookScript("OnShow", function()
-            UnitFrameBase.UpdateAllWidgets(state)
+    if isNewFrame then
+        local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
+        state.effectiveVisibilityDriver = visibilityDriver
+        if visibilityDriver then
+            RegisterStateDriver(customFrame, "visibility", visibilityDriver)
+            customFrame:HookScript("OnShow", function()
+                UnitFrameBase.UpdateAllWidgets(state)
+            end)
+        end
+
+        customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_MAXPOWER", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_MODEL_CHANGED", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_LEVEL", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_FACTION", state.unit)
+        customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", state.unit)
+
+        if state.registerEvents then
+            state.registerEvents(customFrame)
+        end
+
+        customFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+        customFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+        customFrame:RegisterEvent("ENCOUNTER_START")
+        customFrame:RegisterEvent("ENCOUNTER_END")
+        customFrame:RegisterEvent("PLAYER_ALIVE")
+        customFrame:RegisterEvent("PLAYER_DEAD")
+        customFrame:RegisterEvent("PLAYER_UNGHOST")
+        customFrame:RegisterEvent("RAID_TARGET_UPDATE")
+        customFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+        customFrame:RegisterEvent("PARTY_LEADER_CHANGED")
+        customFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
+
+        customFrame:SetScript("OnEvent", function(self, event, eventUnit)
+            if event == "UNIT_MAXHEALTH" then
+                UnitFrameBase.UpdateHealthBar(state)
+                UnitFrameBase.UpdateHealthText(state)
+            elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
+                UnitFrameBase.UpdatePowerBar(state)
+                UnitFrameBase.UpdatePowerText(state)
+            elseif event == "UNIT_MODEL_CHANGED" then
+                UnitFrameBase.UpdatePortrait(state)
+            elseif event == "UNIT_NAME_UPDATE" then
+                UnitFrameBase.UpdateNameText(state)
+            elseif event == "UNIT_LEVEL" then
+                UnitFrameBase.UpdateLevelText(state)
+            elseif event == "UNIT_FACTION" then
+                UnitFrameBase.UpdateHealthBar(state)
+                UnitFrameBase.UpdateNameText(state)
+            elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+                UnitFrameBase.UpdateStatusIndicators(state)
+            elseif event == "RAID_TARGET_UPDATE" then
+                UnitFrameBase.UpdateRaidMarker(state)
+            elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
+                UnitFrameBase.UpdateLeaderIcon(state)
+            elseif event == "PLAYER_ROLES_ASSIGNED" then
+                UnitFrameBase.UpdateRoleIcon(state)
+            elseif event:find("SPELLCAST") then
+                UnitFrameBase.UpdateCastbar(state)
+            elseif event == "PLAYER_ENTERING_WORLD"
+                or event == "ZONE_CHANGED_NEW_AREA"
+                or event == "ENCOUNTER_START"
+                or event == "ENCOUNTER_END"
+                or event == "PLAYER_ALIVE"
+                or event == "PLAYER_DEAD"
+                or event == "PLAYER_UNGHOST" then
+                UnitFrameBase.CheckVisibility(state)
+            end
+
+            if state.onEvent then
+                state.onEvent(self, event, eventUnit)
+            end
         end)
-    end
 
-    customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_MAXPOWER", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_MODEL_CHANGED", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_LEVEL", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_FACTION", state.unit)
-    customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+        state.timeSinceLastUpdate = 0
+        customFrame:SetScript("OnUpdate", function(self, elapsed)
+            UnitFrameBase.CheckVisibility(state)
+            if not self:IsShown() then return end
 
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", state.unit)
-    customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", state.unit)
+            if state.preUpdate then
+                state.preUpdate(state, elapsed)
+            end
 
-    if state.registerEvents then
-        state.registerEvents(customFrame)
-    end
+            if not NivUI:IsRealTimeUpdates(state.frameType) then
+                state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
+                if state.timeSinceLastUpdate < UPDATE_INTERVAL then return end
+                state.timeSinceLastUpdate = 0
+            end
 
-    customFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    customFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    customFrame:RegisterEvent("ENCOUNTER_START")
-    customFrame:RegisterEvent("ENCOUNTER_END")
-    customFrame:RegisterEvent("PLAYER_ALIVE")
-    customFrame:RegisterEvent("PLAYER_DEAD")
-    customFrame:RegisterEvent("PLAYER_UNGHOST")
-    customFrame:RegisterEvent("RAID_TARGET_UPDATE")
-    customFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-    customFrame:RegisterEvent("PARTY_LEADER_CHANGED")
-    customFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
-
-    customFrame:SetScript("OnEvent", function(self, event, eventUnit)
-        if event == "UNIT_MAXHEALTH" then
             UnitFrameBase.UpdateHealthBar(state)
             UnitFrameBase.UpdateHealthText(state)
-        elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
             UnitFrameBase.UpdatePowerBar(state)
             UnitFrameBase.UpdatePowerText(state)
-        elseif event == "UNIT_MODEL_CHANGED" then
-            UnitFrameBase.UpdatePortrait(state)
-        elseif event == "UNIT_NAME_UPDATE" then
-            UnitFrameBase.UpdateNameText(state)
-        elseif event == "UNIT_LEVEL" then
-            UnitFrameBase.UpdateLevelText(state)
-        elseif event == "UNIT_FACTION" then
-            UnitFrameBase.UpdateHealthBar(state)
-            UnitFrameBase.UpdateNameText(state)
-        elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
-            UnitFrameBase.UpdateStatusIndicators(state)
-        elseif event == "RAID_TARGET_UPDATE" then
-            UnitFrameBase.UpdateRaidMarker(state)
-        elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
-            UnitFrameBase.UpdateLeaderIcon(state)
-        elseif event == "PLAYER_ROLES_ASSIGNED" then
-            UnitFrameBase.UpdateRoleIcon(state)
-        elseif event:find("SPELLCAST") then
             UnitFrameBase.UpdateCastbar(state)
-        elseif event == "PLAYER_ENTERING_WORLD"
-            or event == "ZONE_CHANGED_NEW_AREA"
-            or event == "ENCOUNTER_START"
-            or event == "ENCOUNTER_END"
-            or event == "PLAYER_ALIVE"
-            or event == "PLAYER_DEAD"
-            or event == "PLAYER_UNGHOST" then
-            UnitFrameBase.CheckVisibility(state)
-        end
+        end)
 
-        if state.onEvent then
-            state.onEvent(self, event, eventUnit)
-        end
-    end)
-
-    state.timeSinceLastUpdate = 0
-    customFrame:SetScript("OnUpdate", function(self, elapsed)
-        UnitFrameBase.CheckVisibility(state)
-        if not self:IsShown() then return end
-
-        -- Allow module to update state before widget updates (e.g., dynamic unit switching)
-        if state.preUpdate then
-            state.preUpdate(state, elapsed)
-        end
-
-        if not NivUI:IsRealTimeUpdates(state.frameType) then
-            state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
-            if state.timeSinceLastUpdate < UPDATE_INTERVAL then return end
-            state.timeSinceLastUpdate = 0
-        end
-
-        UnitFrameBase.UpdateHealthBar(state)
-        UnitFrameBase.UpdateHealthText(state)
-        UnitFrameBase.UpdatePowerBar(state)
-        UnitFrameBase.UpdatePowerText(state)
-        UnitFrameBase.UpdateCastbar(state)
-    end)
-
-    if NivUI.EditMode then
-        NivUI.EditMode:CreateSelectionFrame(state.frameType, customFrame)
-        if NivUI.EditMode:IsActive() then
-            NivUI.EditMode:ShowSelection(state.frameType)
+        if NivUI.EditMode then
+            NivUI.EditMode:CreateSelectionFrame(state.frameType, customFrame)
+            if NivUI.EditMode:IsActive() then
+                NivUI.EditMode:ShowSelection(state.frameType)
+            end
         end
     end
 

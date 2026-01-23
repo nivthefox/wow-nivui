@@ -278,6 +278,21 @@ local function LayoutGroupFrames(raidSize)
     end
 end
 
+local function ClearFrameWidgets(frame)
+    if frame.widgets then
+        for _, widget in pairs(frame.widgets) do
+            if widget.Hide then widget:Hide() end
+            if widget.SetParent then widget:SetParent(nil) end
+        end
+        wipe(frame.widgets)
+    end
+    if frame.border then
+        frame.border:Hide()
+        frame.border:SetParent(nil)
+        frame.border = nil
+    end
+end
+
 local function CreateMemberFrame(raidSize, unit, parentGroup)
     local state = states[raidSize]
     local style = NivUI:GetStyleWithDefaults(state.styleName)
@@ -288,7 +303,16 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     local frameHeight = frameConfig.height or 40
 
     local frameName = "NivUI_RaidFrame_" .. raidSize .. "_" .. unit
-    local frame = CreateFrame("Button", frameName, parentGroup, "SecureUnitButtonTemplate")
+    local frame = _G[frameName]
+    local isNewFrame = not frame
+
+    if isNewFrame then
+        frame = CreateFrame("Button", frameName, parentGroup, "SecureUnitButtonTemplate")
+    else
+        ClearFrameWidgets(frame)
+        frame:SetParent(parentGroup)
+    end
+
     frame:SetSize(frameWidth, frameHeight)
 
     if frameConfig.strata then frame:SetFrameStrata(frameConfig.strata) end

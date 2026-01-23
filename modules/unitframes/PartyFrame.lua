@@ -138,6 +138,21 @@ local function LayoutMemberFrames()
     end
 end
 
+local function ClearFrameWidgets(frame)
+    if frame.widgets then
+        for _, widget in pairs(frame.widgets) do
+            if widget.Hide then widget:Hide() end
+            if widget.SetParent then widget:SetParent(nil) end
+        end
+        wipe(frame.widgets)
+    end
+    if frame.border then
+        frame.border:Hide()
+        frame.border:SetParent(nil)
+        frame.border = nil
+    end
+end
+
 local function CreateMemberFrame(unit)
     local style = NivUI:GetStyleWithDefaults(state.styleName)
     if not style then return nil end
@@ -147,7 +162,16 @@ local function CreateMemberFrame(unit)
     local frameHeight = frameConfig.height or 60
 
     local frameName = "NivUI_PartyFrame_" .. unit
-    local frame = CreateFrame("Button", frameName, state.container, "SecureUnitButtonTemplate")
+    local frame = _G[frameName]
+    local isNewFrame = not frame
+
+    if isNewFrame then
+        frame = CreateFrame("Button", frameName, state.container, "SecureUnitButtonTemplate")
+    else
+        ClearFrameWidgets(frame)
+        frame:SetParent(state.container)
+    end
+
     frame:SetSize(frameWidth, frameHeight)
 
     if frameConfig.strata then frame:SetFrameStrata(frameConfig.strata) end
