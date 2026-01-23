@@ -74,11 +74,28 @@ function UnitFrameBase.UpdateHealthBar(state)
     widget:SetStatusBarColor(r, g, b, a)
 end
 
+local function ShouldShowPowerBar(unit, visibility)
+    if visibility == "self" then
+        return UnitIsUnit(unit, "player")
+    elseif visibility == "healers" then
+        local role = UnitGroupRolesAssigned(unit)
+        return role == "HEALER" or UnitIsUnit(unit, "player")
+    end
+    return true
+end
+
 function UnitFrameBase.UpdatePowerBar(state)
     if not state.customFrame or not state.customFrame.widgets.powerBar then return end
     local widget = state.customFrame.widgets.powerBar
     local config = state.currentStyle.powerBar
     local unit = state.unit
+
+    local visibility = config.visibility or "everyone"
+    if not ShouldShowPowerBar(unit, visibility) then
+        widget:Hide()
+        return
+    end
+    widget:Show()
 
     local powerType = UnitPowerType(unit)
     local maxPower = UnitPowerMax(unit, powerType)

@@ -66,6 +66,7 @@ NivUI.UnitFrames.WidgetConfigs = {
             label = "General",
             entries = {
                 { kind = "checkbox", key = "enabled", label = "Enabled" },
+                { kind = "dropdown", key = "visibility", label = "Show For", options = "POWER_VISIBILITY" },
                 { kind = "slider", key = "size.width", label = "Width", min = 1, max = 800, step = 1 },
                 { kind = "slider", key = "size.height", label = "Height", min = 1, max = 800, step = 1 },
                 { kind = "dropdown", key = "orientation", label = "Orientation", options = "BAR_ORIENTATIONS" },
@@ -447,6 +448,7 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
     local lists = {
         HEALTH_COLOR_MODES = self.HEALTH_COLOR_MODES,
         POWER_COLOR_MODES = self.POWER_COLOR_MODES,
+        POWER_VISIBILITY = self.POWER_VISIBILITY,
         PORTRAIT_MODES = self.PORTRAIT_MODES,
         PORTRAIT_SHAPES = self.PORTRAIT_SHAPES,
         TEXT_FORMATS = self.TEXT_FORMATS,

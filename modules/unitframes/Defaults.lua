@@ -54,6 +54,12 @@ NivUI.UnitFrames.POWER_COLOR_MODES = {
     { value = "custom", name = "Custom" },
 }
 
+NivUI.UnitFrames.POWER_VISIBILITY = {
+    { value = "everyone", name = "Everyone" },
+    { value = "healers", name = "Healers" },
+    { value = "self", name = "Just Me" },
+}
+
 NivUI.UnitFrames.PORTRAIT_MODES = {
     { value = "3D", name = "3D Model" },
     { value = "2D", name = "2D Texture" },
