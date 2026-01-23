@@ -813,8 +813,14 @@ function UnitFrameBase.CreateModule(config)
     end)
 
     NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
-        if data.frameType == state.frameType and NivUI:IsFrameEnabled(state.frameType) then
-            module.Refresh()
+        if data.frameType == state.frameType and NivUI:IsFrameEnabled(state.frameType) and state.customFrame then
+            -- Just update the visibility driver, don't rebuild the whole frame
+            local newDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
+            state.effectiveVisibilityDriver = newDriver
+            if newDriver then
+                UnregisterStateDriver(state.customFrame, "visibility")
+                RegisterStateDriver(state.customFrame, "visibility", newDriver)
+            end
         end
     end)
 
