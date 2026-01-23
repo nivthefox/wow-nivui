@@ -523,6 +523,7 @@ function UnitFrameBase.BuildCustomFrame(state)
     -- Use secure state driver for visibility (works in combat)
     -- User override takes priority over default driver
     local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
+    state.effectiveVisibilityDriver = visibilityDriver  -- Store so CheckVisibility knows to defer
     if visibilityDriver then
         RegisterStateDriver(customFrame, "visibility", visibilityDriver)
         -- Update widgets when visibility driver shows the frame
@@ -645,7 +646,7 @@ function UnitFrameBase.CheckVisibility(state)
 
     -- If using a visibility driver, the secure state driver handles show/hide
     -- We just need to update widgets if visible
-    if state.visibilityDriver then
+    if state.effectiveVisibilityDriver then
         if state.customFrame:IsShown() then
             UnitFrameBase.UpdateAllWidgets(state)
         end
@@ -675,7 +676,7 @@ function UnitFrameBase.CheckVisibility(state)
 end
 
 function UnitFrameBase.ApplyPendingVisibility(state)
-    if state.visibilityDriver then return end  -- Driver handles it
+    if state.effectiveVisibilityDriver then return end  -- Driver handles it
     if state.pendingVisibility == nil then return end
     if InCombatLockdown() then return end
 
