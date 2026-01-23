@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Group frame settings (party, raid, boss, arena) now appear in an Edit Mode popup when the frame is selected, matching Blizzard's native UI style
 - All frame types now have an Edit Mode settings dialog for visibility customization
 
+### Fixed
+
+- Editing styles no longer creates duplicate frames on screen
+
 ## [1.1.3](https://github.com/nivthefox/wow-nivui/releases/tag/v1.1.3) - 2026-01-22
 
 ### Added
