@@ -629,6 +629,33 @@ function UnitFrameBase.CheckVisibility(state)
 
     local shouldBeVisible = not state.shouldShow or state.shouldShow()
 
+    -- SecureUnitButtonTemplate frames can't be shown/hidden in combat
+    if InCombatLockdown() then
+        state.pendingVisibility = shouldBeVisible
+        return
+    end
+
+    state.pendingVisibility = nil
+
+    if shouldBeVisible then
+        if not state.customFrame:IsShown() then
+            state.customFrame:Show()
+            UnitFrameBase.UpdateAllWidgets(state)
+        end
+    else
+        if state.customFrame:IsShown() then
+            state.customFrame:Hide()
+        end
+    end
+end
+
+function UnitFrameBase.ApplyPendingVisibility(state)
+    if state.pendingVisibility == nil then return end
+    if InCombatLockdown() then return end
+
+    local shouldBeVisible = state.pendingVisibility
+    state.pendingVisibility = nil
+
     if shouldBeVisible then
         if not state.customFrame:IsShown() then
             state.customFrame:Show()
@@ -712,6 +739,7 @@ function UnitFrameBase.CreateModule(config)
             if state.pendingHide and state.hideBlizzard then
                 state.hideBlizzard(state)
             end
+            UnitFrameBase.ApplyPendingVisibility(state)
         end
     end)
 
