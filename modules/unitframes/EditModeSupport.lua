@@ -327,9 +327,9 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
     end)
 
     selection:SetScript("OnMouseDown", function(self)
-        -- Clear Blizzard's selection first
+        -- Clear Blizzard's selection first (pcall to handle secret value errors)
         if EditModeManagerFrame and EditModeManagerFrame.ClearSelectedSystem then
-            EditModeManagerFrame:ClearSelectedSystem()
+            pcall(EditModeManagerFrame.ClearSelectedSystem, EditModeManagerFrame)
         end
         NivUI.EditMode:SelectFrame(self.frameType, self.customFrame)
     end)
