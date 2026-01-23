@@ -374,6 +374,7 @@ function WF.raidMarker(parent, config, _style, unit)
 
     frame.icon = frame:CreateTexture(nil, "OVERLAY")
     frame.icon:SetAllPoints()
+    frame.icon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
 
     local index = GetRaidTargetIndex(unit)
     if index then
@@ -385,6 +386,34 @@ function WF.raidMarker(parent, config, _style, unit)
     end
 
     frame.widgetType = "raidMarker"
+    return frame
+end
+
+function WF.roleIcon(parent, config, _style, unit)
+    unit = unit or "player"
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(config.size, config.size)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
+
+    frame.icon = frame:CreateTexture(nil, "OVERLAY")
+    frame.icon:SetAllPoints()
+
+    local role = UnitGroupRolesAssigned(unit)
+    if role and role ~= "NONE" and GetMicroIconForRole then
+        local atlas = GetMicroIconForRole(role)
+        if atlas then
+            frame.icon:SetAtlas(atlas)
+        end
+    else
+        -- Show tank icon as preview
+        if GetMicroIconForRole then
+            frame.icon:SetAtlas(GetMicroIconForRole("TANK"))
+        end
+        frame.icon:SetAlpha(0.3)
+    end
+
+    frame.widgetType = "roleIcon"
     return frame
 end
 

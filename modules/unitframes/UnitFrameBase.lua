@@ -224,6 +224,61 @@ function UnitFrameBase.UpdateStatusIndicators(state)
     end
 end
 
+function UnitFrameBase.UpdateRaidMarker(state)
+    if not state.customFrame or not state.customFrame.widgets.raidMarker then return end
+    local widget = state.customFrame.widgets.raidMarker
+    local unit = state.unit
+
+    local index = GetRaidTargetIndex(unit)
+    if index then
+        SetRaidTargetIconTexture(widget.icon, index)
+        widget.icon:SetAlpha(1)
+        widget:Show()
+    else
+        widget:Hide()
+    end
+end
+
+function UnitFrameBase.UpdateLeaderIcon(state)
+    if not state.customFrame or not state.customFrame.widgets.leaderIcon then return end
+    local widget = state.customFrame.widgets.leaderIcon
+    local unit = state.unit
+
+    local isLeader = UnitIsGroupLeader(unit)
+    local isAssist = UnitIsGroupAssistant and UnitIsGroupAssistant(unit)
+
+    if isLeader then
+        widget.icon:SetTexture("Interface\\GroupFrame\\UI-Group-LeaderIcon")
+        widget.icon:SetAlpha(1)
+        widget:Show()
+    elseif isAssist then
+        widget.icon:SetTexture("Interface\\GroupFrame\\UI-Group-AssistantIcon")
+        widget.icon:SetAlpha(1)
+        widget:Show()
+    else
+        widget:Hide()
+    end
+end
+
+function UnitFrameBase.UpdateRoleIcon(state)
+    if not state.customFrame or not state.customFrame.widgets.roleIcon then return end
+    local widget = state.customFrame.widgets.roleIcon
+    local unit = state.unit
+
+    local role = UnitGroupRolesAssigned(unit)
+    if role and role ~= "NONE" and GetMicroIconForRole then
+        local atlas = GetMicroIconForRole(role)
+        if atlas then
+            widget.icon:SetAtlas(atlas)
+            widget.icon:SetAlpha(1)
+            widget:Show()
+            return
+        end
+    end
+
+    widget:Hide()
+end
+
 function UnitFrameBase.UpdateNameText(state)
     if not state.customFrame or not state.customFrame.widgets.nameText then return end
     local widget = state.customFrame.widgets.nameText
@@ -345,6 +400,9 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateNameText(state)
     UnitFrameBase.UpdateLevelText(state)
     UnitFrameBase.UpdateStatusIndicators(state)
+    UnitFrameBase.UpdateRaidMarker(state)
+    UnitFrameBase.UpdateLeaderIcon(state)
+    UnitFrameBase.UpdateRoleIcon(state)
     UnitFrameBase.UpdateCastbar(state)
 end
 
@@ -492,6 +550,10 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:RegisterEvent("PLAYER_ALIVE")
     customFrame:RegisterEvent("PLAYER_DEAD")
     customFrame:RegisterEvent("PLAYER_UNGHOST")
+    customFrame:RegisterEvent("RAID_TARGET_UPDATE")
+    customFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    customFrame:RegisterEvent("PARTY_LEADER_CHANGED")
+    customFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
 
     customFrame:SetScript("OnEvent", function(self, event, eventUnit)
         if event == "UNIT_MAXHEALTH" then
@@ -511,6 +573,12 @@ function UnitFrameBase.BuildCustomFrame(state)
             UnitFrameBase.UpdateNameText(state)
         elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
             UnitFrameBase.UpdateStatusIndicators(state)
+        elseif event == "RAID_TARGET_UPDATE" then
+            UnitFrameBase.UpdateRaidMarker(state)
+        elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
+            UnitFrameBase.UpdateLeaderIcon(state)
+        elseif event == "PLAYER_ROLES_ASSIGNED" then
+            UnitFrameBase.UpdateRoleIcon(state)
         elseif event:find("SPELLCAST") then
             UnitFrameBase.UpdateCastbar(state)
         elseif event == "PLAYER_ENTERING_WORLD"

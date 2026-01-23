@@ -252,6 +252,14 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         size = 20,
     },
 
+    roleIcon = {
+        enabled = true,
+        anchor = DefaultAnchor("TOPLEFT", "frame", "TOPLEFT", -8, 8),
+        strata = "MEDIUM",
+        frameLevel = 5,
+        size = 14,
+    },
+
     castbar = {
         enabled = true,
         anchor = DefaultAnchor("TOP", "powerBar", "BOTTOM", 0, 0),
@@ -316,6 +324,7 @@ NivUI.UnitFrames.WIDGET_ORDER = {
     "statusIndicators",
     "leaderIcon",
     "raidMarker",
+    "roleIcon",
     "castbar",
     "buffs",
     "debuffs",
@@ -333,6 +342,7 @@ NivUI.UnitFrames.WIDGET_NAMES = {
     statusIndicators = "Status Indicators",
     leaderIcon = "Leader Icon",
     raidMarker = "Raid Marker",
+    roleIcon = "Role Icon",
     castbar = "Castbar",
     buffs = "Buffs",
     debuffs = "Debuffs",
