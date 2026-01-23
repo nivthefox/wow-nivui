@@ -13,13 +13,29 @@ local SettingType = {
     TextInput = "textinput",
 }
 
+-- Default visibility drivers per frame type (for placeholder display)
+local DefaultVisibilityDrivers = {
+    player = "show",
+    target = "[@target,exists] show; [@softenemy,exists] show; [@softfriend,exists] show; hide",
+    focus = "[@focus,exists] show; hide",
+    pet = "[@pet,exists] show; hide",
+    targettarget = "[@targettarget,exists] show; hide",
+    party = "show",
+    boss = "show",
+    arena = "show",
+    raid10 = "show",
+    raid20 = "show",
+    raid40 = "show",
+}
+
 -- Common visibility setting factory
 local function CreateVisibilitySetting(frameType)
     return {
         key = "visibilityOverride",
-        name = "Visibility Macro",
+        name = "Show States",
         type = SettingType.TextInput,
         width = 140,
+        placeholder = DefaultVisibilityDrivers[frameType] or "show",
         get = function() return NivUI:GetVisibilityOverride(frameType) or "" end,
         set = function(value) NivUI:SetVisibilityOverride(frameType, value) end,
     }
@@ -417,6 +433,27 @@ local function CreateSettingControl(parent, settingDef, index)
         editBox:SetAutoFocus(false)
         editBox:SetFontObject("ChatFontSmall")
 
+        -- Placeholder text (shown when empty and not focused)
+        local placeholder = editBox:CreateFontString(nil, "ARTWORK", "ChatFontSmall")
+        placeholder:SetPoint("LEFT", 5, 0)
+        placeholder:SetPoint("RIGHT", -5, 0)
+        placeholder:SetJustifyH("LEFT")
+        placeholder:SetTextColor(0.5, 0.5, 0.5, 0.8)
+        if settingDef.placeholder then
+            placeholder:SetText(settingDef.placeholder)
+        end
+        editBox.placeholder = placeholder
+
+        local function UpdatePlaceholder()
+            local text = editBox:GetText()
+            local hasFocus = editBox:HasFocus()
+            if (not text or text == "") and not hasFocus and settingDef.placeholder then
+                placeholder:Show()
+            else
+                placeholder:Hide()
+            end
+        end
+
         editBox:SetScript("OnEnterPressed", function(self)
             settingDef.set(self:GetText())
             self:ClearFocus()
@@ -427,10 +464,23 @@ local function CreateSettingControl(parent, settingDef, index)
             self:ClearFocus()
         end)
 
+        editBox:SetScript("OnEditFocusGained", function()
+            UpdatePlaceholder()
+        end)
+
+        editBox:SetScript("OnEditFocusLost", function()
+            UpdatePlaceholder()
+        end)
+
+        editBox:SetScript("OnTextChanged", function()
+            UpdatePlaceholder()
+        end)
+
         control.editBox = editBox
 
         function control:Refresh()
             self.editBox:SetText(self.settingDef.get() or "")
+            UpdatePlaceholder()
         end
     end
 
