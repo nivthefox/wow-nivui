@@ -10,10 +10,43 @@ local SettingType = {
     Dropdown = "dropdown",
     Slider = "slider",
     Checkbox = "checkbox",
+    TextInput = "textinput",
 }
+
+-- Common visibility setting factory
+local function CreateVisibilitySetting(frameType)
+    return {
+        key = "visibilityOverride",
+        name = "Visibility Macro",
+        type = SettingType.TextInput,
+        width = 140,
+        get = function() return NivUI:GetVisibilityOverride(frameType) or "" end,
+        set = function(value) NivUI:SetVisibilityOverride(frameType, value) end,
+    }
+end
 
 -- Settings definitions per frame type
 local FrameSettings = {
+    player = {
+        CreateVisibilitySetting("player"),
+    },
+
+    target = {
+        CreateVisibilitySetting("target"),
+    },
+
+    focus = {
+        CreateVisibilitySetting("focus"),
+    },
+
+    pet = {
+        CreateVisibilitySetting("pet"),
+    },
+
+    targettarget = {
+        CreateVisibilitySetting("targettarget"),
+    },
+
     party = {
         {
             key = "orientation",
@@ -79,6 +112,7 @@ local FrameSettings = {
             get = function() return NivUI:DoesPartyShowWhenSolo() end,
             set = function(value) NivUI:SetPartyShowWhenSolo(value) end,
         },
+        CreateVisibilitySetting("party"),
     },
 
     boss = {
@@ -131,6 +165,7 @@ local FrameSettings = {
             get = function() return NivUI:GetBossSpacing() end,
             set = function(value) NivUI:SetBossSpacing(value) end,
         },
+        CreateVisibilitySetting("boss"),
     },
 
     arena = {
@@ -183,6 +218,7 @@ local FrameSettings = {
             get = function() return NivUI:GetArenaSpacing() end,
             set = function(value) NivUI:SetArenaSpacing(value) end,
         },
+        CreateVisibilitySetting("arena"),
     },
 }
 
@@ -251,6 +287,7 @@ local function CreateRaidSettings(raidSize)
             get = function() return NivUI:GetRaidSpacing(raidSize) end,
             set = function(value) NivUI:SetRaidSpacing(raidSize, value) end,
         },
+        CreateVisibilitySetting(raidSize),
     }
 end
 
@@ -260,6 +297,11 @@ FrameSettings.raid40 = CreateRaidSettings("raid40")
 
 -- Frame display names
 local FrameNames = {
+    player = "Player Frame",
+    target = "Target Frame",
+    focus = "Focus Frame",
+    pet = "Pet Frame",
+    targettarget = "Target of Target",
     party = "Party Frames",
     boss = "Boss Frames",
     arena = "Arena Frames",
@@ -365,6 +407,30 @@ local function CreateSettingControl(parent, settingDef, index)
 
         function control:Refresh()
             self.checkbox:SetChecked(self.settingDef.get())
+        end
+
+    elseif settingDef.type == SettingType.TextInput then
+        local editBox = CreateFrame("EditBox", nil, control, "InputBoxTemplate")
+        editBox:SetPoint("LEFT", label, "RIGHT", 15, 0)
+        editBox:SetWidth(settingDef.width or 140)
+        editBox:SetHeight(20)
+        editBox:SetAutoFocus(false)
+        editBox:SetFontObject("ChatFontSmall")
+
+        editBox:SetScript("OnEnterPressed", function(self)
+            settingDef.set(self:GetText())
+            self:ClearFocus()
+        end)
+
+        editBox:SetScript("OnEscapePressed", function(self)
+            self:SetText(settingDef.get() or "")
+            self:ClearFocus()
+        end)
+
+        control.editBox = editBox
+
+        function control:Refresh()
+            self.editBox:SetText(self.settingDef.get() or "")
         end
     end
 

@@ -521,8 +521,10 @@ function UnitFrameBase.BuildCustomFrame(state)
     state.customFrame = customFrame
 
     -- Use secure state driver for visibility (works in combat)
-    if state.visibilityDriver then
-        RegisterStateDriver(customFrame, "visibility", state.visibilityDriver)
+    -- User override takes priority over default driver
+    local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
+    if visibilityDriver then
+        RegisterStateDriver(customFrame, "visibility", visibilityDriver)
         -- Update widgets when visibility driver shows the frame
         customFrame:HookScript("OnShow", function()
             UnitFrameBase.UpdateAllWidgets(state)
@@ -791,6 +793,12 @@ function UnitFrameBase.CreateModule(config)
             if data.styleName == assignedStyle then
                 module.Refresh()
             end
+        end
+    end)
+
+    NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
+        if data.frameType == state.frameType and NivUI:IsFrameEnabled(state.frameType) then
+            module.Refresh()
         end
     end)
 

@@ -212,6 +212,32 @@ function NivUI:SetRealTimeUpdates(frameType, enabled)
     self:TriggerEvent("RealTimeUpdatesChanged", { frameType = frameType, enabled = enabled })
 end
 
+function NivUI:GetVisibilityOverride(frameType)
+    if not NivUI_DB.unitFrameVisibilityOverrides then
+        return nil
+    end
+    local override = NivUI_DB.unitFrameVisibilityOverrides[frameType]
+    if override and override ~= "" then
+        return override
+    end
+    return nil
+end
+
+function NivUI:SetVisibilityOverride(frameType, driver)
+    if not NivUI_DB.unitFrameVisibilityOverrides then
+        NivUI_DB.unitFrameVisibilityOverrides = {}
+    end
+
+    -- Empty string means clear the override
+    if driver == "" then
+        driver = nil
+    end
+
+    NivUI_DB.unitFrameVisibilityOverrides[frameType] = driver
+
+    self:TriggerEvent("VisibilityOverrideChanged", { frameType = frameType, driver = driver })
+end
+
 function NivUI:DoesPartyIncludePlayer()
     if NivUI_DB.partyIncludePlayer == nil then
         return true  -- Default to including player
