@@ -65,6 +65,17 @@ local FrameSettings = {
 
     party = {
         {
+            key = "sortMode",
+            name = "Sort Order",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "DEFAULT", text = "Default" },
+                { value = "ROLE", text = "By Role" },
+            },
+            get = function() return NivUI:GetPartySortMode() end,
+            set = function(value) NivUI:SetPartySortMode(value) end,
+        },
+        {
             key = "orientation",
             name = "Orientation",
             type = SettingType.Dropdown,
@@ -241,6 +252,18 @@ local FrameSettings = {
 -- Raid settings are parameterized by raid size
 local function CreateRaidSettings(raidSize)
     return {
+        {
+            key = "sortMode",
+            name = "Sort Order",
+            type = SettingType.Dropdown,
+            options = {
+                { value = "GROUP", text = "By Group" },
+                { value = "GROUP_ROLE", text = "By Group Role" },
+                { value = "ROLE", text = "By Role" },
+            },
+            get = function() return NivUI:GetRaidSortMode(raidSize) end,
+            set = function(value) NivUI:SetRaidSortMode(raidSize, value) end,
+        },
         {
             key = "groupOrientation",
             name = "Group Orientation",

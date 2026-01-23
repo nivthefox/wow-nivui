@@ -14,6 +14,13 @@ local state = {
     styleName = nil,
 }
 
+local ROLE_PRIORITY = {
+    TANK = 1,
+    HEALER = 2,
+    DAMAGER = 3,
+    NONE = 4,
+}
+
 local function GetPartyUnits()
     local units = {}
     local includePlayer = NivUI:DoesPartyIncludePlayer()
@@ -24,6 +31,16 @@ local function GetPartyUnits()
 
     for i = 1, 4 do
         table.insert(units, "party" .. i)
+    end
+
+    -- Sort by role if that mode is active
+    local sortMode = NivUI:GetPartySortMode()
+    if sortMode == "ROLE" then
+        table.sort(units, function(a, b)
+            local roleA = UnitGroupRolesAssigned(a) or "NONE"
+            local roleB = UnitGroupRolesAssigned(b) or "NONE"
+            return (ROLE_PRIORITY[roleA] or 4) < (ROLE_PRIORITY[roleB] or 4)
+        end)
     end
 
     return units
@@ -441,7 +458,7 @@ NivUI:RegisterCallback("PartySettingsChanged", function(data)
         if data.setting == "includePlayer" then
             -- Need to rebuild frames since player frame might be added/removed
             PartyFrame.Refresh()
-        elseif data.setting == "spacing" or data.setting == "orientation" or data.setting == "growthDirection" then
+        elseif data.setting == "spacing" or data.setting == "orientation" or data.setting == "growthDirection" or data.setting == "sortMode" then
             LayoutMemberFrames()
         elseif data.setting == "showWhenSolo" then
             if ShouldShowPartyFrames() then

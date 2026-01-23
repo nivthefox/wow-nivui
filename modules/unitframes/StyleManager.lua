@@ -294,6 +294,16 @@ function NivUI:SetPartyShowWhenSolo(enabled)
     self:TriggerEvent("PartySettingsChanged", { setting = "showWhenSolo", enabled = enabled })
 end
 
+function NivUI:GetPartySortMode()
+    return NivUI_DB.partySortMode or "DEFAULT"
+end
+
+function NivUI:SetPartySortMode(value)
+    NivUI_DB.partySortMode = value
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "sortMode", value = value })
+end
+
 -- Raid Settings (per raid size: "raid10", "raid20", "raid40")
 
 local function EnsureRaidSettings(raidSize)
@@ -359,6 +369,20 @@ function NivUI:SetRaidPlayerGrowthDirection(raidSize, value)
     NivUI_DB.raidSettings[raidSize].playerGrowthDirection = value
 
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "playerGrowthDirection", value = value })
+end
+
+function NivUI:GetRaidSortMode(raidSize)
+    if not NivUI_DB.raidSettings or not NivUI_DB.raidSettings[raidSize] then
+        return "GROUP"
+    end
+    return NivUI_DB.raidSettings[raidSize].sortMode or "GROUP"
+end
+
+function NivUI:SetRaidSortMode(raidSize, value)
+    EnsureRaidSettings(raidSize)
+    NivUI_DB.raidSettings[raidSize].sortMode = value
+
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "sortMode", value = value })
 end
 
 -- Boss Settings

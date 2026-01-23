@@ -70,6 +70,22 @@ local function GetActiveRaidSize()
     end
 end
 
+local ROLE_PRIORITY = {
+    TANK = 1,
+    HEALER = 2,
+    DAMAGER = 3,
+    NONE = 4,
+}
+
+local function SortUnitsByRole(units)
+    table.sort(units, function(a, b)
+        local roleA = UnitGroupRolesAssigned(a) or "NONE"
+        local roleB = UnitGroupRolesAssigned(b) or "NONE"
+        return (ROLE_PRIORITY[roleA] or 4) < (ROLE_PRIORITY[roleB] or 4)
+    end)
+    return units
+end
+
 local function GetGroupUnits(groupNum)
     local units = {}
     for i = 1, 40 do
@@ -79,6 +95,30 @@ local function GetGroupUnits(groupNum)
             if subgroup == groupNum then
                 table.insert(units, unit)
             end
+        end
+    end
+    return units
+end
+
+local function GetAllUnitsSortedByRole()
+    local units = {}
+    for i = 1, 40 do
+        local unit = "raid" .. i
+        if UnitExists(unit) then
+            table.insert(units, unit)
+        end
+    end
+    return SortUnitsByRole(units)
+end
+
+local function GetRoleSortedGroupUnits(groupNum)
+    local allSorted = GetAllUnitsSortedByRole()
+    local startIdx = (groupNum - 1) * 5 + 1
+    local endIdx = groupNum * 5
+    local units = {}
+    for i = startIdx, endIdx do
+        if allSorted[i] then
+            table.insert(units, allSorted[i])
         end
     end
     return units
@@ -121,12 +161,18 @@ local function LayoutGroupMembers(raidSize, groupNum)
     end
 
     local units
+    local sortMode = NivUI:GetRaidSortMode(raidSize)
+
     if state.previewMode then
         units = {}
         for i = 1, 5 do
             local fakeIndex = (groupNum - 1) * 5 + i
             table.insert(units, "raid" .. fakeIndex)
         end
+    elseif sortMode == "ROLE" then
+        units = GetRoleSortedGroupUnits(groupNum)
+    elseif sortMode == "GROUP_ROLE" then
+        units = SortUnitsByRole(GetGroupUnits(groupNum))
     else
         units = GetGroupUnits(groupNum)
     end
