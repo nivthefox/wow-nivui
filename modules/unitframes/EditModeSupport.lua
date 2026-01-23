@@ -294,7 +294,17 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
     -- Create label
     selection.Label = selection:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
     selection.Label:SetAllPoints(selection)
-    selection.Label:SetText(frameType)
+
+    -- Use custom group name if this is a custom raid group
+    local labelText = frameType
+    if frameType:find("^customRaid_") then
+        local groupId = frameType:gsub("^customRaid_", "")
+        local groupConfig = NivUI:GetCustomRaidGroup(groupId)
+        if groupConfig then
+            labelText = groupConfig.name
+        end
+    end
+    selection.Label:SetText(labelText)
 
     selection:SetScript("OnDragStart", function(self)
         if InCombatLockdown() then return end
