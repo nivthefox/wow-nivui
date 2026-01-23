@@ -54,9 +54,12 @@ local function HideBlizzardTargetFrame(state)
 
     if not state.softHideHooked then
         state.softHideHooked = true
-        TargetFrame:HookScript("OnShow", function()
+        TargetFrame:HookScript("OnShow", function(self)
             if state.blizzardHidden then
-                HideBlizzardTargetFrame(state)
+                self:SetAlpha(0)
+                if not InCombatLockdown() then
+                    HideBlizzardTargetFrame(state)
+                end
             end
         end)
     end

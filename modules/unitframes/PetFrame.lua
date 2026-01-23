@@ -41,9 +41,12 @@ local function HideBlizzardPetFrame(state)
 
     if not state.softHideHooked then
         state.softHideHooked = true
-        PetFrame:HookScript("OnShow", function()
+        PetFrame:HookScript("OnShow", function(self)
             if state.blizzardHidden then
-                HideBlizzardPetFrame(state)
+                self:SetAlpha(0)
+                if not InCombatLockdown() then
+                    HideBlizzardPetFrame(state)
+                end
             end
         end)
     end

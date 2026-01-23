@@ -29,13 +29,20 @@ function UnitFrameBase.KillVisual(frame)
     if not frame then return end
     if frame.UnregisterAllEvents then frame:UnregisterAllEvents() end
     if frame.EnableMouse then frame:EnableMouse(false) end
-    if frame.Hide then frame:Hide() end
-    if frame.SetScript then
-        frame:SetScript("OnShow", function(self) self:Hide() end)
-        frame:SetScript("OnEnter", nil)
-        frame:SetScript("OnLeave", nil)
-    end
     if frame.SetAlpha then frame:SetAlpha(0) end
+    if not InCombatLockdown() then
+        if frame.Hide then frame:Hide() end
+        if frame.SetScript then
+            frame:SetScript("OnShow", function(self)
+                self:SetAlpha(0)
+                if not InCombatLockdown() then
+                    self:Hide()
+                end
+            end)
+            frame:SetScript("OnEnter", nil)
+            frame:SetScript("OnLeave", nil)
+        end
+    end
 end
 
 function UnitFrameBase.UpdateHealthBar(state)

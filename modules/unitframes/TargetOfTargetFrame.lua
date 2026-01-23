@@ -43,9 +43,12 @@ local function HideBlizzardToTFrame(state)
 
     if not totFrame.NivUI_SoftHideHooked then
         totFrame.NivUI_SoftHideHooked = true
-        totFrame:HookScript("OnShow", function()
+        totFrame:HookScript("OnShow", function(self)
             if state.blizzardHidden then
-                HideBlizzardToTFrame(state)
+                self:SetAlpha(0)
+                if not InCombatLockdown() then
+                    HideBlizzardToTFrame(state)
+                end
             end
         end)
     end
