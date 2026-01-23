@@ -62,6 +62,18 @@ local function HideBlizzardTargetFrame(state)
     end
 end
 
+-- Determines which unit to display: hard target takes priority, then soft targets
+local function GetDisplayUnit()
+    if UnitExists("target") then
+        return "target"
+    elseif UnitExists("softenemy") then
+        return "softenemy"
+    elseif UnitExists("softfriend") then
+        return "softfriend"
+    end
+    return "target" -- fallback, frame will be hidden anyway
+end
+
 NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     unit = "target",
     frameType = "target",
@@ -70,15 +82,36 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorOffsetX = 24,
     anchorOffsetY = 0,
     hideBlizzard = HideBlizzardTargetFrame,
-    visibilityDriver = "[@target,exists] show; hide",
+    -- Show if any target exists: hard target, soft enemy, or soft friend
+    visibilityDriver = "[@target,exists] show; [@softenemy,exists] show; [@softfriend,exists] show; hide",
 
     registerEvents = function(frame)
         frame:RegisterEvent("PLAYER_TARGET_CHANGED")
+        frame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
+        frame:RegisterEvent("PLAYER_SOFT_FRIEND_CHANGED")
+
+        -- Secure attribute driver handles click-targeting even in combat
+        -- Priority: hard target > soft enemy > soft friend
+        RegisterAttributeDriver(frame, "unit", "[@target,exists] target; [@softenemy,exists] softenemy; [@softfriend,exists] softfriend; target")
+    end,
+
+    preUpdate = function(state, _elapsed)
+        local newUnit = GetDisplayUnit()
+        if state.unit ~= newUnit then
+            state.unit = newUnit
+            Base.UpdateAllWidgets(state)
+        end
     end,
 
     onEvent = function(_frame, event, _unit)
-        if event == "PLAYER_TARGET_CHANGED" then
+        if event == "PLAYER_TARGET_CHANGED"
+            or event == "PLAYER_SOFT_ENEMY_CHANGED"
+            or event == "PLAYER_SOFT_FRIEND_CHANGED" then
             local state = NivUI.UnitFrames.TargetFrame.GetState()
+            local newUnit = GetDisplayUnit()
+            if state.unit ~= newUnit then
+                state.unit = newUnit
+            end
             if state.customFrame and state.customFrame:IsShown() then
                 Base.UpdateAllWidgets(state)
             end

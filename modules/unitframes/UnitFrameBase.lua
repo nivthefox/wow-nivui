@@ -610,6 +610,11 @@ function UnitFrameBase.BuildCustomFrame(state)
         UnitFrameBase.CheckVisibility(state)
         if not self:IsShown() then return end
 
+        -- Allow module to update state before widget updates (e.g., dynamic unit switching)
+        if state.preUpdate then
+            state.preUpdate(state, elapsed)
+        end
+
         if not NivUI:IsRealTimeUpdates(state.frameType) then
             state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
             if state.timeSinceLastUpdate < UPDATE_INTERVAL then return end
@@ -719,6 +724,7 @@ function UnitFrameBase.CreateModule(config)
         visibilityDriver = config.visibilityDriver,
         registerEvents = config.registerEvents,
         onEvent = config.onEvent,
+        preUpdate = config.preUpdate,
         hideBlizzard = config.hideBlizzard,
     }
 
