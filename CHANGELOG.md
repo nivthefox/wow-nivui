@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Target frame now shows action targets (soft targets) when no hard target exists
+- Custom visibility conditions ("Show States") for each frame type, configurable via Edit Mode
+
 ### Changed
 
 - Group frame settings (party, raid, boss, arena) now appear in an Edit Mode popup when the frame is selected, matching Blizzard's native UI style
+- All frame types now have an Edit Mode settings dialog for visibility customization
 
 ## [1.1.3](https://github.com/nivthefox/wow-nivui/releases/tag/v1.1.3) - 2026-01-22
 
