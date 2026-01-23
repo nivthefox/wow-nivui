@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Target frame now shows action targets (soft targets) when no hard target exists
 - Custom visibility conditions ("Show States") for each frame type, configurable via Edit Mode
+- Sort order options for party and raid frames: by role, by group, or by group with role sorting
 
 ### Changed
 
