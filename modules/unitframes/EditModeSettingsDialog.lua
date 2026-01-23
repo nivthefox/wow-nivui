@@ -373,7 +373,7 @@ local function CreateSettingControl(parent, settingDef, index)
 end
 
 local function CreateDialog()
-    local frame = CreateFrame("Frame", "NivUI_EditModeSettingsDialog", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "NivUI_EditModeSettingsDialog", UIParent)
     frame:SetSize(DIALOG_WIDTH, 200)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
@@ -384,16 +384,10 @@ local function CreateDialog()
     frame:RegisterForDrag("LeftButton")
     frame:Hide()
 
-    -- Use the translucent dialog border like Blizzard does
-    frame:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true,
-        tileSize = 32,
-        edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    })
-    frame:SetBackdropColor(0, 0, 0, 0.8)
+    -- Use the same translucent dialog border as Blizzard's Edit Mode dialogs
+    local border = CreateFrame("Frame", nil, frame, "DialogBorderTranslucentTemplate")
+    border:SetAllPoints()
+    frame.Border = border
 
     frame:SetScript("OnDragStart", function(self)
         self:StartMoving()
@@ -410,7 +404,7 @@ local function CreateDialog()
 
     -- Close button
     local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    closeButton:SetPoint("TOPRIGHT", -3, -3)
+    closeButton:SetPoint("TOPRIGHT", 2, 2)
     closeButton:SetScript("OnClick", function()
         frame:Hide()
         NivUI.EditMode:ClearSelection()
