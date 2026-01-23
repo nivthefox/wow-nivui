@@ -44,8 +44,10 @@ function UnitFrameBase.UpdateHealthBar(state)
     local config = state.currentStyle.healthBar
     local unit = state.unit
 
-    local maxHealth = UnitHealthMax(unit) or 1
+    local maxHealth = UnitHealthMax(unit)
     local health = UnitHealth(unit)
+
+    if not maxHealth or maxHealth == 0 then return end
 
     widget:SetMinMaxValues(0, maxHealth)
     widget:SetValue(health)
@@ -81,8 +83,10 @@ function UnitFrameBase.UpdatePowerBar(state)
     local unit = state.unit
 
     local powerType = UnitPowerType(unit)
-    local maxPower = UnitPowerMax(unit, powerType) or 1
+    local maxPower = UnitPowerMax(unit, powerType)
     local power = UnitPower(unit, powerType)
+
+    if not maxPower or maxPower == 0 then return end
 
     widget:SetMinMaxValues(0, maxPower)
     widget:SetValue(power)
