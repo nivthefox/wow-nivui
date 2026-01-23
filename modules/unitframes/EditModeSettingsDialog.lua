@@ -439,6 +439,7 @@ local function CreateSettingControl(parent, settingDef, index)
         placeholder:SetPoint("RIGHT", -5, 0)
         placeholder:SetJustifyH("LEFT")
         placeholder:SetTextColor(0.5, 0.5, 0.5, 0.8)
+        placeholder:SetWordWrap(false)
         if settingDef.placeholder then
             placeholder:SetText(settingDef.placeholder)
         end
