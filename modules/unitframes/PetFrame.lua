@@ -57,10 +57,7 @@ NivUI.UnitFrames.PetFrame = Base.CreateModule({
     anchorOffsetX = 0,
     anchorOffsetY = 0,
     hideBlizzard = HideBlizzardPetFrame,
-
-    shouldShow = function()
-        return UnitExists("pet")
-    end,
+    visibilityDriver = "[@pet,exists] show; hide",
 
     registerEvents = function(frame)
         frame:RegisterEvent("UNIT_PET")
@@ -70,7 +67,6 @@ NivUI.UnitFrames.PetFrame = Base.CreateModule({
     onEvent = function(_frame, event, _unit)
         if event == "UNIT_PET" or event == "PET_BAR_UPDATE" then
             local state = NivUI.UnitFrames.PetFrame.GetState()
-            Base.CheckVisibility(state)
             if state.customFrame and state.customFrame:IsShown() then
                 Base.UpdateAllWidgets(state)
             end

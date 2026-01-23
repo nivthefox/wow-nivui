@@ -70,10 +70,7 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorOffsetX = 24,
     anchorOffsetY = 0,
     hideBlizzard = HideBlizzardTargetFrame,
-
-    shouldShow = function()
-        return UnitExists("target")
-    end,
+    visibilityDriver = "[@target,exists] show; hide",
 
     registerEvents = function(frame)
         frame:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -82,7 +79,6 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     onEvent = function(_frame, event, _unit)
         if event == "PLAYER_TARGET_CHANGED" then
             local state = NivUI.UnitFrames.TargetFrame.GetState()
-            Base.CheckVisibility(state)
             if state.customFrame and state.customFrame:IsShown() then
                 Base.UpdateAllWidgets(state)
             end

@@ -520,6 +520,15 @@ function UnitFrameBase.BuildCustomFrame(state)
 
     state.customFrame = customFrame
 
+    -- Use secure state driver for visibility (works in combat)
+    if state.visibilityDriver then
+        RegisterStateDriver(customFrame, "visibility", state.visibilityDriver)
+        -- Update widgets when visibility driver shows the frame
+        customFrame:HookScript("OnShow", function()
+            UnitFrameBase.UpdateAllWidgets(state)
+        end)
+    end
+
     customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", state.unit)
     customFrame:RegisterUnitEvent("UNIT_MAXPOWER", state.unit)
     customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", state.unit)
@@ -627,6 +636,15 @@ end
 function UnitFrameBase.CheckVisibility(state)
     if not state.customFrame then return end
 
+    -- If using a visibility driver, the secure state driver handles show/hide
+    -- We just need to update widgets if visible
+    if state.visibilityDriver then
+        if state.customFrame:IsShown() then
+            UnitFrameBase.UpdateAllWidgets(state)
+        end
+        return
+    end
+
     local shouldBeVisible = not state.shouldShow or state.shouldShow()
 
     -- SecureUnitButtonTemplate frames can't be shown/hidden in combat
@@ -650,6 +668,7 @@ function UnitFrameBase.CheckVisibility(state)
 end
 
 function UnitFrameBase.ApplyPendingVisibility(state)
+    if state.visibilityDriver then return end  -- Driver handles it
     if state.pendingVisibility == nil then return end
     if InCombatLockdown() then return end
 
@@ -697,6 +716,7 @@ function UnitFrameBase.CreateModule(config)
         timeSinceLastUpdate = 0,
         castbarTicking = false,
         shouldShow = config.shouldShow,
+        visibilityDriver = config.visibilityDriver,
         registerEvents = config.registerEvents,
         onEvent = config.onEvent,
         hideBlizzard = config.hideBlizzard,
