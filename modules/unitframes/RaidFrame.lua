@@ -443,11 +443,17 @@ local function BuildRaidFrames(raidSize)
 
     if not state.container then
         state.container = CreateFrame("Frame", "NivUI_RaidContainer_" .. raidSize, UIParent)
-        state.container:SetSize(400, 200)  -- Will be resized by layout
+        state.container:SetSize(400, 200)
 
         local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition(raidSize, state.container)
         if not positionApplied then
             state.container:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        end
+
+        local visibilityOverride = NivUI:GetVisibilityOverride(raidSize)
+        if visibilityOverride and visibilityOverride ~= "" then
+            state.hasVisibilityDriver = true
+            RegisterStateDriver(state.container, "visibility", visibilityOverride)
         end
 
         if NivUI.EditMode then
@@ -513,7 +519,12 @@ local function OnGroupRosterUpdate()
 
     for raidSize, state in pairs(states) do
         if state.enabled then
-            if state.previewMode then
+            if state.hasVisibilityDriver then
+                LayoutGroupFrames(raidSize)
+                if state.container and state.container:IsShown() then
+                    UpdateAllRaidMembers(raidSize)
+                end
+            elseif state.previewMode then
                 if state.container then
                     state.container:Show()
                 end
@@ -563,10 +574,12 @@ function RaidFrame.Enable(raidSize)
     BuildRaidFrames(raidSize)
     HideBlizzardRaidFrames()
 
-    if ShouldShowRaidFrames(raidSize) then
-        state.container:Show()
-    else
-        state.container:Hide()
+    if not state.hasVisibilityDriver then
+        if ShouldShowRaidFrames(raidSize) then
+            state.container:Show()
+        else
+            state.container:Hide()
+        end
     end
 end
 
@@ -584,10 +597,12 @@ function RaidFrame.Refresh(raidSize)
     if not state or not state.enabled then return end
 
     BuildRaidFrames(raidSize)
-    if ShouldShowRaidFrames(raidSize) then
-        state.container:Show()
-    else
-        state.container:Hide()
+    if not state.hasVisibilityDriver then
+        if ShouldShowRaidFrames(raidSize) then
+            state.container:Show()
+        else
+            state.container:Hide()
+        end
     end
 end
 
@@ -600,10 +615,12 @@ function RaidFrame.SetPreviewMode(raidSize, enabled)
         LayoutGroupFrames(raidSize)
         UpdateAllRaidMembers(raidSize)
 
-        if enabled then
-            state.container:Show()
-        elseif not ShouldShowRaidFrames(raidSize) then
-            state.container:Hide()
+        if not state.hasVisibilityDriver then
+            if enabled then
+                state.container:Show()
+            elseif not ShouldShowRaidFrames(raidSize) then
+                state.container:Hide()
+            end
         end
     end
 end
@@ -671,4 +688,22 @@ end)
 
 NivUI:RegisterCallback("RaidPreviewChanged", function(data)
     RaidFrame.SetPreviewMode(data.raidSize, data.enabled)
+end)
+
+NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
+    local state = states[data.frameType]
+    if state and state.enabled and state.container then
+        if data.driver and data.driver ~= "" then
+            state.hasVisibilityDriver = true
+            RegisterStateDriver(state.container, "visibility", data.driver)
+        else
+            state.hasVisibilityDriver = false
+            UnregisterStateDriver(state.container, "visibility")
+            if ShouldShowRaidFrames(data.frameType) then
+                state.container:Show()
+            else
+                state.container:Hide()
+            end
+        end
+    end
 end)

@@ -264,11 +264,17 @@ local function BuildArenaFrames()
 
     if not state.container then
         state.container = CreateFrame("Frame", "NivUI_ArenaContainer", UIParent)
-        state.container:SetSize(200, 300)  -- Will be resized by layout
+        state.container:SetSize(200, 300)
 
         local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition("arena", state.container)
         if not positionApplied then
             state.container:SetPoint("RIGHT", UIParent, "RIGHT", -100, 100)
+        end
+
+        local visibilityOverride = NivUI:GetVisibilityOverride("arena")
+        if visibilityOverride and visibilityOverride ~= "" then
+            state.hasVisibilityDriver = true
+            RegisterStateDriver(state.container, "visibility", visibilityOverride)
         end
 
         if NivUI.EditMode then
@@ -314,7 +320,12 @@ end
 local function OnArenaOpponentUpdate()
     if not state.enabled then return end
 
-    if ShouldShowArenaFrames() then
+    if state.hasVisibilityDriver then
+        LayoutMemberFrames()
+        if state.container and state.container:IsShown() then
+            UpdateAllMemberFrames()
+        end
+    elseif ShouldShowArenaFrames() then
         if state.container then
             state.container:Show()
         end
@@ -352,10 +363,12 @@ function ArenaFrame.Enable()
     BuildArenaFrames()
     HideBlizzardArenaFrames()
 
-    if ShouldShowArenaFrames() then
-        state.container:Show()
-    else
-        state.container:Hide()
+    if not state.hasVisibilityDriver then
+        if ShouldShowArenaFrames() then
+            state.container:Show()
+        else
+            state.container:Hide()
+        end
     end
 end
 
@@ -368,10 +381,12 @@ end
 function ArenaFrame.Refresh()
     if state.enabled then
         BuildArenaFrames()
-        if ShouldShowArenaFrames() then
-            state.container:Show()
-        else
-            state.container:Hide()
+        if not state.hasVisibilityDriver then
+            if ShouldShowArenaFrames() then
+                state.container:Show()
+            else
+                state.container:Hide()
+            end
         end
     end
 end
@@ -382,10 +397,12 @@ function ArenaFrame.SetPreviewMode(enabled)
         LayoutMemberFrames()
         UpdateAllMemberFrames()
 
-        if enabled then
-            state.container:Show()
-        elseif not ShouldShowArenaFrames() then
-            state.container:Hide()
+        if not state.hasVisibilityDriver then
+            if enabled then
+                state.container:Show()
+            elseif not ShouldShowArenaFrames() then
+                state.container:Hide()
+            end
         end
     end
 end
@@ -454,4 +471,21 @@ end)
 
 NivUI:RegisterCallback("ArenaPreviewChanged", function(data)
     ArenaFrame.SetPreviewMode(data.enabled)
+end)
+
+NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
+    if data.frameType == "arena" and state.enabled and state.container then
+        if data.driver and data.driver ~= "" then
+            state.hasVisibilityDriver = true
+            RegisterStateDriver(state.container, "visibility", data.driver)
+        else
+            state.hasVisibilityDriver = false
+            UnregisterStateDriver(state.container, "visibility")
+            if ShouldShowArenaFrames() then
+                state.container:Show()
+            else
+                state.container:Hide()
+            end
+        end
+    end
 end)

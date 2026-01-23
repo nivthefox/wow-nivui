@@ -264,11 +264,17 @@ local function BuildBossFrames()
 
     if not state.container then
         state.container = CreateFrame("Frame", "NivUI_BossContainer", UIParent)
-        state.container:SetSize(200, 300)  -- Will be resized by layout
+        state.container:SetSize(200, 300)
 
         local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition("boss", state.container)
         if not positionApplied then
             state.container:SetPoint("RIGHT", UIParent, "RIGHT", -100, 0)
+        end
+
+        local visibilityOverride = NivUI:GetVisibilityOverride("boss")
+        if visibilityOverride and visibilityOverride ~= "" then
+            state.hasVisibilityDriver = true
+            RegisterStateDriver(state.container, "visibility", visibilityOverride)
         end
 
         if NivUI.EditMode then
@@ -314,7 +320,12 @@ end
 local function OnInstanceEncounterEngageUnit()
     if not state.enabled then return end
 
-    if ShouldShowBossFrames() then
+    if state.hasVisibilityDriver then
+        LayoutMemberFrames()
+        if state.container and state.container:IsShown() then
+            UpdateAllMemberFrames()
+        end
+    elseif ShouldShowBossFrames() then
         if state.container then
             state.container:Show()
         end
@@ -359,10 +370,12 @@ function BossFrame.Enable()
     BuildBossFrames()
     HideBlizzardBossFrames()
 
-    if ShouldShowBossFrames() then
-        state.container:Show()
-    else
-        state.container:Hide()
+    if not state.hasVisibilityDriver then
+        if ShouldShowBossFrames() then
+            state.container:Show()
+        else
+            state.container:Hide()
+        end
     end
 end
 
@@ -375,10 +388,12 @@ end
 function BossFrame.Refresh()
     if state.enabled then
         BuildBossFrames()
-        if ShouldShowBossFrames() then
-            state.container:Show()
-        else
-            state.container:Hide()
+        if not state.hasVisibilityDriver then
+            if ShouldShowBossFrames() then
+                state.container:Show()
+            else
+                state.container:Hide()
+            end
         end
     end
 end
@@ -389,10 +404,12 @@ function BossFrame.SetPreviewMode(enabled)
         LayoutMemberFrames()
         UpdateAllMemberFrames()
 
-        if enabled then
-            state.container:Show()
-        elseif not ShouldShowBossFrames() then
-            state.container:Hide()
+        if not state.hasVisibilityDriver then
+            if enabled then
+                state.container:Show()
+            elseif not ShouldShowBossFrames() then
+                state.container:Hide()
+            end
         end
     end
 end
@@ -463,4 +480,21 @@ end)
 
 NivUI:RegisterCallback("BossPreviewChanged", function(data)
     BossFrame.SetPreviewMode(data.enabled)
+end)
+
+NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
+    if data.frameType == "boss" and state.enabled and state.container then
+        if data.driver and data.driver ~= "" then
+            state.hasVisibilityDriver = true
+            RegisterStateDriver(state.container, "visibility", data.driver)
+        else
+            state.hasVisibilityDriver = false
+            UnregisterStateDriver(state.container, "visibility")
+            if ShouldShowBossFrames() then
+                state.container:Show()
+            else
+                state.container:Hide()
+            end
+        end
+    end
 end)
