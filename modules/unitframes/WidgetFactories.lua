@@ -484,6 +484,127 @@ function WF.castbar(parent, config, _style, _unit)
         frame.timer:SetText("1.2s")
     end
 
+    -- Empowered spell stage tracking
+    frame.StagePoints = {}
+    frame.StagePips = {}
+    frame.StageTiers = {}
+    frame.NumStages = 0
+    frame.CurrSpellStage = -1
+
+    function frame:AddStages(numStages, unit, totalDurationMS)
+        self:ClearStages()
+
+        self.NumStages = numStages + 1  -- +1 for hold phase
+        self.CurrSpellStage = -1
+
+        local barWidth = self:GetWidth()
+        local barHeight = self:GetHeight()
+        local sumDuration = 0
+
+        -- Calculate stage thresholds and create pips
+        for i = 1, self.NumStages - 1 do
+            local stageDuration = GetUnitEmpowerStageDuration(unit, i - 1)
+            if stageDuration and not issecretvalue(stageDuration) and stageDuration > 0 then
+                sumDuration = sumDuration + stageDuration
+                self.StagePoints[i] = sumDuration
+
+                local offset = (sumDuration / totalDurationMS) * barWidth
+
+                -- Create pip (vertical divider line)
+                local pip = self.StagePips[i]
+                if not pip then
+                    pip = self:CreateTexture(nil, "OVERLAY")
+                    pip:SetTexture("Interface\\Buttons\\WHITE8x8")
+                    pip:SetVertexColor(1, 1, 1, 0.8)
+                    pip:SetSize(2, barHeight)
+                    self.StagePips[i] = pip
+                end
+                pip:ClearAllPoints()
+                pip:SetPoint("CENTER", self, "LEFT", offset, 0)
+                pip:Show()
+
+                -- Create tier (segment between this pip and the next, or bar end)
+                local tier = self.StageTiers[i]
+                if not tier then
+                    tier = CreateFrame("Frame", nil, self)
+                    tier.Normal = tier:CreateTexture(nil, "ARTWORK", nil, 1)
+                    tier.Normal:SetAllPoints()
+                    tier.Normal:SetTexture("Interface\\Buttons\\WHITE8x8")
+                    tier.Disabled = tier:CreateTexture(nil, "ARTWORK", nil, 0)
+                    tier.Disabled:SetAllPoints()
+                    tier.Disabled:SetTexture("Interface\\Buttons\\WHITE8x8")
+                    tier.Disabled:SetVertexColor(0.3, 0.3, 0.3, 0.6)
+                    tier.Glow = tier:CreateTexture(nil, "OVERLAY")
+                    tier.Glow:SetAllPoints()
+                    tier.Glow:SetTexture("Interface\\Buttons\\WHITE8x8")
+                    tier.Glow:SetBlendMode("ADD")
+                    tier.Glow:SetAlpha(0)
+                    self.StageTiers[i] = tier
+                end
+
+                -- Position tier from previous pip (or bar start) to this pip
+                local prevOffset = i > 1 and ((self.StagePoints[i - 1] / totalDurationMS) * barWidth) or 0
+                tier:SetPoint("TOPLEFT", self, "TOPLEFT", prevOffset, 0)
+                tier:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", offset, 0)
+
+                -- Set tier color based on castbar color
+                local r, g, b = self:GetStatusBarColor()
+                tier.Normal:SetVertexColor(r, g, b, 1)
+
+                -- Start in disabled state
+                tier.Normal:Hide()
+                tier.Disabled:Show()
+                tier:Show()
+            end
+        end
+    end
+
+    function frame:ClearStages()
+        for _, pip in pairs(self.StagePips) do
+            pip:Hide()
+        end
+        for _, tier in pairs(self.StageTiers) do
+            tier:Hide()
+        end
+        self.NumStages = 0
+        self.CurrSpellStage = -1
+        wipe(self.StagePoints)
+    end
+
+    function frame:UpdateStage(elapsedSec)
+        if self.NumStages <= 0 then return end
+
+        local elapsedMS = elapsedSec * 1000
+        local maxStage = 0
+
+        for i = 1, self.NumStages - 1 do
+            if self.StagePoints[i] and elapsedMS > self.StagePoints[i] then
+                maxStage = i
+            else
+                break
+            end
+        end
+
+        if maxStage > self.CurrSpellStage and maxStage > 0 then
+            self.CurrSpellStage = maxStage
+
+            -- Activate the tier for this stage
+            local tier = self.StageTiers[maxStage]
+            if tier then
+                tier.Normal:Show()
+                tier.Disabled:Hide()
+
+                -- Flash effect
+                tier.Glow:SetAlpha(1)
+                C_Timer.After(0.1, function()
+                    if tier.Glow then
+                        tier.Glow:SetAlpha(0)
+                    end
+                end)
+            end
+        end
+    end
+
     frame.widgetType = "castbar"
     return frame
 end

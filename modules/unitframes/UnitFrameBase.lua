@@ -348,10 +348,14 @@ function UnitFrameBase.UpdateCastbar(state)
 
     local name, _text, texture, startTimeMS, endTimeMS, _isTradeSkill, _castID, notInterruptible, _spellID = UnitCastingInfo(unit)
     local isChanneling = false
+    local isEmpowered = false
+    local numStages = 0
+    local _isEmpoweredFlag
 
     if not name then
-        name, _text, texture, startTimeMS, endTimeMS, _isTradeSkill, notInterruptible, _spellID = UnitChannelInfo(unit)
+        name, _text, texture, startTimeMS, endTimeMS, _isTradeSkill, notInterruptible, _spellID, _isEmpoweredFlag, numStages = UnitChannelInfo(unit)
         isChanneling = true
+        isEmpowered = numStages and numStages > 0
     end
 
     if not name then
@@ -360,12 +364,26 @@ function UnitFrameBase.UpdateCastbar(state)
             state.castbarTicking = false
             widget:SetScript("OnUpdate", nil)
         end
+        if widget.ClearStages then
+            widget:ClearStages()
+        end
         return
     end
 
+    -- Empowered spells include hold-at-max time in their duration
+    if isEmpowered and not issecretvalue(endTimeMS) then
+        local holdTime = GetUnitEmpowerHoldAtMaxTime(unit)
+        if holdTime and not issecretvalue(holdTime) then
+            endTimeMS = endTimeMS + holdTime
+        end
+    end
+
+    -- Empowered spells fill forward like casts, not backward like channels
+    local fillBackward = isChanneling and not isEmpowered
+
     if issecretvalue(startTimeMS) then
         local duration = isChanneling and UnitChannelDuration(unit) or UnitCastingDuration(unit)
-        local direction = isChanneling and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
+        local direction = fillBackward and Enum.StatusBarTimerDirection.RemainingTime or Enum.StatusBarTimerDirection.ElapsedTime
         widget:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, direction)
 
         if widget.timer and config.showTimer then
@@ -388,14 +406,27 @@ function UnitFrameBase.UpdateCastbar(state)
             widget:SetScript("OnUpdate", function()
                 local elapsed = (GetTime() * 1000 - startTimeMS) / 1000
                 local progress = elapsed / durationSec
-                widget:SetValue(isChanneling and (1 - progress) or progress)
+                widget:SetValue(fillBackward and (1 - progress) or progress)
 
                 if widget.timer and config.showTimer then
                     local remaining = (endTimeMS - GetTime() * 1000) / 1000
                     widget.timer:SetFormattedText("%.1fs", remaining)
                 end
+
+                -- Update stage progression for empowered spells
+                if isEmpowered and widget.UpdateStage then
+                    widget:UpdateStage(elapsed)
+                end
             end)
         end
+    end
+
+    -- Set up stage pips for empowered spells
+    if isEmpowered and widget.AddStages then
+        local totalDurationMS = endTimeMS - startTimeMS
+        widget:AddStages(numStages, unit, totalDurationMS)
+    elseif widget.ClearStages then
+        widget:ClearStages()
     end
 
     if widget.spellName and config.showSpellName then
