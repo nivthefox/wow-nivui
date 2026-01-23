@@ -770,7 +770,6 @@ local function SetupChiBarContent(parent)
         filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
         updateInterval = 0.05,
-        useBlizzardTexture = false,
     }
 
     ----------------------------------------------------------------------------
@@ -800,17 +799,6 @@ local function SetupChiBarContent(parent)
     ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
     AddFrame(appearanceHeader, SECTION_SPACING)
-
-    local blizzardTextureCheck = Components.GetCheckbox(
-        content,
-        "Use Blizzard Textures",
-        function(checked)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.useBlizzardTexture = checked
-            NivUI.ChiBar:RebuildSegments()
-        end
-    )
-    AddFrame(blizzardTextureCheck)
 
     local spacingSlider = Components.GetSliderWithInput(
         content,
@@ -921,8 +909,6 @@ local function SetupChiBarContent(parent)
         local db = NivUI_DB.chiBar or {}
 
         visibilityDropdown:SetValue()
-        local useBlizzard = db.useBlizzardTexture or false
-        blizzardTextureCheck:SetValue(useBlizzard)
         spacingSlider:SetValue(db.spacing or chiDefaults.spacing)
         emptyColorPicker:SetValue(db.emptyColor or chiDefaults.emptyColor)
         filledColorPicker:SetValue(db.filledColor or chiDefaults.filledColor)
@@ -974,7 +960,6 @@ local function SetupEssenceBarContent(parent)
         filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },
         borderColor = { r = 0, g = 0, b = 0, a = 1 },
         updateInterval = 0.05,
-        useBlizzardTexture = false,
     }
 
     ----------------------------------------------------------------------------
@@ -1004,17 +989,6 @@ local function SetupEssenceBarContent(parent)
     ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
     AddFrame(appearanceHeader, SECTION_SPACING)
-
-    local blizzardTextureCheck = Components.GetCheckbox(
-        content,
-        "Use Blizzard Textures",
-        function(checked)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.useBlizzardTexture = checked
-            NivUI.EssenceBar:RebuildSegments()
-        end
-    )
-    AddFrame(blizzardTextureCheck)
 
     local spacingSlider = Components.GetSliderWithInput(
         content,
@@ -1125,8 +1099,6 @@ local function SetupEssenceBarContent(parent)
         local db = NivUI_DB.essenceBar or {}
 
         visibilityDropdown:SetValue()
-        local useBlizzard = db.useBlizzardTexture or false
-        blizzardTextureCheck:SetValue(useBlizzard)
         spacingSlider:SetValue(db.spacing or essenceDefaults.spacing)
         emptyColorPicker:SetValue(db.emptyColor or essenceDefaults.emptyColor)
         filledColorPicker:SetValue(db.filledColor or essenceDefaults.filledColor)

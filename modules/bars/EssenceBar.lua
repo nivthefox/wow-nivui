@@ -66,7 +66,6 @@ local defaults = {
     filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },  -- Teal/cyan
     borderColor = { r = 0, g = 0, b = 0, a = 1 },
     updateInterval = 0.05,
-    useBlizzardTexture = false,
 }
 
 local function GetSetting(key)
@@ -89,6 +88,12 @@ local function SafeGetMaxEssence()
     return maxEssence
 end
 
+local function SafeGetPartialEssence()
+    local ok, partial = pcall(UnitPartialPower, "player", Enum.PowerType.Essence)
+    if not ok then return 0 end
+    return partial or 0
+end
+
 local function SafeIsActive(index, essence)
     if essence == nil then return false end
     local ok, result = pcall(function() return index <= essence end)
@@ -107,7 +112,6 @@ function EssenceBar:RebuildSegments()
     local width = self:GetWidth()
     local height = self:GetHeight()
     local spacing = GetSetting("spacing")
-    local useBlizzard = GetSetting("useBlizzardTexture")
 
     local totalSpacing = spacing * (maxEssence - 1)
     local segmentWidth = (width - totalSpacing) / maxEssence
@@ -121,24 +125,20 @@ function EssenceBar:RebuildSegments()
         local bg = self.segmentContainer:CreateTexture(nil, "BACKGROUND")
         bg:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
         bg:SetSize(segmentWidth, height)
+        bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
 
         local bar = self.segmentContainer:CreateTexture(nil, "ARTWORK")
         bar:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
         bar:SetSize(segmentWidth, height)
+        bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
         bar:Hide()
-
-        if useBlizzard then
-            bg:SetAtlas("UF-Essence-BG")
-            bar:SetAtlas("UF-Essence-Icon-Active")
-        else
-            bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
-            bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
-        end
 
         self.segments[i] = {
             bg = bg,
             bar = bar,
             active = false,
+            segmentWidth = segmentWidth,
+            xOffset = xOffset,
         }
     end
 end
@@ -158,15 +158,27 @@ function EssenceBar:UpdateSegments()
         self:RebuildSegments()
     end
 
+    local partialPower = SafeGetPartialEssence()
+    local fillingIndex = essence + 1
+
     for i, seg in ipairs(self.segments) do
-        local shouldBeActive = SafeIsActive(i, essence)
-        if shouldBeActive ~= seg.active then
-            seg.active = shouldBeActive
-            if shouldBeActive then
-                seg.bar:Show()
-            else
-                seg.bar:Hide()
-            end
+        local isFull = SafeIsActive(i, essence)
+        local isFilling = (i == fillingIndex) and (fillingIndex <= maxEssence)
+
+        if isFull then
+            seg.bar:SetWidth(seg.segmentWidth)
+            seg.bar:Show()
+            seg.active = true
+        elseif isFilling and partialPower > 0 then
+            local fillPercent = partialPower / 1000
+            local fillWidth = seg.segmentWidth * fillPercent
+            if fillWidth < 1 then fillWidth = 1 end
+            seg.bar:SetWidth(fillWidth)
+            seg.bar:Show()
+            seg.active = false
+        else
+            seg.bar:Hide()
+            seg.active = false
         end
     end
 end
@@ -260,10 +272,6 @@ local function LoadPosition()
 end
 
 local function ApplyColors()
-    if GetSetting("useBlizzardTexture") then
-        return
-    end
-
     local emptyColor = GetSetting("emptyColor")
     local filledColor = GetSetting("filledColor")
 

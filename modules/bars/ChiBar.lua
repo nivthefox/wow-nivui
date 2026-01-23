@@ -66,7 +66,6 @@ local defaults = {
     filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },  -- Jade green
     borderColor = { r = 0, g = 0, b = 0, a = 1 },
     updateInterval = 0.05,
-    useBlizzardTexture = false,
 }
 
 local function GetSetting(key)
@@ -109,7 +108,6 @@ function ChiBar:RebuildSegments()
     local width = self:GetWidth()
     local height = self:GetHeight()
     local spacing = GetSetting("spacing")
-    local useBlizzard = GetSetting("useBlizzardTexture")
 
     local totalSpacing = spacing * (maxChi - 1)
     local segmentWidth = (width - totalSpacing) / maxChi
@@ -123,19 +121,13 @@ function ChiBar:RebuildSegments()
         local bg = self.segmentContainer:CreateTexture(nil, "BACKGROUND")
         bg:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
         bg:SetSize(segmentWidth, height)
+        bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
 
         local bar = self.segmentContainer:CreateTexture(nil, "ARTWORK")
         bar:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
         bar:SetSize(segmentWidth, height)
+        bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
         bar:Hide()
-
-        if useBlizzard then
-            bg:SetAtlas("uf-chi-bg")
-            bar:SetAtlas("uf-chi-icon")
-        else
-            bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
-            bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
-        end
 
         self.segments[i] = {
             bg = bg,
@@ -269,10 +261,6 @@ local function LoadPosition()
 end
 
 local function ApplyColors()
-    if GetSetting("useBlizzardTexture") then
-        return
-    end
-
     local emptyColor = GetSetting("emptyColor")
     local filledColor = GetSetting("filledColor")
 
