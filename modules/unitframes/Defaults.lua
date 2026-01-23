@@ -150,6 +150,7 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
 
     powerBar = {
         enabled = true,
+        visibility = "everyone",
         anchor = DefaultAnchor("TOPLEFT", "healthBar", "BOTTOMLEFT", 0, -2),
         size = { width = 180, height = 12 },
         strata = "MEDIUM",
