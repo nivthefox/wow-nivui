@@ -477,6 +477,31 @@ function NivUI.EditMode:GetProjectedContainerSize(frameType)
         else
             return maxGroups * groupWidth + (maxGroups - 1) * spacing, groupHeight
         end
+
+    elseif frameType:find("^customRaid_") then
+        -- Custom raid groups - estimate based on a reasonable max member count
+        local groupId = frameType:gsub("^customRaid_", "")
+        local groupConfig = NivUI:GetCustomRaidGroup(groupId)
+        if not groupConfig then return nil, nil end
+
+        styleName = groupConfig.styleName or styleName
+        style = NivUI:GetStyleWithDefaults(styleName)
+        frameConfig = style and style.frame or {}
+        frameWidth = frameConfig.width or 80
+        frameHeight = frameConfig.height or 40
+
+        -- Estimate max members: roles can have up to 40 members, member filter uses selection count
+        local maxMembers = 10  -- Reasonable default for preview
+        if groupConfig.filterType == "member" then
+            local memberCount = 0
+            for _ in pairs(groupConfig.members) do
+                memberCount = memberCount + 1
+            end
+            maxMembers = math.max(memberCount, 1)
+        end
+
+        local spacing = 2
+        return frameWidth, maxMembers * frameHeight + (maxMembers - 1) * spacing
     end
 
     return nil, nil
@@ -487,6 +512,19 @@ function NivUI.EditMode:UpdateContainerSizes()
     local groupFrameTypes = {"party", "boss", "arena", "raid10", "raid20", "raid40"}
 
     for _, frameType in ipairs(groupFrameTypes) do
+        local selection = selectionFrames[frameType]
+        if selection and selection.customFrame then
+            local width, height = self:GetProjectedContainerSize(frameType)
+            if width and height then
+                selection.customFrame:SetSize(width, height)
+            end
+        end
+    end
+
+    -- Also update custom raid group sizes
+    local customGroups = NivUI:GetCustomRaidGroups()
+    for groupId in pairs(customGroups) do
+        local frameType = "customRaid_" .. groupId
         local selection = selectionFrames[frameType]
         if selection and selection.customFrame then
             local width, height = self:GetProjectedContainerSize(frameType)

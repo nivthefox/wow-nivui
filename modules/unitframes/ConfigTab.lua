@@ -167,6 +167,52 @@ StaticPopupDialogs["NIVUI_CONFIRM_RELOAD"] = {
     hideOnEscape = 1,
 }
 
+StaticPopupDialogs["NIVUI_NEW_CUSTOM_RAID_GROUP"] = {
+    text = "Enter name for new custom raid group:",
+    button1 = "Create",
+    button2 = "Cancel",
+    hasEditBox = 1,
+    OnAccept = function(dialog)
+        local name = dialog:GetEditBox():GetText()
+        if name and name ~= "" then
+            local id, err = NivUI:CreateCustomRaidGroup(name)
+            if not id then
+                print("NivUI: " .. (err or "Failed to create custom raid group"))
+            end
+        end
+    end,
+    EditBoxOnEnterPressed = function(editBox)
+        local dialog = editBox:GetParent()
+        local name = editBox:GetText()
+        if name and name ~= "" then
+            local id, err = NivUI:CreateCustomRaidGroup(name)
+            if not id then
+                print("NivUI: " .. (err or "Failed to create custom raid group"))
+            end
+        end
+        dialog:Hide()
+    end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+}
+
+StaticPopupDialogs["NIVUI_DELETE_CUSTOM_RAID_GROUP"] = {
+    text = "Delete custom raid group '%s'? This cannot be undone.",
+    button1 = "Delete",
+    button2 = "Cancel",
+    OnAccept = function(_dialog, data)
+        local success, err = NivUI:DeleteCustomRaidGroup(data.groupId)
+        if not success then
+            print("NivUI: " .. (err or "Failed to delete custom raid group"))
+        end
+    end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    showAlert = 1,
+}
+
 local function DeepGet(tbl, key)
     local parts = { strsplit(".", key) }
     local current = tbl
@@ -967,6 +1013,299 @@ function NivUI.UnitFrames:SetupAssignmentsTab(parent, Components)
     return container
 end
 
+local function CreateCustomRaidGroupPanel(parent, groupId, Components)
+    local frame = CreateFrame("Frame", nil, parent)
+
+    local allFrames = {}
+    local checkboxes = {}
+    local memberCheckboxes = {}
+
+    local function AddRow(row, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            row:SetPoint("TOP", frame, "TOP", 0, -10)
+        else
+            row:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, row)
+    end
+
+    local function RefreshPanel()
+        -- Clear existing rows
+        for _, row in ipairs(allFrames) do
+            row:Hide()
+            row:SetParent(nil)
+        end
+        wipe(allFrames)
+        wipe(checkboxes)
+        wipe(memberCheckboxes)
+
+        local groupData = NivUI:GetCustomRaidGroup(groupId)
+        if not groupData then return end
+
+        -- Header row with group name and delete button
+        local headerRow = CreateFrame("Frame", nil, frame)
+        headerRow:SetHeight(32)
+        headerRow:SetPoint("LEFT", 20, 0)
+        headerRow:SetPoint("RIGHT", -20, 0)
+
+        local headerText = headerRow:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        headerText:SetPoint("LEFT", 0, 0)
+        headerText:SetText(groupData.name)
+
+        local deleteBtn = CreateFrame("Button", nil, headerRow, "UIPanelButtonTemplate")
+        deleteBtn:SetSize(60, 22)
+        deleteBtn:SetPoint("RIGHT", 0, 0)
+        deleteBtn:SetText("Delete")
+        deleteBtn:SetScript("OnClick", function()
+            local dialog = StaticPopup_Show("NIVUI_DELETE_CUSTOM_RAID_GROUP", groupData.name)
+            if dialog then
+                dialog.data = { groupId = groupId }
+            end
+        end)
+
+        AddRow(headerRow)
+
+        -- Filter type dropdown
+        local filterRow = CreateFrame("Frame", nil, frame)
+        filterRow:SetHeight(28)
+        filterRow:SetPoint("LEFT", 20, 0)
+        filterRow:SetPoint("RIGHT", -20, 0)
+
+        local filterLabel = filterRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        filterLabel:SetPoint("LEFT", 0, 0)
+        filterLabel:SetText("Filter Type:")
+
+        local filterDropdown = CreateFrame("DropdownButton", nil, filterRow, "WowStyle1DropdownTemplate")
+        filterDropdown:SetWidth(150)
+        filterDropdown:SetPoint("LEFT", filterLabel, "RIGHT", 10, 0)
+
+        filterDropdown:SetupMenu(function(_, rootDescription)
+            local options = {
+                { name = "By Role", value = "role" },
+                { name = "By Raid Member", value = "member" },
+            }
+            for _, opt in ipairs(options) do
+                rootDescription:CreateRadio(
+                    opt.name,
+                    function() return groupData.filterType == opt.value end,
+                    function()
+                        groupData.filterType = opt.value
+                        NivUI:SaveCustomRaidGroup(groupId, groupData)
+                        RefreshPanel()
+                    end
+                )
+            end
+        end)
+
+        AddRow(filterRow, 8)
+
+        -- Show role checkboxes or member checkboxes based on filter type
+        if groupData.filterType == "role" then
+            local rolesHeader = Components.GetHeader(frame, "Roles to Include")
+            AddRow(rolesHeader, 12)
+
+            local roleTypes = {
+                { key = "tank", label = "Tanks" },
+                { key = "healer", label = "Healers" },
+                { key = "dps", label = "DPS" },
+            }
+
+            for _, roleInfo in ipairs(roleTypes) do
+                local roleRow = CreateFrame("Frame", nil, frame)
+                roleRow:SetHeight(24)
+                roleRow:SetPoint("LEFT", 30, 0)
+                roleRow:SetPoint("RIGHT", -20, 0)
+
+                local checkbox = CreateFrame("CheckButton", nil, roleRow, "SettingsCheckboxTemplate")
+                checkbox:SetPoint("LEFT", 0, 0)
+                checkbox:SetText("")
+                checkbox:SetChecked(groupData.roles[roleInfo.key])
+
+                checkbox:SetScript("OnClick", function(self)
+                    groupData.roles[roleInfo.key] = self:GetChecked()
+                    NivUI:SaveCustomRaidGroup(groupId, groupData)
+                end)
+
+                local roleLabel = roleRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                roleLabel:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+                roleLabel:SetText(roleInfo.label)
+
+                table.insert(checkboxes, { checkbox = checkbox, key = roleInfo.key })
+                AddRow(roleRow, 4)
+            end
+
+        else -- member filter
+            local membersHeader = Components.GetHeader(frame, "Raid Members to Include")
+            AddRow(membersHeader, 12)
+
+            -- Create a scrollable list of current raid members
+            local scrollContainer = CreateFrame("Frame", nil, frame)
+            scrollContainer:SetHeight(200)
+            scrollContainer:SetPoint("LEFT", 30, 0)
+            scrollContainer:SetPoint("RIGHT", -20, 0)
+
+            local bg = scrollContainer:CreateTexture(nil, "BACKGROUND")
+            bg:SetAllPoints()
+            bg:SetColorTexture(0.08, 0.08, 0.08, 0.8)
+
+            local scrollFrame = CreateFrame("ScrollFrame", nil, scrollContainer, "UIPanelScrollFrameTemplate")
+            scrollFrame:SetPoint("TOPLEFT", 4, -4)
+            scrollFrame:SetPoint("BOTTOMRIGHT", -24, 4)
+
+            local content = CreateFrame("Frame", nil, scrollFrame)
+            content:SetWidth(scrollContainer:GetWidth() - 40)
+            content:SetHeight(1)
+            scrollFrame:SetScrollChild(content)
+
+            -- Get current raid roster
+            local raidMembers = {}
+            if IsInRaid() then
+                for i = 1, 40 do
+                    local name = GetRaidRosterInfo(i)
+                    if name then
+                        -- Strip realm name if present
+                        local shortName = strsplit("-", name)
+                        table.insert(raidMembers, shortName)
+                    end
+                end
+            else
+                -- Show party members if not in raid
+                local playerName = UnitName("player")
+                table.insert(raidMembers, playerName)
+                for i = 1, 4 do
+                    local name = UnitName("party" .. i)
+                    if name then
+                        table.insert(raidMembers, name)
+                    end
+                end
+            end
+
+            -- Also show any previously saved members that aren't in the current roster
+            for savedName in pairs(groupData.members) do
+                local found = false
+                for _, name in ipairs(raidMembers) do
+                    if name == savedName then
+                        found = true
+                        break
+                    end
+                end
+                if not found then
+                    table.insert(raidMembers, savedName)
+                end
+            end
+
+            table.sort(raidMembers)
+
+            local yOffset = 0
+            for _, memberName in ipairs(raidMembers) do
+                local memberRow = CreateFrame("Frame", nil, content)
+                memberRow:SetHeight(22)
+                memberRow:SetPoint("TOPLEFT", 0, -yOffset)
+                memberRow:SetPoint("TOPRIGHT", 0, -yOffset)
+
+                local checkbox = CreateFrame("CheckButton", nil, memberRow, "SettingsCheckboxTemplate")
+                checkbox:SetPoint("LEFT", 0, 0)
+                checkbox:SetText("")
+                checkbox:SetChecked(groupData.members[memberName] == true)
+
+                checkbox:SetScript("OnClick", function(self)
+                    if self:GetChecked() then
+                        groupData.members[memberName] = true
+                    else
+                        groupData.members[memberName] = nil
+                    end
+                    NivUI:SaveCustomRaidGroup(groupId, groupData)
+                end)
+
+                local memberLabel = memberRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                memberLabel:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+                memberLabel:SetText(memberName)
+
+                table.insert(memberCheckboxes, { checkbox = checkbox, name = memberName })
+                yOffset = yOffset + 22
+            end
+
+            content:SetHeight(math.max(yOffset, 20))
+
+            if #raidMembers == 0 then
+                local emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+                emptyText:SetPoint("CENTER", 0, 0)
+                emptyText:SetText("No raid members found")
+            end
+
+            AddRow(scrollContainer, 4)
+        end
+
+        -- Style dropdown
+        local styleRow = CreateFrame("Frame", nil, frame)
+        styleRow:SetHeight(28)
+        styleRow:SetPoint("LEFT", 20, 0)
+        styleRow:SetPoint("RIGHT", -20, 0)
+
+        local styleLabel = styleRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        styleLabel:SetPoint("LEFT", 0, 0)
+        styleLabel:SetText("Style:")
+
+        local styleDropdown = CreateFrame("DropdownButton", nil, styleRow, "WowStyle1DropdownTemplate")
+        styleDropdown:SetWidth(150)
+        styleDropdown:SetPoint("LEFT", styleLabel, "RIGHT", 10, 0)
+
+        styleDropdown:SetupMenu(function(_, rootDescription)
+            local names = NivUI:GetStyleNames()
+            for _, styleName in ipairs(names) do
+                rootDescription:CreateRadio(
+                    styleName,
+                    function() return groupData.styleName == styleName end,
+                    function()
+                        groupData.styleName = styleName
+                        NivUI:SaveCustomRaidGroup(groupId, groupData)
+                    end
+                )
+            end
+        end)
+
+        AddRow(styleRow, 12)
+
+        -- Enabled checkbox
+        local enabledRow = CreateFrame("Frame", nil, frame)
+        enabledRow:SetHeight(24)
+        enabledRow:SetPoint("LEFT", 20, 0)
+        enabledRow:SetPoint("RIGHT", -20, 0)
+
+        local enabledCheckbox = CreateFrame("CheckButton", nil, enabledRow, "SettingsCheckboxTemplate")
+        enabledCheckbox:SetPoint("LEFT", 0, 0)
+        enabledCheckbox:SetText("")
+        enabledCheckbox:SetChecked(groupData.enabled)
+
+        enabledCheckbox:SetScript("OnClick", function(self)
+            groupData.enabled = self:GetChecked()
+            NivUI:SaveCustomRaidGroup(groupId, groupData)
+        end)
+
+        local enabledLabel = enabledRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        enabledLabel:SetPoint("LEFT", enabledCheckbox, "RIGHT", 4, 0)
+        enabledLabel:SetText("Enabled")
+
+        AddRow(enabledRow, 8)
+    end
+
+    frame:SetScript("OnShow", function()
+        RefreshPanel()
+    end)
+
+    -- Listen for roster changes to refresh member list
+    local eventFrame = CreateFrame("Frame", nil, frame)
+    eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    eventFrame:SetScript("OnEvent", function()
+        if frame:IsShown() then
+            RefreshPanel()
+        end
+    end)
+
+    return frame
+end
+
 function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     local container = CreateFrame("Frame", nil, parent)
     container:SetAllPoints()
@@ -974,30 +1313,32 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
 
     local TAB_HEIGHT = 24
     local allTabs = {}
+    local customGroupTabs = {}
     local currentSubTab = "designer"
+    local addButton
 
-    -- Tab definitions: id, name, frameType (nil = always show), createPanel function
-    local tabDefinitions = {
+    -- Static tab definitions
+    local staticTabDefinitions = {
         {
             id = "designer",
             name = "Designer",
             frameType = nil,
-            createPanel = function(parent)
-                return self:SetupDesignerContent(parent, Components)
+            createPanel = function(panelParent)
+                return self:SetupDesignerContent(panelParent, Components)
             end
         },
         {
             id = "assignments",
             name = "Assignments",
             frameType = nil,
-            createPanel = function(parent)
-                return CreateAssignmentsPanel(parent, Components)
+            createPanel = function(panelParent)
+                return CreateAssignmentsPanel(panelParent, Components)
             end
         },
     }
 
-    -- Create all tabs and their containers
-    for _, def in ipairs(tabDefinitions) do
+    -- Create static tabs
+    for _, def in ipairs(staticTabDefinitions) do
         local tabContainer = CreateFrame("Frame", nil, container)
         tabContainer:SetPoint("BOTTOMRIGHT", 0, 0)
         tabContainer:Hide()
@@ -1012,6 +1353,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
             frameType = def.frameType,
             tab = tab,
             container = tabContainer,
+            isCustomGroup = false,
         }
 
         tab:SetScript("OnClick", function()
@@ -1019,6 +1361,86 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end)
 
         table.insert(allTabs, tabData)
+    end
+
+    -- Create [+] button for adding custom groups
+    addButton = CreateFrame("Button", nil, container)
+    addButton:SetSize(24, 24)
+    addButton:SetNormalFontObject("GameFontNormalLarge")
+    addButton:SetHighlightFontObject("GameFontHighlightLarge")
+    addButton:SetText("+")
+
+    local addBg = addButton:CreateTexture(nil, "BACKGROUND")
+    addBg:SetAllPoints()
+    addBg:SetColorTexture(0.15, 0.15, 0.15, 0.8)
+
+    addButton:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_NEW_CUSTOM_RAID_GROUP")
+    end)
+
+    addButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Add Custom Raid Group")
+        GameTooltip:AddLine("Create a filtered raid frame group", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+
+    addButton:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
+    -- Function to create a custom group tab
+    local function CreateCustomGroupTab(groupId, groupData)
+        local tabContainer = CreateFrame("Frame", nil, container)
+        tabContainer:SetPoint("BOTTOMRIGHT", 0, 0)
+        tabContainer:Hide()
+
+        local panel = CreateCustomRaidGroupPanel(tabContainer, groupId, Components)
+        panel:SetAllPoints()
+
+        local tab = Components.GetTab(container, groupData.name)
+
+        local tabData = {
+            id = "customGroup_" .. groupId,
+            groupId = groupId,
+            frameType = nil,
+            tab = tab,
+            container = tabContainer,
+            isCustomGroup = true,
+        }
+
+        tab:SetScript("OnClick", function()
+            SelectSubTab(tabData.id)
+        end)
+
+        return tabData
+    end
+
+    -- Function to rebuild custom group tabs
+    local function RebuildCustomGroupTabs()
+        -- Remove existing custom group tabs
+        for _, tabData in ipairs(customGroupTabs) do
+            tabData.tab:Hide()
+            tabData.tab:SetParent(nil)
+            tabData.container:Hide()
+            tabData.container:SetParent(nil)
+        end
+        wipe(customGroupTabs)
+
+        -- Remove custom tabs from allTabs
+        for i = #allTabs, 1, -1 do
+            if allTabs[i].isCustomGroup then
+                table.remove(allTabs, i)
+            end
+        end
+
+        -- Create tabs for each custom group
+        local customGroups = NivUI:GetCustomRaidGroups()
+        for groupId, groupData in pairs(customGroups) do
+            local tabData = CreateCustomGroupTab(groupId, groupData)
+            table.insert(allTabs, tabData)
+            table.insert(customGroupTabs, tabData)
+        end
     end
 
     -- Find tab data by id
@@ -1091,6 +1513,16 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
             end
         end
 
+        -- Position the [+] button after all tabs
+        local addBtnWidth = 24
+        if x + addBtnWidth > containerWidth and x > 0 then
+            x = 0
+            y = y - TAB_HEIGHT
+            numRows = numRows + 1
+        end
+        addButton:ClearAllPoints()
+        addButton:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+
         -- Update content container positions based on number of tab rows
         local contentOffset = -(numRows * TAB_HEIGHT)
         for _, tabData in ipairs(allTabs) do
@@ -1116,6 +1548,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
 
     -- Handle show - layout tabs and select current
     container:SetScript("OnShow", function()
+        RebuildCustomGroupTabs()
         LayoutTabs()
         SelectSubTab(currentSubTab)
     end)
@@ -1124,6 +1557,28 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     NivUI:RegisterCallback("FrameEnabledChanged", function(_data)
         if container:IsShown() then
             LayoutTabs()
+        end
+    end)
+
+    -- Listen for custom group changes
+    NivUI:RegisterCallback("CustomRaidGroupCreated", function(data)
+        if container:IsShown() then
+            RebuildCustomGroupTabs()
+            LayoutTabs()
+            -- Select the newly created tab
+            SelectSubTab("customGroup_" .. data.id)
+        end
+    end)
+
+    NivUI:RegisterCallback("CustomRaidGroupDeleted", function(_data)
+        if container:IsShown() then
+            -- If we were viewing the deleted group, switch to first tab
+            if currentSubTab:find("customGroup_") then
+                currentSubTab = "designer"
+            end
+            RebuildCustomGroupTabs()
+            LayoutTabs()
+            SelectSubTab(currentSubTab)
         end
     end)
 

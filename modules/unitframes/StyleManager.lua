@@ -449,6 +449,89 @@ function NivUI:SetArenaGrowthDirection(value)
     self:TriggerEvent("ArenaSettingsChanged", { setting = "growthDirection", value = value })
 end
 
+-- Custom Raid Groups
+
+local function GenerateCustomRaidGroupId()
+    return "custom_" .. time() .. "_" .. math.random(1000, 9999)
+end
+
+function NivUI:GetCustomRaidGroups()
+    return NivUI_DB.customRaidGroups or {}
+end
+
+function NivUI:GetCustomRaidGroup(id)
+    if not NivUI_DB.customRaidGroups then return nil end
+    return NivUI_DB.customRaidGroups[id]
+end
+
+function NivUI:CreateCustomRaidGroup(name)
+    if not name or name == "" then
+        return nil, "Group name cannot be empty"
+    end
+
+    if not NivUI_DB.customRaidGroups then
+        NivUI_DB.customRaidGroups = {}
+    end
+
+    local id = GenerateCustomRaidGroupId()
+    local defaultStyleName = self:GetStyleNames()[1] or "Default"
+
+    NivUI_DB.customRaidGroups[id] = {
+        name = name,
+        filterType = "role",
+        roles = {
+            tank = false,
+            healer = false,
+            dps = false,
+        },
+        members = {},
+        styleName = defaultStyleName,
+        enabled = true,
+    }
+
+    self:TriggerEvent("CustomRaidGroupCreated", { id = id, name = name })
+
+    return id
+end
+
+function NivUI:SaveCustomRaidGroup(id, data)
+    if not id or not data then
+        return false, "Invalid parameters"
+    end
+
+    if not NivUI_DB.customRaidGroups or not NivUI_DB.customRaidGroups[id] then
+        return false, "Custom raid group does not exist"
+    end
+
+    NivUI_DB.customRaidGroups[id] = DeepCopy(data)
+
+    self:TriggerEvent("CustomRaidGroupChanged", { id = id, data = data })
+
+    return true
+end
+
+function NivUI:DeleteCustomRaidGroup(id)
+    if not id then
+        return false, "Invalid group ID"
+    end
+
+    if not NivUI_DB.customRaidGroups or not NivUI_DB.customRaidGroups[id] then
+        return false, "Custom raid group does not exist"
+    end
+
+    local name = NivUI_DB.customRaidGroups[id].name
+    NivUI_DB.customRaidGroups[id] = nil
+
+    -- Clean up positions
+    if NivUI_DB.unitFramePositions then
+        NivUI_DB.unitFramePositions["customRaid_" .. id] = nil
+    end
+
+    self:TriggerEvent("CustomRaidGroupDeleted", { id = id, name = name })
+
+    return true
+end
+
 function NivUI:GetStyleWithDefaults(name)
     local style = self:GetStyle(name)
     if not style then
