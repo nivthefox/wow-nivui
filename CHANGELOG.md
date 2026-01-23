@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Empowered spell support for castbars with stage pip indicators
 - Essence bar for Evoker with regeneration progress animation
 - Target frame now shows action targets (soft targets) when no hard target exists
 - Custom visibility conditions ("Show States") for each frame type, configurable via Edit Mode
