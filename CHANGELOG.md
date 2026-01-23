@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Editing styles no longer creates duplicate frames on screen
+- Show States visibility overrides now work for party, raid, boss, and arena frames
 
 ## [1.1.3](https://github.com/nivthefox/wow-nivui/releases/tag/v1.1.3) - 2026-01-22
 
