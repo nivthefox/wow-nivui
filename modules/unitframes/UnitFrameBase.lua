@@ -525,25 +525,10 @@ function UnitFrameBase.BuildCustomFrame(state)
     local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
     state.effectiveVisibilityDriver = visibilityDriver  -- Store so CheckVisibility knows to defer
     if visibilityDriver then
-        print("NivUI DEBUG: Registering visibility driver for", state.frameType, ":", visibilityDriver)
         RegisterStateDriver(customFrame, "visibility", visibilityDriver)
         -- Update widgets when visibility driver shows the frame
         customFrame:HookScript("OnShow", function()
-            print("NivUI DEBUG: OnShow fired for", state.frameType)
             UnitFrameBase.UpdateAllWidgets(state)
-        end)
-    end
-
-    -- Debug: monitor combat state changes
-    if visibilityDriver and state.frameType == "player" then
-        local debugFrame = CreateFrame("Frame")
-        debugFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-        debugFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-        debugFrame:RegisterEvent("PLAYER_IN_COMBAT_CHANGED")
-        debugFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
-        debugFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
-        debugFrame:SetScript("OnEvent", function(_, event, ...)
-            print("NivUI DEBUG:", event, "args:", ..., "- frame shown:", customFrame:IsShown(), "- statehidden:", customFrame:GetAttribute("statehidden"))
         end)
     end
 
