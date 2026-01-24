@@ -91,6 +91,40 @@ local function ShouldShowPowerBar(unit, visibility)
     return true
 end
 
+local function IsAnchorChainVisible(widgets, style, widgetType, visited)
+    visited = visited or {}
+    if visited[widgetType] then return true end
+    visited[widgetType] = true
+
+    local config = style[widgetType]
+    if not config then return true end
+
+    local anchorTo = config.anchor and config.anchor.relativeTo
+    if not anchorTo or anchorTo == "frame" then
+        return true
+    end
+
+    local anchorWidget = widgets[anchorTo]
+    if not anchorWidget then return true end
+    if not anchorWidget:IsShown() then return false end
+
+    return IsAnchorChainVisible(widgets, style, anchorTo, visited)
+end
+
+local function CascadeAnchorVisibility(state)
+    if not state.customFrame or not state.customFrame.widgets then return end
+    local widgets = state.customFrame.widgets
+    local style = state.currentStyle
+
+    for widgetType, widget in pairs(widgets) do
+        if widget.Hide and widget.Show then
+            if not IsAnchorChainVisible(widgets, style, widgetType, nil) then
+                widget:Hide()
+            end
+        end
+    end
+end
+
 function UnitFrameBase.UpdatePowerBar(state)
     if not state.customFrame or not state.customFrame.widgets.powerBar then return end
     local widget = state.customFrame.widgets.powerBar
@@ -459,6 +493,7 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateLeaderIcon(state)
     UnitFrameBase.UpdateRoleIcon(state)
     UnitFrameBase.UpdateCastbar(state)
+    CascadeAnchorVisibility(state)
 end
 
 function UnitFrameBase.CreateWidgets(parent, style, unit, options)
