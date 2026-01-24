@@ -7,6 +7,8 @@ local states = {
     raid10 = {
         enabled = false,
         previewMode = false,
+        hasVisibilityDriver = false,
+        visibilityDriverString = nil,
         container = nil,
         groupFrames = {},      -- Keyed by group number (1-8)
         memberFrames = {},     -- Keyed by unit ID: "raid1", "raid2", etc.
@@ -17,6 +19,8 @@ local states = {
     raid20 = {
         enabled = false,
         previewMode = false,
+        hasVisibilityDriver = false,
+        visibilityDriverString = nil,
         container = nil,
         groupFrames = {},
         memberFrames = {},
@@ -27,6 +31,8 @@ local states = {
     raid40 = {
         enabled = false,
         previewMode = false,
+        hasVisibilityDriver = false,
+        visibilityDriverString = nil,
         container = nil,
         groupFrames = {},
         memberFrames = {},
@@ -452,8 +458,12 @@ local function BuildRaidFrames(raidSize)
 
         local visibilityOverride = NivUI:GetVisibilityOverride(raidSize)
         if visibilityOverride and visibilityOverride ~= "" then
-            state.hasVisibilityDriver = true
-            RegisterStateDriver(state.container, "visibility", visibilityOverride)
+            state.visibilityDriverString = visibilityOverride
+            local activeSize = GetActiveRaidSize()
+            if raidSize == activeSize then
+                state.hasVisibilityDriver = true
+                RegisterStateDriver(state.container, "visibility", visibilityOverride)
+            end
         end
 
         if NivUI.EditMode then
@@ -519,6 +529,19 @@ local function OnGroupRosterUpdate()
 
     for raidSize, state in pairs(states) do
         if state.enabled then
+            local isActive = (raidSize == activeSize)
+
+            if state.visibilityDriverString and state.container then
+                if isActive and not state.hasVisibilityDriver then
+                    RegisterStateDriver(state.container, "visibility", state.visibilityDriverString)
+                    state.hasVisibilityDriver = true
+                elseif not isActive and state.hasVisibilityDriver then
+                    UnregisterStateDriver(state.container, "visibility")
+                    state.hasVisibilityDriver = false
+                    state.container:Hide()
+                end
+            end
+
             if state.hasVisibilityDriver then
                 LayoutGroupFrames(raidSize)
                 if state.container and state.container:IsShown() then
@@ -530,7 +553,7 @@ local function OnGroupRosterUpdate()
                 end
                 LayoutGroupFrames(raidSize)
                 UpdateAllRaidMembers(raidSize)
-            elseif raidSize == activeSize then
+            elseif isActive then
                 if state.container then
                     state.container:Show()
                 end
@@ -694,11 +717,18 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
     local state = states[data.frameType]
     if state and state.enabled and state.container then
         if data.driver and data.driver ~= "" then
-            state.hasVisibilityDriver = true
-            RegisterStateDriver(state.container, "visibility", data.driver)
+            state.visibilityDriverString = data.driver
+            local activeSize = GetActiveRaidSize()
+            if data.frameType == activeSize then
+                state.hasVisibilityDriver = true
+                RegisterStateDriver(state.container, "visibility", data.driver)
+            end
         else
-            state.hasVisibilityDriver = false
-            UnregisterStateDriver(state.container, "visibility")
+            state.visibilityDriverString = nil
+            if state.hasVisibilityDriver then
+                state.hasVisibilityDriver = false
+                UnregisterStateDriver(state.container, "visibility")
+            end
             if ShouldShowRaidFrames(data.frameType) then
                 state.container:Show()
             else
