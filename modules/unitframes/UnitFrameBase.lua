@@ -105,7 +105,7 @@ local function IsAnchorChainVisible(widgets, style, widgetType, visited)
     end
 
     local anchorWidget = widgets[anchorTo]
-    if not anchorWidget then return true end
+    if not anchorWidget then return false end  -- Anchor target doesn't exist (disabled)
     if not anchorWidget:IsShown() then return false end
 
     return IsAnchorChainVisible(widgets, style, anchorTo, visited)
@@ -543,11 +543,16 @@ function UnitFrameBase.ApplyAnchors(parent, widgets, style)
             else
                 anchorTarget = widgets[anchor.relativeTo]
                 if not anchorTarget then
-                    anchorTarget = parent
+                    -- Anchor target doesn't exist (disabled), hide this widget
+                    widget:Hide()
+                    widget.anchorMissing = true
                 end
             end
 
-            widget:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
+            if anchorTarget then
+                widget:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
+                widget.anchorMissing = nil
+            end
         else
             widget:SetPoint("CENTER", parent, "CENTER", 0, 0)
         end
