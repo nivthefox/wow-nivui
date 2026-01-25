@@ -203,11 +203,11 @@ function NivUI:GetColors()
     return self.staggerBarDefaults.colors
 end
 
-local function DeepCopy(src)
+function NivUI.DeepCopy(src)
     if type(src) ~= "table" then return src end
     local copy = {}
     for k, v in pairs(src) do
-        copy[k] = DeepCopy(v)
+        copy[k] = NivUI.DeepCopy(v)
     end
     return copy
 end
@@ -220,7 +220,7 @@ function NivUI:InitializeDB()
     end
     for k, v in pairs(self.staggerBarDefaults) do
         if NivUI_DB.staggerBar[k] == nil then
-            NivUI_DB.staggerBar[k] = DeepCopy(v)
+            NivUI_DB.staggerBar[k] = NivUI.DeepCopy(v)
         end
     end
 
@@ -229,7 +229,7 @@ function NivUI:InitializeDB()
     end
     for k, v in pairs(self.chiBarDefaults) do
         if NivUI_DB.chiBar[k] == nil then
-            NivUI_DB.chiBar[k] = DeepCopy(v)
+            NivUI_DB.chiBar[k] = NivUI.DeepCopy(v)
         end
     end
 
@@ -238,7 +238,7 @@ function NivUI:InitializeDB()
     end
     for k, v in pairs(self.essenceBarDefaults) do
         if NivUI_DB.essenceBar[k] == nil then
-            NivUI_DB.essenceBar[k] = DeepCopy(v)
+            NivUI_DB.essenceBar[k] = NivUI.DeepCopy(v)
         end
     end
 

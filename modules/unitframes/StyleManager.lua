@@ -1,15 +1,6 @@
 NivUI = NivUI or {}
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
-local function DeepCopy(src)
-    if type(src) ~= "table" then return src end
-    local copy = {}
-    for k, v in pairs(src) do
-        copy[k] = DeepCopy(v)
-    end
-    return copy
-end
-
 function NivUI:GetStyle(name)
     if not NivUI_DB.unitFrameStyles then return nil end
     local style = NivUI_DB.unitFrameStyles[name]
@@ -41,7 +32,7 @@ function NivUI:SaveStyle(name, data)
         NivUI_DB.unitFrameStyles = {}
     end
 
-    NivUI_DB.unitFrameStyles[name] = DeepCopy(data)
+    NivUI_DB.unitFrameStyles[name] = NivUI.DeepCopy(data)
 
     self:TriggerEvent("StyleChanged", { styleName = name })
 
@@ -494,7 +485,7 @@ function NivUI:SaveCustomRaidGroup(id, data)
         return false, "Custom raid group does not exist"
     end
 
-    NivUI_DB.customRaidGroups[id] = DeepCopy(data)
+    NivUI_DB.customRaidGroups[id] = NivUI.DeepCopy(data)
 
     self:TriggerEvent("CustomRaidGroupChanged", { id = id, data = data })
 
@@ -525,17 +516,17 @@ end
 function NivUI:GetStyleWithDefaults(name)
     local style = self:GetStyle(name)
     if not style then
-        return DeepCopy(NivUI.UnitFrames.DEFAULT_STYLE)
+        return NivUI.DeepCopy(NivUI.UnitFrames.DEFAULT_STYLE)
     end
 
-    local merged = DeepCopy(NivUI.UnitFrames.DEFAULT_STYLE)
+    local merged = NivUI.DeepCopy(NivUI.UnitFrames.DEFAULT_STYLE)
 
     local function MergeTable(target, source)
         for k, v in pairs(source) do
             if type(v) == "table" and type(target[k]) == "table" then
                 MergeTable(target[k], v)
             else
-                target[k] = DeepCopy(v)
+                target[k] = NivUI.DeepCopy(v)
             end
         end
     end
