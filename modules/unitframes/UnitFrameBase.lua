@@ -4,8 +4,6 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 local UnitFrameBase = {}
 NivUI.UnitFrames.Base = UnitFrameBase
 
-local UPDATE_INTERVAL = 0.1
-
 local function GetClassColor(unit)
     return NivUI.WidgetFactories.GetClassColor(unit)
 end
@@ -819,7 +817,7 @@ function UnitFrameBase.BuildCustomFrame(state)
 
             if not NivUI:IsRealTimeUpdates(state.frameType) then
                 state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
-                if state.timeSinceLastUpdate < UPDATE_INTERVAL then return end
+                if state.timeSinceLastUpdate < NivUI.UPDATE_INTERVAL then return end
                 state.timeSinceLastUpdate = 0
             end
 

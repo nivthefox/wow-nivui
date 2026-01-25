@@ -193,10 +193,9 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
         end
     end)
 
-    local UPDATE_INTERVAL = 0.1
     frame:SetScript("OnUpdate", function(_self, elapsed)
         memberState.timeSinceLastUpdate = memberState.timeSinceLastUpdate + elapsed
-        if memberState.timeSinceLastUpdate < UPDATE_INTERVAL then return end
+        if memberState.timeSinceLastUpdate < NivUI.UPDATE_INTERVAL then return end
         memberState.timeSinceLastUpdate = 0
 
         Base.UpdateHealthBar(memberState)

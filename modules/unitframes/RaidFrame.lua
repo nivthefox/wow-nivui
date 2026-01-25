@@ -399,11 +399,10 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
         end
     end)
 
-    local UPDATE_INTERVAL = 0.1
     frame:SetScript("OnUpdate", function(self, elapsed)
         if not NivUI:IsRealTimeUpdates(raidSize) then
             memberState.timeSinceLastUpdate = memberState.timeSinceLastUpdate + elapsed
-            if memberState.timeSinceLastUpdate < UPDATE_INTERVAL then return end
+            if memberState.timeSinceLastUpdate < NivUI.UPDATE_INTERVAL then return end
             memberState.timeSinceLastUpdate = 0
         end
 

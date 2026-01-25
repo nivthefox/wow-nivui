@@ -6,8 +6,6 @@ NivUI.UnitFrames.MultiUnitFrameBase = MultiUnitFrameBase
 
 local Base = NivUI.UnitFrames.Base
 
-local UPDATE_INTERVAL = 0.1
-
 --- Creates a multi-unit frame module from configuration.
 ---@param config table Module configuration
 ---@return table module The created module with Enable, Disable, Refresh, SetPreviewMode, GetState methods
@@ -254,7 +252,7 @@ function MultiUnitFrameBase.CreateModule(config)
         frame:SetScript("OnUpdate", function(self, elapsed)
             if not NivUI:IsRealTimeUpdates(config.frameType) then
                 memberState.timeSinceLastUpdate = memberState.timeSinceLastUpdate + elapsed
-                if memberState.timeSinceLastUpdate < UPDATE_INTERVAL then return end
+                if memberState.timeSinceLastUpdate < NivUI.UPDATE_INTERVAL then return end
                 memberState.timeSinceLastUpdate = 0
             end
 

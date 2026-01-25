@@ -2,6 +2,8 @@ NivUI = NivUI or {}
 
 NivUI_DB = NivUI_DB or {}
 
+NivUI.UPDATE_INTERVAL = 0.1
+
 NivUI.eventCallbacks = NivUI.eventCallbacks or {}
 
 NivUI.staggerBarDefaults = {
