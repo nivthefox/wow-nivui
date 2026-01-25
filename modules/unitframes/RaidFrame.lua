@@ -598,7 +598,7 @@ function RaidFrame.Disable(raidSize)
 
     state.enabled = false
     DestroyRaidFrames(raidSize)
-    ReloadUI()
+    NivUI:RequestReload()
 end
 
 function RaidFrame.Refresh(raidSize)
@@ -699,14 +699,18 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
             local activeSize = GetActiveRaidSize()
             if data.frameType == activeSize then
                 state.hasVisibilityDriver = true
-                RegisterStateDriver(state.container, "visibility", data.driver)
+                if not NivUI.EditMode:IsActive() then
+                    RegisterStateDriver(state.container, "visibility", data.driver)
+                end
                 NivUI.EditMode:RegisterVisibilityDriver(data.frameType, state.container, data.driver)
             end
         else
             state.visibilityDriverString = nil
             if state.hasVisibilityDriver then
                 state.hasVisibilityDriver = false
-                UnregisterStateDriver(state.container, "visibility")
+                if not NivUI.EditMode:IsActive() then
+                    UnregisterStateDriver(state.container, "visibility")
+                end
                 NivUI.EditMode:UnregisterVisibilityDriver(data.frameType)
             end
             Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(data.frameType))

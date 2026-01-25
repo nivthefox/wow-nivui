@@ -358,7 +358,7 @@ function MultiUnitFrameBase.CreateModule(config)
     function module.Disable()
         state.enabled = false
         DestroyFrames()
-        ReloadUI()
+        NivUI:RequestReload()
     end
 
     function module.Refresh()
@@ -458,11 +458,15 @@ function MultiUnitFrameBase.CreateModule(config)
         if data.frameType == config.frameType and state.enabled and state.container then
             if data.driver and data.driver ~= "" then
                 state.hasVisibilityDriver = true
-                RegisterStateDriver(state.container, "visibility", data.driver)
+                if not NivUI.EditMode:IsActive() then
+                    RegisterStateDriver(state.container, "visibility", data.driver)
+                end
                 NivUI.EditMode:RegisterVisibilityDriver(config.frameType, state.container, data.driver)
             else
                 state.hasVisibilityDriver = false
-                UnregisterStateDriver(state.container, "visibility")
+                if not NivUI.EditMode:IsActive() then
+                    UnregisterStateDriver(state.container, "visibility")
+                end
                 NivUI.EditMode:UnregisterVisibilityDriver(config.frameType)
                 if config.memberVisibilityMode == "manual" and config.shouldShowContainer then
                     Base.SetSecureVisibility(state.container, config.shouldShowContainer(state))

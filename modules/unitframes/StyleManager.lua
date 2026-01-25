@@ -245,10 +245,15 @@ function NivUI:GetPartySpacing()
     return NivUI_DB.partySpacing or 2
 end
 
-function NivUI:SetPartySpacing(value)
-    NivUI_DB.partySpacing = value
+local function ValidateSpacing(value, min, max, default)
+    if type(value) ~= "number" then return default end
+    return math.max(min, math.min(max, value))
+end
 
-    self:TriggerEvent("PartySettingsChanged", { setting = "spacing", value = value })
+function NivUI:SetPartySpacing(value)
+    NivUI_DB.partySpacing = ValidateSpacing(value, 0, 100, 2)
+
+    self:TriggerEvent("PartySettingsChanged", { setting = "spacing", value = NivUI_DB.partySpacing })
 end
 
 function NivUI:GetPartyOrientation()
@@ -312,9 +317,9 @@ end
 
 function NivUI:SetRaidSpacing(raidSize, value)
     EnsureRaidSettings(raidSize)
-    NivUI_DB.raidSettings[raidSize].spacing = value
+    NivUI_DB.raidSettings[raidSize].spacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "spacing", value = value })
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "spacing", value = NivUI_DB.raidSettings[raidSize].spacing })
 end
 
 function NivUI:GetRaidGroupOrientation(raidSize)
@@ -378,9 +383,9 @@ function NivUI:GetBossSpacing()
 end
 
 function NivUI:SetBossSpacing(value)
-    NivUI_DB.bossSpacing = value
+    NivUI_DB.bossSpacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("BossSettingsChanged", { setting = "spacing", value = value })
+    self:TriggerEvent("BossSettingsChanged", { setting = "spacing", value = NivUI_DB.bossSpacing })
 end
 
 function NivUI:GetBossOrientation()
@@ -408,9 +413,9 @@ function NivUI:GetArenaSpacing()
 end
 
 function NivUI:SetArenaSpacing(value)
-    NivUI_DB.arenaSpacing = value
+    NivUI_DB.arenaSpacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("ArenaSettingsChanged", { setting = "spacing", value = value })
+    self:TriggerEvent("ArenaSettingsChanged", { setting = "spacing", value = NivUI_DB.arenaSpacing })
 end
 
 function NivUI:GetArenaOrientation()

@@ -12,6 +12,14 @@ local function GetPowerColor(unit)
     return NivUI.WidgetFactories.GetPowerColor(unit)
 end
 
+local function GetWidgetConfig(state, widgetName)
+    local config = state.currentStyle and state.currentStyle[widgetName]
+    if not config then
+        return NivUI.UnitFrames.DEFAULT_STYLE[widgetName]
+    end
+    return config
+end
+
 function UnitFrameBase.HideRegions(frame)
     if not frame then return end
     local regions = { frame:GetRegions() }
@@ -134,7 +142,7 @@ end
 function UnitFrameBase.UpdateHealthBar(state)
     if not state.customFrame or not state.customFrame.widgets.healthBar then return end
     local widget = state.customFrame.widgets.healthBar
-    local config = state.currentStyle.healthBar
+    local config = GetWidgetConfig(state, "healthBar")
     local unit = state.unit
 
     local maxHealth = UnitHealthMax(unit)
@@ -214,7 +222,7 @@ end
 function UnitFrameBase.UpdatePowerBar(state)
     if not state.customFrame or not state.customFrame.widgets.powerBar then return end
     local widget = state.customFrame.widgets.powerBar
-    local config = state.currentStyle.powerBar
+    local config = GetWidgetConfig(state, "powerBar")
     local unit = state.unit
 
     local visibility = config.visibility or "everyone"
@@ -245,7 +253,7 @@ end
 function UnitFrameBase.UpdateHealthText(state)
     if not state.customFrame or not state.customFrame.widgets.healthText then return end
     local widget = state.customFrame.widgets.healthText
-    local config = state.currentStyle.healthText
+    local config = GetWidgetConfig(state, "healthText")
     local unit = state.unit
 
     local health = UnitHealth(unit)
@@ -291,7 +299,7 @@ end
 function UnitFrameBase.UpdatePowerText(state)
     if not state.customFrame or not state.customFrame.widgets.powerText then return end
     local widget = state.customFrame.widgets.powerText
-    local config = state.currentStyle.powerText
+    local config = GetWidgetConfig(state, "powerText")
     local unit = state.unit
 
     local powerType = UnitPowerType(unit)
@@ -327,7 +335,7 @@ end
 function UnitFrameBase.UpdatePortrait(state)
     if not state.customFrame or not state.customFrame.widgets.portrait then return end
     local widget = state.customFrame.widgets.portrait
-    local config = state.currentStyle.portrait
+    local config = GetWidgetConfig(state, "portrait")
     local unit = state.unit
 
     if config.mode == "3D" then
@@ -355,7 +363,7 @@ end
 function UnitFrameBase.UpdateStatusIndicators(state)
     if not state.customFrame or not state.customFrame.widgets.statusIndicators then return end
     local widget = state.customFrame.widgets.statusIndicators
-    local config = state.currentStyle.statusIndicators
+    local config = GetWidgetConfig(state, "statusIndicators")
     local unit = state.unit
 
     if widget.combat then
@@ -426,7 +434,7 @@ end
 function UnitFrameBase.UpdateNameText(state)
     if not state.customFrame or not state.customFrame.widgets.nameText then return end
     local widget = state.customFrame.widgets.nameText
-    local config = state.currentStyle.nameText
+    local config = GetWidgetConfig(state, "nameText")
     local unit = state.unit
 
     local name = UnitName(unit) or state.defaultName or "Unit"
@@ -444,7 +452,7 @@ end
 function UnitFrameBase.UpdateLevelText(state)
     if not state.customFrame or not state.customFrame.widgets.levelText then return end
     local widget = state.customFrame.widgets.levelText
-    local config = state.currentStyle.levelText
+    local config = GetWidgetConfig(state, "levelText")
     local unit = state.unit
 
     local level = UnitLevel(unit)
@@ -463,7 +471,7 @@ end
 function UnitFrameBase.UpdateCastbar(state)
     if not state.customFrame or not state.customFrame.widgets.castbar then return end
     local widget = state.customFrame.widgets.castbar
-    local config = state.currentStyle.castbar
+    local config = GetWidgetConfig(state, "castbar")
     local unit = state.unit
 
     local name, _text, texture, startTimeMS, endTimeMS, _isTradeSkill, _castID, notInterruptible, _spellID = UnitCastingInfo(unit)
@@ -938,7 +946,7 @@ function UnitFrameBase.CreateModule(config)
 
     function module.Disable()
         UnitFrameBase.DestroyCustomFrame(state)
-        ReloadUI()
+        NivUI:RequestReload()
     end
 
     function module.Refresh()
@@ -996,7 +1004,7 @@ function UnitFrameBase.CreateModule(config)
         if data.frameType == state.frameType and NivUI:IsFrameEnabled(state.frameType) and state.customFrame then
             local newDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
             state.effectiveVisibilityDriver = newDriver
-            if newDriver then
+            if newDriver and not NivUI.EditMode:IsActive() then
                 UnregisterStateDriver(state.customFrame, "visibility")
                 RegisterStateDriver(state.customFrame, "visibility", newDriver)
             end

@@ -6,6 +6,21 @@ NivUI.UPDATE_INTERVAL = 0.1
 
 NivUI.eventCallbacks = NivUI.eventCallbacks or {}
 
+-- ReloadUI debouncing: allows multiple toggles to coalesce before actually reloading
+local pendingReload = false
+local reloadTimer = nil
+
+function NivUI:RequestReload()
+    if pendingReload then return end
+    pendingReload = true
+
+    if reloadTimer then reloadTimer:Cancel() end
+    reloadTimer = C_Timer.NewTimer(0.5, function()
+        pendingReload = false
+        ReloadUI()
+    end)
+end
+
 NivUI.staggerBarDefaults = {
     visibility = "combat",
     updateInterval = 0.2,
