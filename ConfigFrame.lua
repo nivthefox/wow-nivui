@@ -400,293 +400,585 @@ local function SelectSidebarTab(index)
     currentSidebarTab = index
 end
 
-local function SetupStaggerBarContent(parent)
-    local container = CreateFrame("Frame", nil, parent)
-    container:Hide()
+--- Section handler dispatch table for BuildClassBarConfig
+--- Each handler returns the widget and an optional onShow refresh function
+local SectionHandlers = {}
 
-    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 0, 0)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 900)
-    scrollFrame:SetScrollChild(content)
-
-    local allFrames = {}
-
-    local function AddFrame(frame, spacing)
-        spacing = spacing or 0
-        if #allFrames == 0 then
-            frame:SetPoint("TOP", content, "TOP", 0, 0)
-        else
-            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
-        end
-        table.insert(allFrames, frame)
-    end
-
-    local enableCheckbox = Components.GetCheckbox(
+function SectionHandlers.enable(content, section, config)
+    local widget = Components.GetCheckbox(
         content,
-        "Enable Stagger Bar",
+        section.label or ("Enable " .. config.displayName),
         function(checked)
-            NivUI:SetClassBarEnabled("stagger", checked)
+            NivUI:SetClassBarEnabled(config.barType, checked)
         end
     )
-    AddFrame(enableCheckbox)
+    local function onShow()
+        widget:SetValue(NivUI:IsClassBarEnabled(config.barType))
+    end
+    return widget, onShow
+end
 
-    local generalHeader = Components.GetHeader(content, "General")
-    AddFrame(generalHeader, SECTION_SPACING)
+function SectionHandlers.header(content, section, _config)
+    return Components.GetHeader(content, section.text), nil
+end
 
-    local visibilityDropdown = Components.GetBasicDropdown(
+function SectionHandlers.visibility(content, section, config)
+    local widget
+    if section.applySetting then
+        widget = Components.GetBasicDropdown(
+            content,
+            section.label or "Bar Visible:",
+            function() return NivUI:GetVisibilityOptions() end,
+            function(value) return NivUI:GetSetting("visibility") == value end,
+            function(value)
+                NivUI_DB[config.dbKey].visibility = value
+                NivUI:ApplySettings(section.applySetting)
+            end
+        )
+    else
+        widget = Components.GetBasicDropdown(
+            content,
+            section.label or "Bar Visible:",
+            function() return NivUI:GetVisibilityOptions() end,
+            function(value)
+                local db = NivUI_DB[config.dbKey] or {}
+                return (db.visibility or config.defaults.visibility) == value
+            end,
+            function(value)
+                NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                NivUI_DB[config.dbKey].visibility = value
+                if section.applyFunc then section.applyFunc() end
+            end
+        )
+    end
+    local function onShow()
+        widget:SetValue()
+    end
+    return widget, onShow
+end
+
+function SectionHandlers.fgTexture(content, section, config)
+    local widget = Components.GetTextureDropdown(
         content,
-        "Bar Visible:",
-        function() return NivUI:GetVisibilityOptions() end,
-        function(value) return NivUI:GetSetting("visibility") == value end,
-        function(value)
-            NivUI_DB.staggerBar.visibility = value
-            NivUI:ApplySettings("visibility")
-        end
-    )
-    AddFrame(visibilityDropdown)
-
-    local appearanceHeader = Components.GetHeader(content, "Appearance")
-    AddFrame(appearanceHeader, SECTION_SPACING)
-
-    local fgTextureDropdown = Components.GetTextureDropdown(
-        content,
-        "Foreground:",
+        section.label or "Foreground:",
         function() return NivUI:GetBarTextures() end,
         function() return NivUI:GetSetting("foregroundTexture") end,
         function(value)
-            NivUI_DB.staggerBar.foregroundTexture = value
-            NivUI:ApplySettings("barTexture")
+            NivUI_DB[config.dbKey].foregroundTexture = value
+            NivUI:ApplySettings(section.applySetting or "barTexture")
         end
     )
-    AddFrame(fgTextureDropdown)
+    local function onShow()
+        widget:SetValue()
+    end
+    return widget, onShow
+end
 
-    local bgTextureDropdown = Components.GetTextureDropdown(
+function SectionHandlers.bgTexture(content, section, config)
+    local widget = Components.GetTextureDropdown(
         content,
-        "Background:",
+        section.label or "Background:",
         function() return NivUI:GetBarTextures() end,
         function() return NivUI:GetSetting("backgroundTexture") end,
         function(value)
-            NivUI_DB.staggerBar.backgroundTexture = value
-            NivUI:ApplySettings("background")
+            NivUI_DB[config.dbKey].backgroundTexture = value
+            NivUI:ApplySettings(section.applySetting or "background")
         end
     )
-    AddFrame(bgTextureDropdown)
+    local function onShow()
+        widget:SetValue()
+    end
+    return widget, onShow
+end
 
-    local bgColorPicker = Components.GetColorPicker(
+function SectionHandlers.bgColor(content, section, config)
+    local widget = Components.GetColorPicker(
         content,
-        "Background Color:",
+        section.label or "Background Color:",
         true,
         function(color)
-            NivUI_DB.staggerBar.backgroundColor = color
-            NivUI:ApplySettings("background")
+            NivUI_DB[config.dbKey].backgroundColor = color
+            NivUI:ApplySettings(section.applySetting or "background")
         end
     )
-    AddFrame(bgColorPicker)
+    local function onShow()
+        local db = NivUI_DB[config.dbKey]
+        widget:SetValue(db.backgroundColor or config.defaults.backgroundColor)
+    end
+    return widget, onShow
+end
 
-    local borderDropdown = Components.GetBasicDropdown(
+function SectionHandlers.borderDropdown(content, section, config)
+    local widget = Components.GetBasicDropdown(
         content,
-        "Border Style:",
+        section.label or "Border Style:",
         function() return NivUI:GetBorders() end,
         function(value) return NivUI:GetSetting("borderStyle") == value end,
         function(value)
-            NivUI_DB.staggerBar.borderStyle = value
-            NivUI:ApplySettings("border")
+            NivUI_DB[config.dbKey].borderStyle = value
+            NivUI:ApplySettings(section.applySetting or "border")
         end
     )
-    AddFrame(borderDropdown)
+    local function onShow()
+        widget:SetValue()
+    end
+    return widget, onShow
+end
 
-    local borderColorPicker = Components.GetColorPicker(
-        content,
-        "Border Color:",
-        true,
-        function(color)
-            NivUI_DB.staggerBar.borderColor = color
-            NivUI:ApplySettings("border")
+function SectionHandlers.borderColor(content, section, config)
+    local hasAlpha = section.hasAlpha
+    if hasAlpha == nil then hasAlpha = true end
+
+    local widget
+    if section.applySetting then
+        widget = Components.GetColorPicker(
+            content,
+            section.label or "Border Color:",
+            hasAlpha,
+            function(color)
+                NivUI_DB[config.dbKey].borderColor = color
+                NivUI:ApplySettings(section.applySetting)
+            end
+        )
+    else
+        widget = Components.GetColorPicker(
+            content,
+            section.label or "Border Color:",
+            hasAlpha,
+            function(color)
+                NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                NivUI_DB[config.dbKey].borderColor = color
+                if section.applyFunc then section.applyFunc() end
+            end
+        )
+    end
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.borderColor or config.defaults.borderColor)
+    end
+    return widget, onShow
+end
+
+function SectionHandlers.color(content, section, config)
+    local hasAlpha = section.hasAlpha
+    if hasAlpha == nil then hasAlpha = false end
+
+    local widget
+    if section.nestedKey then
+        widget = Components.GetColorPicker(
+            content,
+            section.label,
+            hasAlpha,
+            function(color)
+                NivUI_DB[config.dbKey][section.nestedKey] = NivUI_DB[config.dbKey][section.nestedKey] or {}
+                NivUI_DB[config.dbKey][section.nestedKey][section.key] = color
+                if section.applyFunc then section.applyFunc() end
+            end
+        )
+        local function onShow()
+            local db = NivUI_DB[config.dbKey]
+            local nested = db[section.nestedKey] or config.defaults[section.nestedKey] or {}
+            widget:SetValue(nested[section.key])
         end
-    )
-    AddFrame(borderColorPicker)
-
-    local colorsHeader = Components.GetHeader(content, "Stagger Colors")
-    AddFrame(colorsHeader, SECTION_SPACING)
-
-    local lightColorPicker = Components.GetColorPicker(
-        content,
-        "Light:",
-        false,
-        function(color)
-            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
-            NivUI_DB.staggerBar.colors.light = color
+        return widget, onShow
+    else
+        if section.applySetting then
+            widget = Components.GetColorPicker(
+                content,
+                section.label,
+                hasAlpha,
+                function(color)
+                    NivUI_DB[config.dbKey][section.key] = color
+                    NivUI:ApplySettings(section.applySetting)
+                end
+            )
+        else
+            widget = Components.GetColorPicker(
+                content,
+                section.label,
+                hasAlpha,
+                function(color)
+                    NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                    NivUI_DB[config.dbKey][section.key] = color
+                    if section.applyFunc then section.applyFunc() end
+                end
+            )
         end
-    )
-    AddFrame(lightColorPicker)
-
-    local moderateColorPicker = Components.GetColorPicker(
-        content,
-        "Moderate:",
-        false,
-        function(color)
-            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
-            NivUI_DB.staggerBar.colors.moderate = color
+        local function onShow()
+            local db = NivUI_DB[config.dbKey] or {}
+            widget:SetValue(db[section.key] or config.defaults[section.key])
         end
-    )
-    AddFrame(moderateColorPicker)
+        return widget, onShow
+    end
+end
 
-    local heavyColorPicker = Components.GetColorPicker(
+function SectionHandlers.fontDropdown(content, section, config)
+    local widget = Components.GetBasicDropdown(
         content,
-        "Heavy:",
-        false,
-        function(color)
-            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
-            NivUI_DB.staggerBar.colors.heavy = color
-        end
-    )
-    AddFrame(heavyColorPicker)
-
-    local extremeColorPicker = Components.GetColorPicker(
-        content,
-        "Extreme:",
-        false,
-        function(color)
-            NivUI_DB.staggerBar.colors = NivUI_DB.staggerBar.colors or {}
-            NivUI_DB.staggerBar.colors.extreme = color
-        end
-    )
-    AddFrame(extremeColorPicker)
-
-    local textHeader = Components.GetHeader(content, "Text")
-    AddFrame(textHeader, SECTION_SPACING)
-
-    local fontDropdown = Components.GetBasicDropdown(
-        content,
-        "Font:",
+        section.label or "Font:",
         function() return NivUI:GetFonts() end,
         function(value) return NivUI:GetSetting("font") == value end,
         function(value)
-            NivUI_DB.staggerBar.font = value
-            NivUI:ApplySettings("font")
+            NivUI_DB[config.dbKey].font = value
+            NivUI:ApplySettings(section.applySetting or "font")
         end
     )
-    AddFrame(fontDropdown)
+    local function onShow()
+        widget:SetValue()
+    end
+    return widget, onShow
+end
 
-    local fontSizeSlider = Components.GetSliderWithInput(
+function SectionHandlers.fontSizeSlider(content, section, config)
+    local widget = Components.GetSliderWithInput(
         content,
-        "Font Size:",
-        8, 24, 1, false,
+        section.label or "Font Size:",
+        section.min or 8,
+        section.max or 24,
+        section.step or 1,
+        false,
         function(value)
-            NivUI_DB.staggerBar.fontSize = value
-            NivUI:ApplySettings("font")
+            NivUI_DB[config.dbKey].fontSize = value
+            NivUI:ApplySettings(section.applySetting or "font")
         end
     )
-    AddFrame(fontSizeSlider)
+    local function onShow()
+        local db = NivUI_DB[config.dbKey]
+        widget:SetValue(db.fontSize or config.defaults.fontSize)
+    end
+    return widget, onShow
+end
 
-    local fontColorPicker = Components.GetColorPicker(
+function SectionHandlers.fontColor(content, section, config)
+    local widget = Components.GetColorPicker(
         content,
-        "Font Color:",
+        section.label or "Font Color:",
         false,
         function(color)
-            NivUI_DB.staggerBar.fontColor = color
-            NivUI:ApplySettings("font")
+            NivUI_DB[config.dbKey].fontColor = color
+            NivUI:ApplySettings(section.applySetting or "font")
         end
     )
-    AddFrame(fontColorPicker)
+    local function onShow()
+        local db = NivUI_DB[config.dbKey]
+        widget:SetValue(db.fontColor or config.defaults.fontColor)
+    end
+    return widget, onShow
+end
 
-    local fontShadowCheck = Components.GetCheckbox(
+function SectionHandlers.fontShadow(content, section, config)
+    local widget = Components.GetCheckbox(
         content,
-        "Text Shadow",
+        section.label or "Text Shadow",
         function(checked)
-            NivUI_DB.staggerBar.fontShadow = checked
-            NivUI:ApplySettings("font")
+            NivUI_DB[config.dbKey].fontShadow = checked
+            NivUI:ApplySettings(section.applySetting or "font")
         end
     )
-    AddFrame(fontShadowCheck)
-
-    local positionHeader = Components.GetHeader(content, "Position")
-    AddFrame(positionHeader, SECTION_SPACING)
-
-    local lockedCheck = Components.GetCheckbox(
-        content,
-        "Locked",
-        function(checked)
-            NivUI_DB.staggerBar.locked = checked
-            NivUI:ApplySettings("locked")
-        end
-    )
-    AddFrame(lockedCheck)
-
-    local widthSlider = Components.GetSliderWithInput(
-        content,
-        "Width:",
-        100, 600, 10, false,
-        function(value)
-            NivUI_DB.staggerBar.width = value
-            NivUI:ApplySettings("position")
-        end
-    )
-    AddFrame(widthSlider)
-
-    local heightSlider = Components.GetSliderWithInput(
-        content,
-        "Height:",
-        5, 60, 1, false,
-        function(value)
-            NivUI_DB.staggerBar.height = value
-            NivUI:ApplySettings("position")
-        end
-    )
-    AddFrame(heightSlider)
-
-    local intervalSlider = Components.GetSliderWithInput(
-        content,
-        "Update Interval:",
-        0.05, 1.0, 0.05, true,
-        function(value)
-            NivUI_DB.staggerBar.updateInterval = value
-        end
-    )
-    AddFrame(intervalSlider)
-
-    container:SetScript("OnShow", function()
-        local db = NivUI_DB.staggerBar
-        local defaults = NivUI.defaults
-
-        enableCheckbox:SetValue(NivUI:IsClassBarEnabled("stagger"))
-        visibilityDropdown:SetValue()
-
-        fgTextureDropdown:SetValue()
-        bgTextureDropdown:SetValue()
-        bgColorPicker:SetValue(db.backgroundColor or defaults.backgroundColor)
-        borderDropdown:SetValue()
-        borderColorPicker:SetValue(db.borderColor or defaults.borderColor)
-
-        local colors = db.colors or defaults.colors
-        lightColorPicker:SetValue(colors.light)
-        moderateColorPicker:SetValue(colors.moderate)
-        heavyColorPicker:SetValue(colors.heavy)
-        extremeColorPicker:SetValue(colors.extreme)
-
-        fontDropdown:SetValue()
-        fontSizeSlider:SetValue(db.fontSize or defaults.fontSize)
-        fontColorPicker:SetValue(db.fontColor or defaults.fontColor)
+    local function onShow()
+        local db = NivUI_DB[config.dbKey]
         local shadow = db.fontShadow
-        if shadow == nil then shadow = defaults.fontShadow end
-        fontShadowCheck:SetValue(shadow)
-
-        lockedCheck:SetValue(db.locked or false)
-        widthSlider:SetValue(db.width or defaults.width)
-        heightSlider:SetValue(db.height or defaults.height)
-        intervalSlider:SetValue(db.updateInterval or defaults.updateInterval)
-    end)
-
-    container.widthSlider = widthSlider
-    container.heightSlider = heightSlider
-
-    return container
+        if shadow == nil then shadow = config.defaults.fontShadow end
+        widget:SetValue(shadow)
+    end
+    return widget, onShow
 end
 
-local function SetupChiBarContent(parent)
+function SectionHandlers.lockedCheckbox(content, section, config)
+    local widget
+    if section.applySetting then
+        widget = Components.GetCheckbox(
+            content,
+            section.label or "Locked",
+            function(checked)
+                NivUI_DB[config.dbKey].locked = checked
+                NivUI:ApplySettings(section.applySetting)
+            end
+        )
+    else
+        widget = Components.GetCheckbox(
+            content,
+            section.label or "Locked",
+            function(checked)
+                NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                NivUI_DB[config.dbKey].locked = checked
+                if section.applyFunc then section.applyFunc() end
+            end
+        )
+    end
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.locked or false)
+    end
+    return widget, onShow
+end
+
+function SectionHandlers.widthSlider(content, section, config)
+    local widget
+    if section.applySetting then
+        widget = Components.GetSliderWithInput(
+            content,
+            section.label or "Width:",
+            section.min or 100,
+            section.max or 600,
+            section.step or 10,
+            false,
+            function(value)
+                NivUI_DB[config.dbKey].width = value
+                NivUI:ApplySettings(section.applySetting)
+            end
+        )
+    else
+        widget = Components.GetSliderWithInput(
+            content,
+            section.label or "Width:",
+            section.min or 100,
+            section.max or 600,
+            section.step or 10,
+            false,
+            function(value)
+                NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                NivUI_DB[config.dbKey].width = value
+                if section.applyFunc then section.applyFunc() end
+                if section.rebuildFunc then section.rebuildFunc() end
+            end
+        )
+    end
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.width or config.defaults.width)
+    end
+    return widget, onShow, "widthSlider"
+end
+
+function SectionHandlers.heightSlider(content, section, config)
+    local widget
+    if section.applySetting then
+        widget = Components.GetSliderWithInput(
+            content,
+            section.label or "Height:",
+            section.min or 5,
+            section.max or 60,
+            section.step or 1,
+            false,
+            function(value)
+                NivUI_DB[config.dbKey].height = value
+                NivUI:ApplySettings(section.applySetting)
+            end
+        )
+    else
+        widget = Components.GetSliderWithInput(
+            content,
+            section.label or "Height:",
+            section.min or 5,
+            section.max or 60,
+            section.step or 1,
+            false,
+            function(value)
+                NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                NivUI_DB[config.dbKey].height = value
+                if section.applyFunc then section.applyFunc() end
+                if section.rebuildFunc then section.rebuildFunc() end
+            end
+        )
+    end
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.height or config.defaults.height)
+    end
+    return widget, onShow, "heightSlider"
+end
+
+function SectionHandlers.intervalSlider(content, section, config)
+    local widget
+    if section.applySetting then
+        widget = Components.GetSliderWithInput(
+            content,
+            section.label or "Update Interval:",
+            section.min or 0.05,
+            section.max or 1.0,
+            section.step or 0.05,
+            true,
+            function(value)
+                NivUI_DB[config.dbKey].updateInterval = value
+                NivUI:ApplySettings(section.applySetting)
+            end
+        )
+    else
+        widget = Components.GetSliderWithInput(
+            content,
+            section.label or "Update Interval:",
+            section.min or 0.05,
+            section.max or 1.0,
+            section.step or 0.05,
+            true,
+            function(value)
+                NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+                NivUI_DB[config.dbKey].updateInterval = value
+            end
+        )
+    end
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.updateInterval or config.defaults.updateInterval)
+    end
+    return widget, onShow
+end
+
+function SectionHandlers.spacingSlider(content, section, config)
+    local widget = Components.GetSliderWithInput(
+        content,
+        section.label or "Segment Spacing:",
+        section.min or 0,
+        section.max or 10,
+        section.step or 1,
+        false,
+        function(value)
+            NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+            NivUI_DB[config.dbKey].spacing = value
+            if section.rebuildFunc then section.rebuildFunc() end
+        end
+    )
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.spacing or config.defaults.spacing)
+    end
+    return widget, onShow
+end
+
+function SectionHandlers.emptyColor(content, section, config)
+    local widget = Components.GetColorPicker(
+        content,
+        section.label or "Empty Color:",
+        true,
+        function(color)
+            NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+            NivUI_DB[config.dbKey].emptyColor = color
+            if section.applyFunc then section.applyFunc() end
+        end
+    )
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.emptyColor or config.defaults.emptyColor)
+    end
+    return widget, onShow
+end
+
+function SectionHandlers.filledColor(content, section, config)
+    local widget = Components.GetColorPicker(
+        content,
+        section.label or "Filled Color:",
+        true,
+        function(color)
+            NivUI_DB[config.dbKey] = NivUI_DB[config.dbKey] or {}
+            NivUI_DB[config.dbKey].filledColor = color
+            if section.applyFunc then section.applyFunc() end
+        end
+    )
+    local function onShow()
+        local db = NivUI_DB[config.dbKey] or {}
+        widget:SetValue(db.filledColor or config.defaults.filledColor)
+    end
+    return widget, onShow
+end
+
+--- Configuration table for the Stagger Bar config panel.
+--- Uses NivUI:ApplySettings() for most settings since stagger bar uses the shared settings system.
+local staggerBarConfig = {
+    barType = "stagger",
+    displayName = "Stagger Bar",
+    dbKey = "staggerBar",
+    defaults = NivUI.staggerBarDefaults,
+    contentHeight = 900,
+    sections = {
+        { type = "enable" },
+        { type = "header", text = "General" },
+        { type = "visibility", applySetting = "visibility" },
+        { type = "header", text = "Appearance" },
+        { type = "fgTexture", applySetting = "barTexture" },
+        { type = "bgTexture", applySetting = "background" },
+        { type = "bgColor", applySetting = "background" },
+        { type = "borderDropdown", applySetting = "border" },
+        { type = "borderColor", applySetting = "border" },
+        { type = "header", text = "Stagger Colors" },
+        { type = "color", nestedKey = "colors", key = "light", label = "Light:" },
+        { type = "color", nestedKey = "colors", key = "moderate", label = "Moderate:" },
+        { type = "color", nestedKey = "colors", key = "heavy", label = "Heavy:" },
+        { type = "color", nestedKey = "colors", key = "extreme", label = "Extreme:" },
+        { type = "header", text = "Text" },
+        { type = "fontDropdown", applySetting = "font" },
+        { type = "fontSizeSlider", applySetting = "font" },
+        { type = "fontColor", applySetting = "font" },
+        { type = "fontShadow", applySetting = "font" },
+        { type = "header", text = "Position" },
+        { type = "lockedCheckbox", applySetting = "locked" },
+        { type = "widthSlider", applySetting = "position" },
+        { type = "heightSlider", applySetting = "position" },
+        { type = "intervalSlider" },
+    },
+}
+
+--- Configuration table for the Chi Bar config panel.
+--- Uses direct applyFunc callbacks since chi bar has its own update functions.
+local chiBarConfig = {
+    barType = "chi",
+    displayName = "Chi Bar",
+    dbKey = "chiBar",
+    defaults = NivUI.chiBarDefaults,
+    contentHeight = 500,
+    sections = {
+        { type = "enable" },
+        { type = "header", text = "General" },
+        { type = "visibility", applyFunc = function() NivUI.ChiBar_UpdateVisibility() end },
+        { type = "header", text = "Appearance" },
+        { type = "spacingSlider", rebuildFunc = function() if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end end },
+        { type = "emptyColor", applyFunc = function() NivUI.ChiBar_ApplyColors() end },
+        { type = "filledColor", applyFunc = function() NivUI.ChiBar_ApplyColors() end },
+        { type = "borderColor", applyFunc = function() NivUI.ChiBar_ApplyBorder() end },
+        { type = "header", text = "Position" },
+        { type = "lockedCheckbox", applyFunc = function() NivUI.ChiBar_ApplyLockState() end },
+        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.ChiBar_LoadPosition() end, rebuildFunc = function() if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end end },
+        { type = "heightSlider", applyFunc = function() NivUI.ChiBar_LoadPosition() end, rebuildFunc = function() if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end end },
+        { type = "intervalSlider" },
+    },
+}
+
+--- Configuration table for the Essence Bar config panel.
+--- Uses direct applyFunc callbacks since essence bar has its own update functions.
+local essenceBarConfig = {
+    barType = "essence",
+    displayName = "Essence Bar",
+    dbKey = "essenceBar",
+    defaults = NivUI.essenceBarDefaults,
+    contentHeight = 500,
+    sections = {
+        { type = "enable" },
+        { type = "header", text = "General" },
+        { type = "visibility", applyFunc = function() NivUI.EssenceBar_UpdateVisibility() end },
+        { type = "header", text = "Appearance" },
+        { type = "spacingSlider", rebuildFunc = function() if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end end },
+        { type = "emptyColor", applyFunc = function() NivUI.EssenceBar_ApplyColors() end },
+        { type = "filledColor", applyFunc = function() NivUI.EssenceBar_ApplyColors() end },
+        { type = "borderColor", applyFunc = function() NivUI.EssenceBar_ApplyBorder() end },
+        { type = "header", text = "Position" },
+        { type = "lockedCheckbox", applyFunc = function() NivUI.EssenceBar_ApplyLockState() end },
+        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.EssenceBar_LoadPosition() end, rebuildFunc = function() if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end end },
+        { type = "heightSlider", applyFunc = function() NivUI.EssenceBar_LoadPosition() end, rebuildFunc = function() if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end end },
+        { type = "intervalSlider" },
+    },
+}
+
+--- Factory function to build a class bar configuration panel.
+--- @param parent Frame The parent frame to attach the config panel to.
+--- @param config table Configuration table with the following fields:
+---   barType: string - for NivUI:IsClassBarEnabled() / SetClassBarEnabled()
+---   displayName: string - for enable checkbox label
+---   dbKey: string - NivUI_DB key (e.g., "staggerBar", "chiBar")
+---   defaults: table - default values table
+---   contentHeight: number - scroll content height
+---   sections: table - array of section descriptors
+--- @return table { container = Frame, widthSlider = Frame|nil, heightSlider = Frame|nil }
+local function BuildClassBarConfig(parent, config)
     local container = CreateFrame("Frame", nil, parent)
     container:Hide()
 
@@ -695,7 +987,7 @@ local function SetupChiBarContent(parent)
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 500)
+    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, config.contentHeight or 500)
     scrollFrame:SetScrollChild(content)
 
     local allFrames = {}
@@ -710,359 +1002,45 @@ local function SetupChiBarContent(parent)
         table.insert(allFrames, frame)
     end
 
-    local chiDefaults = NivUI.chiBarDefaults or {
-        visibility = "combat",
-        spacing = 2,
-        width = 200,
-        height = 20,
-        locked = true,
-        emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-        filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },
-        borderColor = { r = 0, g = 0, b = 0, a = 1 },
-        updateInterval = 0.05,
-    }
+    local refs = {}
+    local onShowHandlers = {}
 
-    local enableCheckbox = Components.GetCheckbox(
-        content,
-        "Enable Chi Bar",
-        function(checked)
-            NivUI:SetClassBarEnabled("chi", checked)
+    for _, section in ipairs(config.sections) do
+        local handler = SectionHandlers[section.type]
+        if handler then
+            local widget, onShow, refKey = handler(content, section, config)
+            if widget then
+                local spacing = section.spacing
+                if spacing == nil and section.type == "header" then
+                    spacing = SECTION_SPACING
+                end
+                AddFrame(widget, spacing or 0)
+            end
+            if onShow then
+                table.insert(onShowHandlers, onShow)
+            end
+            if refKey then
+                refs[refKey] = widget
+            end
         end
-    )
-    AddFrame(enableCheckbox)
-
-    local generalHeader = Components.GetHeader(content, "General")
-    AddFrame(generalHeader, SECTION_SPACING)
-
-    local visibilityDropdown = Components.GetBasicDropdown(
-        content,
-        "Bar Visible:",
-        function() return NivUI:GetVisibilityOptions() end,
-        function(value)
-            local db = NivUI_DB.chiBar or {}
-            return (db.visibility or chiDefaults.visibility) == value
-        end,
-        function(value)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.visibility = value
-            NivUI.ChiBar_UpdateVisibility()
-        end
-    )
-    AddFrame(visibilityDropdown)
-
-    local appearanceHeader = Components.GetHeader(content, "Appearance")
-    AddFrame(appearanceHeader, SECTION_SPACING)
-
-    local spacingSlider = Components.GetSliderWithInput(
-        content,
-        "Segment Spacing:",
-        0, 10, 1, false,
-        function(value)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.spacing = value
-            if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end
-        end
-    )
-    AddFrame(spacingSlider)
-
-    local emptyColorPicker = Components.GetColorPicker(
-        content,
-        "Empty Color:",
-        true,
-        function(color)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.emptyColor = color
-            NivUI.ChiBar_ApplyColors()
-        end
-    )
-    AddFrame(emptyColorPicker)
-
-    local filledColorPicker = Components.GetColorPicker(
-        content,
-        "Filled Color:",
-        true,
-        function(color)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.filledColor = color
-            NivUI.ChiBar_ApplyColors()
-        end
-    )
-    AddFrame(filledColorPicker)
-
-    local borderColorPicker = Components.GetColorPicker(
-        content,
-        "Border Color:",
-        true,
-        function(color)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.borderColor = color
-            NivUI.ChiBar_ApplyBorder()
-        end
-    )
-    AddFrame(borderColorPicker)
-
-    local positionHeader = Components.GetHeader(content, "Position")
-    AddFrame(positionHeader, SECTION_SPACING)
-
-    local lockedCheck = Components.GetCheckbox(
-        content,
-        "Locked",
-        function(checked)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.locked = checked
-            NivUI.ChiBar_ApplyLockState()
-        end
-    )
-    AddFrame(lockedCheck)
-
-    local widthSlider = Components.GetSliderWithInput(
-        content,
-        "Width:",
-        60, 400, 10, false,
-        function(value)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.width = value
-            NivUI.ChiBar_LoadPosition()
-            if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end
-        end
-    )
-    AddFrame(widthSlider)
-
-    local heightSlider = Components.GetSliderWithInput(
-        content,
-        "Height:",
-        5, 60, 1, false,
-        function(value)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.height = value
-            NivUI.ChiBar_LoadPosition()
-            if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end
-        end
-    )
-    AddFrame(heightSlider)
-
-    local intervalSlider = Components.GetSliderWithInput(
-        content,
-        "Update Interval:",
-        0.05, 1.0, 0.05, true,
-        function(value)
-            NivUI_DB.chiBar = NivUI_DB.chiBar or {}
-            NivUI_DB.chiBar.updateInterval = value
-        end
-    )
-    AddFrame(intervalSlider)
-
-    container:SetScript("OnShow", function()
-        local db = NivUI_DB.chiBar or {}
-
-        enableCheckbox:SetValue(NivUI:IsClassBarEnabled("chi"))
-        visibilityDropdown:SetValue()
-        spacingSlider:SetValue(db.spacing or chiDefaults.spacing)
-        emptyColorPicker:SetValue(db.emptyColor or chiDefaults.emptyColor)
-        filledColorPicker:SetValue(db.filledColor or chiDefaults.filledColor)
-        borderColorPicker:SetValue(db.borderColor or chiDefaults.borderColor)
-        lockedCheck:SetValue(db.locked or false)
-        widthSlider:SetValue(db.width or chiDefaults.width)
-        heightSlider:SetValue(db.height or chiDefaults.height)
-        intervalSlider:SetValue(db.updateInterval or chiDefaults.updateInterval)
-    end)
-
-    container.widthSlider = widthSlider
-    container.heightSlider = heightSlider
-
-    return container
-end
-
-local function SetupEssenceBarContent(parent)
-    local container = CreateFrame("Frame", nil, parent)
-    container:Hide()
-
-    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 0, 0)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 500)
-    scrollFrame:SetScrollChild(content)
-
-    local allFrames = {}
-
-    local function AddFrame(frame, spacing)
-        spacing = spacing or 0
-        if #allFrames == 0 then
-            frame:SetPoint("TOP", content, "TOP", 0, 0)
-        else
-            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
-        end
-        table.insert(allFrames, frame)
     end
 
-    local essenceDefaults = NivUI.essenceBarDefaults or {
-        visibility = "combat",
-        spacing = 2,
-        width = 200,
-        height = 20,
-        locked = true,
-        emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-        filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },
-        borderColor = { r = 0, g = 0, b = 0, a = 1 },
-        updateInterval = 0.05,
-    }
-
-    local enableCheckbox = Components.GetCheckbox(
-        content,
-        "Enable Essence Bar",
-        function(checked)
-            NivUI:SetClassBarEnabled("essence", checked)
-        end
-    )
-    AddFrame(enableCheckbox)
-
-    local generalHeader = Components.GetHeader(content, "General")
-    AddFrame(generalHeader, SECTION_SPACING)
-
-    local visibilityDropdown = Components.GetBasicDropdown(
-        content,
-        "Bar Visible:",
-        function() return NivUI:GetVisibilityOptions() end,
-        function(value)
-            local db = NivUI_DB.essenceBar or {}
-            return (db.visibility or essenceDefaults.visibility) == value
-        end,
-        function(value)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.visibility = value
-            NivUI.EssenceBar_UpdateVisibility()
-        end
-    )
-    AddFrame(visibilityDropdown)
-
-    local appearanceHeader = Components.GetHeader(content, "Appearance")
-    AddFrame(appearanceHeader, SECTION_SPACING)
-
-    local spacingSlider = Components.GetSliderWithInput(
-        content,
-        "Segment Spacing:",
-        0, 10, 1, false,
-        function(value)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.spacing = value
-            if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end
-        end
-    )
-    AddFrame(spacingSlider)
-
-    local emptyColorPicker = Components.GetColorPicker(
-        content,
-        "Empty Color:",
-        true,
-        function(color)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.emptyColor = color
-            NivUI.EssenceBar_ApplyColors()
-        end
-    )
-    AddFrame(emptyColorPicker)
-
-    local filledColorPicker = Components.GetColorPicker(
-        content,
-        "Filled Color:",
-        true,
-        function(color)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.filledColor = color
-            NivUI.EssenceBar_ApplyColors()
-        end
-    )
-    AddFrame(filledColorPicker)
-
-    local borderColorPicker = Components.GetColorPicker(
-        content,
-        "Border Color:",
-        true,
-        function(color)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.borderColor = color
-            NivUI.EssenceBar_ApplyBorder()
-        end
-    )
-    AddFrame(borderColorPicker)
-
-    local positionHeader = Components.GetHeader(content, "Position")
-    AddFrame(positionHeader, SECTION_SPACING)
-
-    local lockedCheck = Components.GetCheckbox(
-        content,
-        "Locked",
-        function(checked)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.locked = checked
-            NivUI.EssenceBar_ApplyLockState()
-        end
-    )
-    AddFrame(lockedCheck)
-
-    local widthSlider = Components.GetSliderWithInput(
-        content,
-        "Width:",
-        60, 400, 10, false,
-        function(value)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.width = value
-            NivUI.EssenceBar_LoadPosition()
-            if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end
-        end
-    )
-    AddFrame(widthSlider)
-
-    local heightSlider = Components.GetSliderWithInput(
-        content,
-        "Height:",
-        5, 60, 1, false,
-        function(value)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.height = value
-            NivUI.EssenceBar_LoadPosition()
-            if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end
-        end
-    )
-    AddFrame(heightSlider)
-
-    local intervalSlider = Components.GetSliderWithInput(
-        content,
-        "Update Interval:",
-        0.05, 1.0, 0.05, true,
-        function(value)
-            NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
-            NivUI_DB.essenceBar.updateInterval = value
-        end
-    )
-    AddFrame(intervalSlider)
-
     container:SetScript("OnShow", function()
-        local db = NivUI_DB.essenceBar or {}
-
-        enableCheckbox:SetValue(NivUI:IsClassBarEnabled("essence"))
-        visibilityDropdown:SetValue()
-        spacingSlider:SetValue(db.spacing or essenceDefaults.spacing)
-        emptyColorPicker:SetValue(db.emptyColor or essenceDefaults.emptyColor)
-        filledColorPicker:SetValue(db.filledColor or essenceDefaults.filledColor)
-        borderColorPicker:SetValue(db.borderColor or essenceDefaults.borderColor)
-        lockedCheck:SetValue(db.locked or false)
-        widthSlider:SetValue(db.width or essenceDefaults.width)
-        heightSlider:SetValue(db.height or essenceDefaults.height)
-        intervalSlider:SetValue(db.updateInterval or essenceDefaults.updateInterval)
+        for _, onShow in ipairs(onShowHandlers) do
+            onShow()
+        end
     end)
 
-    container.widthSlider = widthSlider
-    container.heightSlider = heightSlider
-
-    return container
+    return {
+        container = container,
+        widthSlider = refs.widthSlider,
+        heightSlider = refs.heightSlider,
+    }
 end
 
-local staggerContent
-local chiContent
-local essenceContent
+local staggerResult
+local chiResult
+local essenceResult
 local function SetupClassBarsTabWithSubtabs()
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
@@ -1085,30 +1063,30 @@ local function SetupClassBarsTabWithSubtabs()
         currentSubTab = index
     end
 
-    staggerContent = SetupStaggerBarContent(container)
-    staggerContent:SetPoint("TOPLEFT", 0, -32)
-    staggerContent:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, staggerContent)
+    staggerResult = BuildClassBarConfig(container, staggerBarConfig)
+    staggerResult.container:SetPoint("TOPLEFT", 0, -32)
+    staggerResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, staggerResult.container)
 
     local staggerTab = Components.GetTab(container, "Stagger")
     staggerTab:SetPoint("TOPLEFT", 0, 0)
     staggerTab:SetScript("OnClick", function() SelectSubTab(1) end)
     table.insert(subTabs, staggerTab)
 
-    chiContent = SetupChiBarContent(container)
-    chiContent:SetPoint("TOPLEFT", 0, -32)
-    chiContent:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, chiContent)
+    chiResult = BuildClassBarConfig(container, chiBarConfig)
+    chiResult.container:SetPoint("TOPLEFT", 0, -32)
+    chiResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, chiResult.container)
 
     local chiTab = Components.GetTab(container, "Chi")
     chiTab:SetPoint("LEFT", staggerTab, "RIGHT", 0, 0)
     chiTab:SetScript("OnClick", function() SelectSubTab(2) end)
     table.insert(subTabs, chiTab)
 
-    essenceContent = SetupEssenceBarContent(container)
-    essenceContent:SetPoint("TOPLEFT", 0, -32)
-    essenceContent:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, essenceContent)
+    essenceResult = BuildClassBarConfig(container, essenceBarConfig)
+    essenceResult.container:SetPoint("TOPLEFT", 0, -32)
+    essenceResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
+    table.insert(subTabContainers, essenceResult.container)
 
     local essenceTab = Components.GetTab(container, "Essence")
     essenceTab:SetPoint("LEFT", chiTab, "RIGHT", 0, 0)
@@ -1144,29 +1122,36 @@ end)
 
 NivUI.OnBarMoved = function()
     local staggerDb = NivUI_DB.staggerBar
-    if staggerContent and staggerContent.widthSlider then
-        staggerContent.widthSlider:SetValue(staggerDb.width or 394)
+    local staggerDefaults = NivUI.staggerBarDefaults
+    if staggerResult and staggerResult.widthSlider then
+        staggerResult.widthSlider:SetValue(staggerDb.width or staggerDefaults.width)
     end
-    if staggerContent and staggerContent.heightSlider then
-        staggerContent.heightSlider:SetValue(staggerDb.height or 20)
+    if staggerResult and staggerResult.heightSlider then
+        staggerResult.heightSlider:SetValue(staggerDb.height or staggerDefaults.height)
     end
 
     local chiDb = NivUI_DB.chiBar or {}
-    if chiContent and chiContent.widthSlider then
-        chiContent.widthSlider:SetValue(chiDb.width or 200)
+    local chiDefaults = NivUI.chiBarDefaults
+    if chiResult and chiResult.widthSlider then
+        chiResult.widthSlider:SetValue(chiDb.width or chiDefaults.width)
     end
-    if chiContent and chiContent.heightSlider then
-        chiContent.heightSlider:SetValue(chiDb.height or 20)
+    if chiResult and chiResult.heightSlider then
+        chiResult.heightSlider:SetValue(chiDb.height or chiDefaults.height)
     end
 
     local essenceDb = NivUI_DB.essenceBar or {}
-    if essenceContent and essenceContent.widthSlider then
-        essenceContent.widthSlider:SetValue(essenceDb.width or 200)
+    local essenceDefaults = NivUI.essenceBarDefaults
+    if essenceResult and essenceResult.widthSlider then
+        essenceResult.widthSlider:SetValue(essenceDb.width or essenceDefaults.width)
     end
-    if essenceContent and essenceContent.heightSlider then
-        essenceContent.heightSlider:SetValue(essenceDb.height or 20)
+    if essenceResult and essenceResult.heightSlider then
+        essenceResult.heightSlider:SetValue(essenceDb.height or essenceDefaults.height)
     end
 end
 
+NivUI.staggerBarConfig = staggerBarConfig
+NivUI.chiBarConfig = chiBarConfig
+NivUI.essenceBarConfig = essenceBarConfig
+NivUI.BuildClassBarConfig = BuildClassBarConfig
 NivUI.Components = Components
 NivUI.ConfigFrame = ConfigFrame
