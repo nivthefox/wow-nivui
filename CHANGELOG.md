@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Custom raid groups: create filtered views of your raid showing only specific roles or players
 
+### Changed
+
+- Chi bar and stagger bar are now opt-in like unit frames (disabled by default until enabled in settings)
+
+### Fixed
+
+- Boss frames now show and hide correctly during encounters
+- Target frame right-click menu now works properly
+- Widgets anchored to hidden or disabled elements now hide correctly
+- Raid frames respect visibility settings when group size changes
+- Edit Mode no longer breaks frame visibility when opened
+
 ## [1.2.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.2.0) - 2026-01-22
 
 ### Added
