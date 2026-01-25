@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.3.0) - 2026-01-25
+
 ### Added
 
 - Custom raid groups: create filtered views of your raid showing only specific roles or players
