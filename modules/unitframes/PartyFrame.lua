@@ -351,9 +351,7 @@ local function OnGroupRosterUpdate()
 
     if state.hasVisibilityDriver then
         LayoutMemberFrames()
-        if state.container and state.container:IsShown() then
-            UpdateAllMemberFrames()
-        end
+        UpdateAllMemberFrames()
     elseif ShouldShowPartyFrames() then
         Base.SetSecureVisibility(state.container, true)
         LayoutMemberFrames()

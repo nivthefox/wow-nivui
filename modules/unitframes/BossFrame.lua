@@ -323,9 +323,7 @@ local function OnInstanceEncounterEngageUnit()
 
     if state.hasVisibilityDriver then
         LayoutMemberFrames()
-        if state.container and state.container:IsShown() then
-            UpdateAllMemberFrames()
-        end
+        UpdateAllMemberFrames()
     elseif ShouldShowBossFrames() then
         Base.SetSecureVisibility(state.container, true)
         LayoutMemberFrames()

@@ -547,9 +547,7 @@ local function OnGroupRosterUpdate()
 
             if state.hasVisibilityDriver then
                 LayoutGroupFrames(raidSize)
-                if state.container and state.container:IsShown() then
-                    UpdateAllRaidMembers(raidSize)
-                end
+                UpdateAllRaidMembers(raidSize)
             elseif state.previewMode or isActive then
                 Base.SetSecureVisibility(state.container, true)
                 LayoutGroupFrames(raidSize)

@@ -323,9 +323,7 @@ local function OnArenaOpponentUpdate()
 
     if state.hasVisibilityDriver then
         LayoutMemberFrames()
-        if state.container and state.container:IsShown() then
-            UpdateAllMemberFrames()
-        end
+        UpdateAllMemberFrames()
     elseif ShouldShowArenaFrames() then
         Base.SetSecureVisibility(state.container, true)
         LayoutMemberFrames()
