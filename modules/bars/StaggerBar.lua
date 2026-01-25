@@ -8,99 +8,25 @@ local THRESHOLDS = {
     extreme = 1.00,
 }
 
-local StaggerBar = CreateFrame("Frame", "NivUIStaggerBar", UIParent)
-StaggerBar:SetSize(394, 20)
-StaggerBar:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
-StaggerBar:SetResizable(true)
-StaggerBar:SetResizeBounds(100, 5, 800, 60)
-StaggerBar:Hide()
-
-local clickBg = StaggerBar:CreateTexture(nil, "BACKGROUND", nil, -1)
-clickBg:SetAllPoints()
-clickBg:SetColorTexture(0, 0, 0, 0)
-
-local barContainer = CreateFrame("Frame", nil, StaggerBar)
-barContainer:SetAllPoints()
-StaggerBar.barContainer = barContainer
-
-local resizeHandle = CreateFrame("Button", nil, StaggerBar)
-resizeHandle:SetSize(16, 16)
-resizeHandle:SetPoint("BOTTOMRIGHT", StaggerBar, "BOTTOMRIGHT", 0, 0)
-resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-resizeHandle:Hide()
-StaggerBar.resizeHandle = resizeHandle
-
-resizeHandle:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" then
-        StaggerBar:StartSizing("BOTTOMRIGHT")
-    end
-end)
-
-resizeHandle:SetScript("OnMouseUp", function(self, _button)
-    StaggerBar:StopMovingOrSizing()
-    local db = NivUI_DB.staggerBar
-    db.width = StaggerBar:GetWidth()
-    db.height = StaggerBar:GetHeight()
-    if NivUI.OnBarMoved then NivUI.OnBarMoved() end
-end)
-
-local bg = barContainer:CreateTexture(nil, "BACKGROUND")
-bg:SetAllPoints()
-bg:SetColorTexture(0, 0, 0, 0.8)
-StaggerBar.bg = bg
-
-local bar = CreateFrame("StatusBar", nil, barContainer)
-bar:SetAllPoints()
-bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-bar:SetMinMaxValues(0, 1)
-bar:SetValue(0)
-StaggerBar.bar = bar
-
-local spark = bar:CreateTexture(nil, "OVERLAY")
-spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
-spark:SetSize(4, 4)
-spark:SetBlendMode("ADD")
-spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
-StaggerBar.spark = spark
-
-local textLeft = bar:CreateFontString(nil, "OVERLAY")
-textLeft:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-textLeft:SetPoint("LEFT", bar, "LEFT", 4, 0)
-textLeft:SetTextColor(1, 1, 1, 1)
-textLeft:SetShadowOffset(0, 0)
-StaggerBar.textLeft = textLeft
-
-local textCenter = bar:CreateFontString(nil, "OVERLAY")
-textCenter:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-textCenter:SetPoint("CENTER", bar, "CENTER", 0, 0)
-textCenter:SetTextColor(1, 1, 1, 1)
-textCenter:SetShadowOffset(0, 0)
-StaggerBar.textCenter = textCenter
-
-local textRight = bar:CreateFontString(nil, "OVERLAY")
-textRight:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-textRight:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
-textRight:SetTextColor(1, 1, 1, 1)
-textRight:SetShadowOffset(0, 0)
-StaggerBar.textRight = textRight
-
-StaggerBar.text = textCenter
-
-local border = CreateFrame("Frame", nil, barContainer, "BackdropTemplate")
-border:SetPoint("TOPLEFT", -1, 1)
-border:SetPoint("BOTTOMRIGHT", 1, -1)
-border:SetBackdrop({
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 1,
-})
-border:SetBackdropBorderColor(0, 0, 0, 1)
-StaggerBar.border = border
-
 local lastUpdate = 0
 local isBrewmaster = false
 local inCombat = false
+
+local function GetSetting(key)
+    local db = NivUI_DB and NivUI_DB.staggerBar
+    if db and db[key] ~= nil then
+        return db[key]
+    end
+    return NivUI.staggerBarDefaults[key]
+end
+
+local function GetColors()
+    local db = NivUI_DB and NivUI_DB.staggerBar
+    if db and db.colors then
+        return db.colors
+    end
+    return NivUI.staggerBarDefaults.colors
+end
 
 local function FormatNumber(num)
     if num >= 1000000 then
@@ -130,7 +56,7 @@ local function GetStaggerTickDamage()
 end
 
 local function GetStaggerColor(percent)
-    local colors = NivUI:GetColors()
+    local colors = GetColors()
     if percent >= THRESHOLDS.extreme then
         return colors.extreme
     elseif percent >= THRESHOLDS.heavy then
@@ -142,52 +68,14 @@ local function GetStaggerColor(percent)
     end
 end
 
-local UpdateVisibility  -- Forward declaration
-
-local function UpdateBar()
-    local stagger = UnitStagger("player")
-    local maxHealth = UnitHealthMax("player")
-
-    if not stagger or not maxHealth or maxHealth == 0 then
-        StaggerBar.textLeft:SetText("")
-        StaggerBar.textCenter:SetText("")
-        StaggerBar.textRight:SetText("")
-        StaggerBar.bar:SetValue(0)
-        return
-    end
-
-    local percent = stagger / maxHealth
-    local color = GetStaggerColor(percent)
-
-    if percent >= THRESHOLDS.extreme then
-        StaggerBar.bg:SetColorTexture(0.5, 0, 0, 0.8)
-        local overflow = stagger - maxHealth
-        StaggerBar.bar:SetMinMaxValues(0, maxHealth)
-        StaggerBar.bar:SetValue(overflow)
-    else
-        StaggerBar.bg:SetColorTexture(0, 0, 0, 0.8)
-        StaggerBar.bar:SetMinMaxValues(0, maxHealth)
-        StaggerBar.bar:SetValue(stagger)
-    end
-
-    StaggerBar.bar:SetStatusBarColor(color.r, color.g, color.b)
-
-    local tickDamage = GetStaggerTickDamage()
-    local dps = tickDamage * 2
-    local dpsPercent = math.floor((dps / maxHealth) * 1000) / 10
-
-    StaggerBar.textLeft:SetText(FormatNumber(stagger))
-    StaggerBar.textCenter:SetText(FormatNumber(dps) .. "/s")
-    StaggerBar.textRight:SetText(dpsPercent .. "%")
-
-    UpdateVisibility()
-end
+local UpdateVisibility
+local UpdateBar
 
 local function ShouldShow()
-    local visibility = NivUI:GetSetting("visibility")
+    local visibility = GetSetting("visibility")
 
     if visibility == "never" then return false end
-    if not NivUI:GetSetting("locked") then return true end
+    if not GetSetting("locked") then return true end
     if not isBrewmaster then return false end
     if visibility == "always" then return true end
 
@@ -199,11 +87,56 @@ local function ShouldShow()
 end
 
 UpdateVisibility = function()
+    local frame = NivUI.StaggerBar
+    if not frame then return end
+
     if ShouldShow() then
-        StaggerBar:Show()
+        frame:Show()
     else
-        StaggerBar:Hide()
+        frame:Hide()
     end
+end
+
+UpdateBar = function()
+    local frame = NivUI.StaggerBar
+    if not frame then return end
+
+    local stagger = UnitStagger("player")
+    local maxHealth = UnitHealthMax("player")
+
+    if not stagger or not maxHealth or maxHealth == 0 then
+        frame.textLeft:SetText("")
+        frame.textCenter:SetText("")
+        frame.textRight:SetText("")
+        frame.bar:SetValue(0)
+        return
+    end
+
+    local percent = stagger / maxHealth
+    local color = GetStaggerColor(percent)
+
+    if percent >= THRESHOLDS.extreme then
+        frame.bg:SetColorTexture(0.5, 0, 0, 0.8)
+        local overflow = stagger - maxHealth
+        frame.bar:SetMinMaxValues(0, maxHealth)
+        frame.bar:SetValue(overflow)
+    else
+        frame.bg:SetColorTexture(0, 0, 0, 0.8)
+        frame.bar:SetMinMaxValues(0, maxHealth)
+        frame.bar:SetValue(stagger)
+    end
+
+    frame.bar:SetStatusBarColor(color.r, color.g, color.b)
+
+    local tickDamage = GetStaggerTickDamage()
+    local dps = tickDamage * 2
+    local dpsPercent = math.floor((dps / maxHealth) * 1000) / 10
+
+    frame.textLeft:SetText(FormatNumber(stagger))
+    frame.textCenter:SetText(FormatNumber(dps) .. "/s")
+    frame.textRight:SetText(dpsPercent .. "%")
+
+    UpdateVisibility()
 end
 
 local function CheckSpec()
@@ -221,7 +154,7 @@ end
 local function OnUpdate(self, elapsed)
     lastUpdate = lastUpdate + elapsed
 
-    local interval = NivUI:GetSetting("updateInterval")
+    local interval = GetSetting("updateInterval")
 
     if lastUpdate >= interval then
         lastUpdate = 0
@@ -229,94 +162,68 @@ local function OnUpdate(self, elapsed)
     end
 end
 
-local function EnableDragging()
-    StaggerBar:SetMovable(true)
-    StaggerBar:EnableMouse(true)
-    StaggerBar:RegisterForDrag("LeftButton")
-
-    StaggerBar:SetScript("OnDragStart", function(self)
-        if not NivUI:GetSetting("locked") then
-            self:StartMoving()
-        end
-    end)
-
-    StaggerBar:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local db = NivUI_DB.staggerBar
-        local point, _, _, x, y = self:GetPoint()
-        db.point = point
-        db.x = x
-        db.y = y
-        if NivUI.OnBarMoved then NivUI.OnBarMoved() end
-    end)
-end
-
-local function LoadPosition()
+local function LoadPosition(frame)
     local db = NivUI_DB.staggerBar
-    local defaults = NivUI.defaults
+    local defaults = NivUI.staggerBarDefaults
 
-    StaggerBar:ClearAllPoints()
-    StaggerBar:SetPoint(
+    frame:ClearAllPoints()
+    frame:SetPoint(
         db.point or defaults.point,
         UIParent,
         db.point or defaults.point,
         db.x or defaults.x,
         db.y or defaults.y
     )
-    StaggerBar:SetSize(
+    frame:SetSize(
         db.width or defaults.width,
         db.height or defaults.height
     )
 
-    if NivUI:GetSetting("locked") then
-        StaggerBar.resizeHandle:Hide()
+    if GetSetting("locked") then
+        frame.resizeHandle:Hide()
     else
-        StaggerBar.resizeHandle:Show()
+        frame.resizeHandle:Show()
     end
 end
 
-local function ApplyBarTexture()
-    local textureName = NivUI:GetSetting("foregroundTexture") or NivUI:GetSetting("barTexture")
+local function ApplyBarTexture(frame)
+    local textureName = GetSetting("foregroundTexture") or GetSetting("barTexture")
     local texturePath = NivUI:GetTexturePath(textureName)
-    StaggerBar.bar:SetStatusBarTexture(texturePath)
-    StaggerBar.spark:ClearAllPoints()
-    StaggerBar.spark:SetPoint("CENTER", StaggerBar.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
+    frame.bar:SetStatusBarTexture(texturePath)
+    frame.spark:ClearAllPoints()
+    frame.spark:SetPoint("CENTER", frame.bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 end
 
-local function ApplyBackground()
-    local bgColor = NivUI:GetSetting("backgroundColor")
+local function ApplyBackground(frame)
+    local bgColor = GetSetting("backgroundColor")
     if bgColor then
-        StaggerBar.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
+        frame.bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
     end
 end
 
-local function ApplyBorder()
-    local borderStyle = NivUI:GetSetting("borderStyle")
-    local borderColor = NivUI:GetSetting("borderColor")
+local function ApplyBorder(frame)
+    local borderStyle = GetSetting("borderStyle")
+    local borderColor = GetSetting("borderColor")
 
     if borderStyle == "none" then
-        StaggerBar.border:SetBackdrop(nil)
+        frame.border:SetBackdrop(nil)
     else
         local width = borderStyle == "thick" and 2 or 1
-        StaggerBar.border:SetBackdrop({
+        frame.border:SetBackdrop({
             edgeFile = "Interface\\Buttons\\WHITE8x8",
             edgeSize = width,
         })
         if borderColor then
-            StaggerBar.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+            frame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         else
-            StaggerBar.border:SetBackdropBorderColor(0, 0, 0, 1)
+            frame.border:SetBackdropBorderColor(0, 0, 0, 1)
         end
     end
 end
 
-local function ApplyVisibility()
-    UpdateVisibility()
-end
-
-local function ApplyFontSettings()
+local function ApplyFontSettings(frame)
     local db = NivUI_DB.staggerBar
-    local defaults = NivUI.defaults
+    local defaults = NivUI.staggerBarDefaults
 
     local fontName = db.font or defaults.font
     local fontPath = NivUI:GetFontPath(fontName)
@@ -331,130 +238,202 @@ local function ApplyFontSettings()
     local g = fontColor.g or 1
     local b = fontColor.b or 1
 
-    for _, text in ipairs({StaggerBar.textLeft, StaggerBar.textCenter, StaggerBar.textRight}) do
+    for _, text in ipairs({frame.textLeft, frame.textCenter, frame.textRight}) do
         text:SetFont(fontPath, fontSize, flags)
         text:SetTextColor(r, g, b, 1)
     end
 end
 
-local function ApplyLockState()
-    local locked = NivUI:GetSetting("locked")
+local function ApplyLockState(frame)
+    local locked = GetSetting("locked")
     if locked then
-        StaggerBar.resizeHandle:Hide()
+        frame.resizeHandle:Hide()
     else
-        StaggerBar.resizeHandle:Show()
-        local colors = NivUI:GetColors()
-        StaggerBar.bar:SetMinMaxValues(0, 1)
-        StaggerBar.bar:SetValue(0)
-        StaggerBar.bar:SetStatusBarColor(colors.light.r, colors.light.g, colors.light.b)
-        StaggerBar.bg:SetColorTexture(0, 0, 0, 0.8)
-        StaggerBar.textLeft:SetText("0")
-        StaggerBar.textCenter:SetText("0/s")
-        StaggerBar.textRight:SetText("0%")
-        StaggerBar:Show()
+        frame.resizeHandle:Show()
+        local colors = GetColors()
+        frame.bar:SetMinMaxValues(0, 1)
+        frame.bar:SetValue(0)
+        frame.bar:SetStatusBarColor(colors.light.r, colors.light.g, colors.light.b)
+        frame.bg:SetColorTexture(0, 0, 0, 0.8)
+        frame.textLeft:SetText("0")
+        frame.textCenter:SetText("0/s")
+        frame.textRight:SetText("0%")
+        frame:Show()
     end
     UpdateVisibility()
 end
 
-NivUI:RegisterApplyCallback("barTexture", ApplyBarTexture)
-NivUI:RegisterApplyCallback("background", ApplyBackground)
-NivUI:RegisterApplyCallback("border", ApplyBorder)
-NivUI:RegisterApplyCallback("visibility", ApplyVisibility)
-NivUI:RegisterApplyCallback("font", ApplyFontSettings)
-NivUI:RegisterApplyCallback("locked", ApplyLockState)
-NivUI:RegisterApplyCallback("position", LoadPosition)
+local function EnableDragging(frame)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
 
-NivUI.StaggerBar = StaggerBar
-NivUI.UpdateVisibility = UpdateVisibility
+    frame:SetScript("OnDragStart", function(self)
+        if not GetSetting("locked") then
+            self:StartMoving()
+        end
+    end)
 
-local function OnEvent(self, event, ...)
-    if event == "ADDON_LOADED" then
-        local addon = ...
-        if addon == "NivUI" then
-            NivUI:InitializeDB()
-            if NivUI.InitializeDefaultStyle then
-                NivUI:InitializeDefaultStyle()
-            end
-            LoadPosition()
-            ApplyBarTexture()
-            ApplyBackground()
-            ApplyBorder()
-            ApplyFontSettings()
-            EnableDragging()
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local db = NivUI_DB.staggerBar
+        local point, _, _, x, y = self:GetPoint()
+        db.point = point
+        db.x = x
+        db.y = y
+        if NivUI.OnBarMoved then NivUI.OnBarMoved() end
+    end)
+end
+
+local function CreateStaggerBarUI()
+    local frame = CreateFrame("Frame", "NivUIStaggerBar", UIParent)
+    frame:SetSize(394, 20)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
+    frame:SetResizable(true)
+    frame:SetResizeBounds(100, 5, 800, 60)
+    frame:Hide()
+
+    local clickBg = frame:CreateTexture(nil, "BACKGROUND", nil, -1)
+    clickBg:SetAllPoints()
+    clickBg:SetColorTexture(0, 0, 0, 0)
+
+    local barContainer = CreateFrame("Frame", nil, frame)
+    barContainer:SetAllPoints()
+    frame.barContainer = barContainer
+
+    local resizeHandle = CreateFrame("Button", nil, frame)
+    resizeHandle:SetSize(16, 16)
+    resizeHandle:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizeHandle:Hide()
+    frame.resizeHandle = resizeHandle
+
+    resizeHandle:SetScript("OnMouseDown", function(self, button)
+        if button == "LeftButton" then
+            frame:StartSizing("BOTTOMRIGHT")
+        end
+    end)
+
+    resizeHandle:SetScript("OnMouseUp", function(self, _button)
+        frame:StopMovingOrSizing()
+        local db = NivUI_DB.staggerBar
+        db.width = frame:GetWidth()
+        db.height = frame:GetHeight()
+        if NivUI.OnBarMoved then NivUI.OnBarMoved() end
+    end)
+
+    local bg = barContainer:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0, 0, 0, 0.8)
+    frame.bg = bg
+
+    local bar = CreateFrame("StatusBar", nil, barContainer)
+    bar:SetAllPoints()
+    bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    bar:SetMinMaxValues(0, 1)
+    bar:SetValue(0)
+    frame.bar = bar
+
+    local spark = bar:CreateTexture(nil, "OVERLAY")
+    spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
+    spark:SetSize(4, 4)
+    spark:SetBlendMode("ADD")
+    spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
+    frame.spark = spark
+
+    local textLeft = bar:CreateFontString(nil, "OVERLAY")
+    textLeft:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    textLeft:SetPoint("LEFT", bar, "LEFT", 4, 0)
+    textLeft:SetTextColor(1, 1, 1, 1)
+    textLeft:SetShadowOffset(0, 0)
+    frame.textLeft = textLeft
+
+    local textCenter = bar:CreateFontString(nil, "OVERLAY")
+    textCenter:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    textCenter:SetPoint("CENTER", bar, "CENTER", 0, 0)
+    textCenter:SetTextColor(1, 1, 1, 1)
+    textCenter:SetShadowOffset(0, 0)
+    frame.textCenter = textCenter
+
+    local textRight = bar:CreateFontString(nil, "OVERLAY")
+    textRight:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    textRight:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+    textRight:SetTextColor(1, 1, 1, 1)
+    textRight:SetShadowOffset(0, 0)
+    frame.textRight = textRight
+
+    frame.text = textCenter
+
+    local border = CreateFrame("Frame", nil, barContainer, "BackdropTemplate")
+    border:SetPoint("TOPLEFT", -1, 1)
+    border:SetPoint("BOTTOMRIGHT", 1, -1)
+    border:SetBackdrop({
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    border:SetBackdropBorderColor(0, 0, 0, 1)
+    frame.border = border
+
+    return frame
+end
+
+local function RegisterEvents(frame)
+    frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+    frame:SetScript("OnEvent", function(self, event)
+        if event == "PLAYER_SPECIALIZATION_CHANGED" then
             CheckSpec()
+        elseif event == "PLAYER_REGEN_DISABLED" then
+            inCombat = true
+            UpdateVisibility()
+        elseif event == "PLAYER_REGEN_ENABLED" then
+            inCombat = false
+            UpdateVisibility()
+        elseif event == "PLAYER_ENTERING_WORLD" then
+            CheckSpec()
+            inCombat = UnitAffectingCombat("player")
+            UpdateVisibility()
         end
-    elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-        CheckSpec()
-    elseif event == "PLAYER_REGEN_DISABLED" then
-        inCombat = true
-        UpdateVisibility()
-    elseif event == "PLAYER_REGEN_ENABLED" then
-        inCombat = false
-        UpdateVisibility()
-    elseif event == "PLAYER_ENTERING_WORLD" then
-        CheckSpec()
-        inCombat = UnitAffectingCombat("player")
-        UpdateVisibility()
-    end
+    end)
 end
 
-StaggerBar:RegisterEvent("ADDON_LOADED")
-StaggerBar:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-StaggerBar:RegisterEvent("PLAYER_REGEN_DISABLED")
-StaggerBar:RegisterEvent("PLAYER_REGEN_ENABLED")
-StaggerBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-StaggerBar:SetScript("OnEvent", OnEvent)
-StaggerBar:SetScript("OnUpdate", OnUpdate)
+local function OnEnable(frame)
+    NivUI.StaggerBar = frame
 
-SLASH_NIVUI1 = "/nivui"
-SlashCmdList["NIVUI"] = function(msg)
-    local args = {}
-    for word in msg:gmatch("%S+") do
-        table.insert(args, word:lower())
-    end
+    LoadPosition(frame)
+    ApplyBarTexture(frame)
+    ApplyBackground(frame)
+    ApplyBorder(frame)
+    ApplyFontSettings(frame)
+    EnableDragging(frame)
+    CheckSpec()
 
-    local module = args[1]
-    local cmd = args[2]
-
-    if not module or module == "" then
-        if NivUI.ConfigFrame then
-            if NivUI.ConfigFrame:IsShown() then
-                NivUI.ConfigFrame:Hide()
-            else
-                NivUI.ConfigFrame:Show()
-            end
-        else
-            print("NivUI: Config frame not loaded")
-        end
-    elseif module == "stagger" then
-        if cmd == "lock" then
-            NivUI_DB.staggerBar.locked = true
-            ApplyLockState()
-            print("NivUI Stagger Bar: Locked")
-        elseif cmd == "unlock" then
-            NivUI_DB.staggerBar.locked = false
-            ApplyLockState()
-            print("NivUI Stagger Bar: Unlocked - drag to move, corner to resize")
-        elseif cmd == "show" then
-            StaggerBar:Show()
-            print("NivUI Stagger Bar: Forced visible (will hide on combat end)")
-        elseif cmd == "reset" then
-            NivUI_DB.staggerBar = {}
-            NivUI:InitializeDB()
-            LoadPosition()
-            ApplyBarTexture()
-            ApplyFontSettings()
-            print("NivUI Stagger Bar: Reset to defaults")
-        else
-            print("NivUI Stagger Bar commands:")
-            print("  /nivui stagger lock - Lock position")
-            print("  /nivui stagger unlock - Unlock for repositioning")
-            print("  /nivui stagger show - Force show (for testing)")
-            print("  /nivui stagger reset - Reset to defaults")
-        end
-    else
-        print("NivUI commands:")
-        print("  /nivui - Open config panel")
-        print("  /nivui stagger - Stagger bar options")
-    end
+    NivUI:RegisterApplyCallback("barTexture", function() ApplyBarTexture(frame) end)
+    NivUI:RegisterApplyCallback("background", function() ApplyBackground(frame) end)
+    NivUI:RegisterApplyCallback("border", function() ApplyBorder(frame) end)
+    NivUI:RegisterApplyCallback("visibility", UpdateVisibility)
+    NivUI:RegisterApplyCallback("font", function() ApplyFontSettings(frame) end)
+    NivUI:RegisterApplyCallback("locked", function() ApplyLockState(frame) end)
+    NivUI:RegisterApplyCallback("position", function() LoadPosition(frame) end)
 end
+
+local function OnDisable(_frame)
+    NivUI.StaggerBar = nil
+end
+
+local StaggerBarModule = NivUI.BarBase.CreateModule({
+    barType = "stagger",
+    createUI = CreateStaggerBarUI,
+    registerEvents = RegisterEvents,
+    onUpdate = OnUpdate,
+    onEnable = OnEnable,
+    onDisable = OnDisable,
+})
+
+NivUI.StaggerBarModule = StaggerBarModule
+NivUI.UpdateVisibility = UpdateVisibility

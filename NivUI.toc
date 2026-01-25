@@ -3,9 +3,10 @@
 ## Notes: Niv's UI customizations
 ## Author: Niv
 ## Version: 1.1.3
-## SavedVariables: NivUI_DB, NivUI_StaggerBarDB
+## SavedVariables: NivUI_DB
 
 NivUI.lua
+modules/bars/BarBase.lua
 modules/bars/StaggerBar.lua
 modules/bars/ChiBar.lua
 modules/bars/EssenceBar.lua

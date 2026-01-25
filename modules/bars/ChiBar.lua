@@ -1,79 +1,13 @@
-local ChiBar = CreateFrame("Frame", "NivUIChiBar", UIParent)
-ChiBar:SetSize(200, 20)
-ChiBar:SetPoint("CENTER", UIParent, "CENTER", 0, -250)
-ChiBar:SetResizable(true)
-ChiBar:SetResizeBounds(60, 5, 400, 60)
-ChiBar:Hide()
-
-local clickBg = ChiBar:CreateTexture(nil, "BACKGROUND", nil, -1)
-clickBg:SetAllPoints()
-clickBg:SetColorTexture(0, 0, 0, 0)
-
-local segmentContainer = CreateFrame("Frame", nil, ChiBar)
-segmentContainer:SetAllPoints()
-ChiBar.segmentContainer = segmentContainer
-
-local resizeHandle = CreateFrame("Button", nil, ChiBar)
-resizeHandle:SetSize(16, 16)
-resizeHandle:SetPoint("BOTTOMRIGHT", ChiBar, "BOTTOMRIGHT", 0, 0)
-resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-resizeHandle:Hide()
-ChiBar.resizeHandle = resizeHandle
-
-resizeHandle:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" then
-        ChiBar:StartSizing("BOTTOMRIGHT")
-    end
-end)
-
-resizeHandle:SetScript("OnMouseUp", function(self, _button)
-    ChiBar:StopMovingOrSizing()
-    local db = NivUI_DB.chiBar
-    db.width = ChiBar:GetWidth()
-    db.height = ChiBar:GetHeight()
-    ChiBar:RebuildSegments()
-    if NivUI.OnBarMoved then NivUI.OnBarMoved() end
-end)
-
-local border = CreateFrame("Frame", nil, ChiBar, "BackdropTemplate")
-border:SetPoint("TOPLEFT", -1, 1)
-border:SetPoint("BOTTOMRIGHT", 1, -1)
-border:SetBackdrop({
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 1,
-})
-border:SetBackdropBorderColor(0, 0, 0, 1)
-ChiBar.border = border
-
-ChiBar.segments = {}
-
 local lastUpdate = 0
 local isWindwalker = false
 local inCombat = false
-
-local defaults = {
-    point = "CENTER",
-    x = 0,
-    y = -250,
-    width = 200,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",  -- "always", "combat", "never"
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },  -- Jade green
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
 
 local function GetSetting(key)
     local db = NivUI_DB and NivUI_DB.chiBar
     if db and db[key] ~= nil then
         return db[key]
     end
-    return defaults[key]
+    return NivUI.chiBarDefaults[key]
 end
 
 local function SafeGetChi()
@@ -95,73 +29,7 @@ local function SafeIsActive(index, chi)
     return result
 end
 
-function ChiBar:RebuildSegments()
-    for _, seg in ipairs(self.segments) do
-        seg.bg:Hide()
-        seg.bar:Hide()
-    end
-    wipe(self.segments)
-
-    local maxChi = SafeGetMaxChi() or 5
-    local width = self:GetWidth()
-    local height = self:GetHeight()
-    local spacing = GetSetting("spacing")
-
-    local totalSpacing = spacing * (maxChi - 1)
-    local segmentWidth = (width - totalSpacing) / maxChi
-
-    local emptyColor = GetSetting("emptyColor")
-    local filledColor = GetSetting("filledColor")
-
-    for i = 1, maxChi do
-        local xOffset = (i - 1) * (segmentWidth + spacing)
-
-        local bg = self.segmentContainer:CreateTexture(nil, "BACKGROUND")
-        bg:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
-        bg:SetSize(segmentWidth, height)
-        bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
-
-        local bar = self.segmentContainer:CreateTexture(nil, "ARTWORK")
-        bar:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
-        bar:SetSize(segmentWidth, height)
-        bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
-        bar:Hide()
-
-        self.segments[i] = {
-            bg = bg,
-            bar = bar,
-            active = false,
-        }
-    end
-end
-
-function ChiBar:UpdateSegments()
-    local chi = SafeGetChi()
-    local maxChi = SafeGetMaxChi()
-
-    if chi == nil or maxChi == nil then
-        for _, seg in ipairs(self.segments) do
-            seg.bar:Hide()
-        end
-        return
-    end
-
-    if #self.segments ~= maxChi then
-        self:RebuildSegments()
-    end
-
-    for i, seg in ipairs(self.segments) do
-        local shouldBeActive = SafeIsActive(i, chi)
-        if shouldBeActive ~= seg.active then
-            seg.active = shouldBeActive
-            if shouldBeActive then
-                seg.bar:Show()
-            else
-                seg.bar:Hide()
-            end
-        end
-    end
-end
+local UpdateVisibility
 
 local function ShouldShow()
     local visibility = GetSetting("visibility")
@@ -176,11 +44,14 @@ local function ShouldShow()
     return inCombat
 end
 
-local function UpdateVisibility()
+UpdateVisibility = function()
+    local frame = NivUI.ChiBar
+    if not frame then return end
+
     if ShouldShow() then
-        ChiBar:Show()
+        frame:Show()
     else
-        ChiBar:Hide()
+        frame:Hide()
     end
 end
 
@@ -195,8 +66,8 @@ local function CheckSpec()
     isWindwalker = (spec == 3)
     UpdateVisibility()
 
-    if isWindwalker then
-        ChiBar:RebuildSegments()
+    if isWindwalker and NivUI.ChiBar then
+        NivUI.ChiBar:RebuildSegments()
     end
 end
 
@@ -211,18 +82,68 @@ local function OnUpdate(self, elapsed)
     end
 end
 
-local function EnableDragging()
-    ChiBar:SetMovable(true)
-    ChiBar:EnableMouse(true)
-    ChiBar:RegisterForDrag("LeftButton")
+local function LoadPosition(frame)
+    local db = NivUI_DB.chiBar or {}
+    local defaults = NivUI.chiBarDefaults
 
-    ChiBar:SetScript("OnDragStart", function(self)
+    frame:ClearAllPoints()
+    frame:SetPoint(
+        db.point or defaults.point,
+        UIParent,
+        db.point or defaults.point,
+        db.x or defaults.x,
+        db.y or defaults.y
+    )
+    frame:SetSize(
+        db.width or defaults.width,
+        db.height or defaults.height
+    )
+
+    if GetSetting("locked") then
+        frame.resizeHandle:Hide()
+    else
+        frame.resizeHandle:Show()
+    end
+end
+
+local function ApplyColors(frame)
+    local emptyColor = GetSetting("emptyColor")
+    local filledColor = GetSetting("filledColor")
+
+    for _, seg in ipairs(frame.segments) do
+        seg.bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
+        seg.bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
+    end
+end
+
+local function ApplyBorder(frame)
+    local borderColor = GetSetting("borderColor")
+    frame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+end
+
+local function ApplyLockState(frame)
+    local locked = GetSetting("locked")
+    if locked then
+        frame.resizeHandle:Hide()
+    else
+        frame.resizeHandle:Show()
+        frame:Show()
+    end
+    UpdateVisibility()
+end
+
+local function EnableDragging(frame)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+
+    frame:SetScript("OnDragStart", function(self)
         if not GetSetting("locked") then
             self:StartMoving()
         end
     end)
 
-    ChiBar:SetScript("OnDragStop", function(self)
+    frame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local db = NivUI_DB.chiBar
         local point, _, _, x, y = self:GetPoint()
@@ -233,118 +154,185 @@ local function EnableDragging()
     end)
 end
 
-local function LoadPosition()
-    local db = NivUI_DB.chiBar or {}
+local function CreateChiBarUI()
+    local frame = CreateFrame("Frame", "NivUIChiBar", UIParent)
+    frame:SetSize(200, 20)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, -250)
+    frame:SetResizable(true)
+    frame:SetResizeBounds(60, 5, 400, 60)
+    frame:Hide()
 
-    ChiBar:ClearAllPoints()
-    ChiBar:SetPoint(
-        db.point or defaults.point,
-        UIParent,
-        db.point or defaults.point,
-        db.x or defaults.x,
-        db.y or defaults.y
-    )
-    ChiBar:SetSize(
-        db.width or defaults.width,
-        db.height or defaults.height
-    )
+    local clickBg = frame:CreateTexture(nil, "BACKGROUND", nil, -1)
+    clickBg:SetAllPoints()
+    clickBg:SetColorTexture(0, 0, 0, 0)
 
-    if GetSetting("locked") then
-        ChiBar.resizeHandle:Hide()
-    else
-        ChiBar.resizeHandle:Show()
+    local segmentContainer = CreateFrame("Frame", nil, frame)
+    segmentContainer:SetAllPoints()
+    frame.segmentContainer = segmentContainer
+
+    local resizeHandle = CreateFrame("Button", nil, frame)
+    resizeHandle:SetSize(16, 16)
+    resizeHandle:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizeHandle:Hide()
+    frame.resizeHandle = resizeHandle
+
+    resizeHandle:SetScript("OnMouseDown", function(self, button)
+        if button == "LeftButton" then
+            frame:StartSizing("BOTTOMRIGHT")
+        end
+    end)
+
+    resizeHandle:SetScript("OnMouseUp", function(self, _button)
+        frame:StopMovingOrSizing()
+        local db = NivUI_DB.chiBar
+        db.width = frame:GetWidth()
+        db.height = frame:GetHeight()
+        frame:RebuildSegments()
+        if NivUI.OnBarMoved then NivUI.OnBarMoved() end
+    end)
+
+    local border = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    border:SetPoint("TOPLEFT", -1, 1)
+    border:SetPoint("BOTTOMRIGHT", 1, -1)
+    border:SetBackdrop({
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    border:SetBackdropBorderColor(0, 0, 0, 1)
+    frame.border = border
+
+    frame.segments = {}
+
+    function frame:RebuildSegments()
+        for _, seg in ipairs(self.segments) do
+            seg.bg:Hide()
+            seg.bar:Hide()
+        end
+        wipe(self.segments)
+
+        local maxChi = SafeGetMaxChi() or 5
+        local width = self:GetWidth()
+        local height = self:GetHeight()
+        local spacing = GetSetting("spacing")
+
+        local totalSpacing = spacing * (maxChi - 1)
+        local segmentWidth = (width - totalSpacing) / maxChi
+
+        local emptyColor = GetSetting("emptyColor")
+        local filledColor = GetSetting("filledColor")
+
+        for i = 1, maxChi do
+            local xOffset = (i - 1) * (segmentWidth + spacing)
+
+            local bg = self.segmentContainer:CreateTexture(nil, "BACKGROUND")
+            bg:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
+            bg:SetSize(segmentWidth, height)
+            bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
+
+            local bar = self.segmentContainer:CreateTexture(nil, "ARTWORK")
+            bar:SetPoint("TOPLEFT", self.segmentContainer, "TOPLEFT", xOffset, 0)
+            bar:SetSize(segmentWidth, height)
+            bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
+            bar:Hide()
+
+            self.segments[i] = {
+                bg = bg,
+                bar = bar,
+                active = false,
+            }
+        end
     end
-end
 
-local function ApplyColors()
-    local emptyColor = GetSetting("emptyColor")
-    local filledColor = GetSetting("filledColor")
+    function frame:UpdateSegments()
+        local chi = SafeGetChi()
+        local maxChi = SafeGetMaxChi()
 
-    for _, seg in ipairs(ChiBar.segments) do
-        seg.bg:SetColorTexture(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a or 0.8)
-        seg.bar:SetColorTexture(filledColor.r, filledColor.g, filledColor.b, filledColor.a or 1.0)
-    end
-end
+        if chi == nil or maxChi == nil then
+            for _, seg in ipairs(self.segments) do
+                seg.bar:Hide()
+            end
+            return
+        end
 
-local function ApplyBorder()
-    local borderColor = GetSetting("borderColor")
-    ChiBar.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
-end
+        if #self.segments ~= maxChi then
+            self:RebuildSegments()
+        end
 
-local function ApplyLockState()
-    local locked = GetSetting("locked")
-    if locked then
-        ChiBar.resizeHandle:Hide()
-    else
-        ChiBar.resizeHandle:Show()
-        ChiBar:Show()
-    end
-    UpdateVisibility()
-end
-
-local function InitializeDB()
-    if not NivUI_DB then NivUI_DB = {} end
-    if not NivUI_DB.chiBar then NivUI_DB.chiBar = {} end
-
-    for k, v in pairs(defaults) do
-        if NivUI_DB.chiBar[k] == nil then
-            if type(v) == "table" then
-                NivUI_DB.chiBar[k] = {}
-                for k2, v2 in pairs(v) do
-                    NivUI_DB.chiBar[k][k2] = v2
+        for i, seg in ipairs(self.segments) do
+            local shouldBeActive = SafeIsActive(i, chi)
+            if shouldBeActive ~= seg.active then
+                seg.active = shouldBeActive
+                if shouldBeActive then
+                    seg.bar:Show()
+                else
+                    seg.bar:Hide()
                 end
-            else
-                NivUI_DB.chiBar[k] = v
             end
         end
     end
+
+    return frame
 end
 
-local function OnEvent(self, event, ...)
-    if event == "ADDON_LOADED" then
-        local addon = ...
-        if addon == "NivUI" then
-            InitializeDB()
-            LoadPosition()
-            ApplyBorder()
-            EnableDragging()
+local function RegisterEvents(frame)
+    frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    frame:RegisterEvent("UNIT_MAXPOWER")
+
+    frame:SetScript("OnEvent", function(self, event, ...)
+        if event == "PLAYER_SPECIALIZATION_CHANGED" then
             CheckSpec()
-            ChiBar:RebuildSegments()
+        elseif event == "PLAYER_REGEN_DISABLED" then
+            inCombat = true
+            UpdateVisibility()
+        elseif event == "PLAYER_REGEN_ENABLED" then
+            inCombat = false
+            UpdateVisibility()
+        elseif event == "PLAYER_ENTERING_WORLD" then
+            CheckSpec()
+            inCombat = UnitAffectingCombat("player")
+            UpdateVisibility()
+        elseif event == "UNIT_MAXPOWER" then
+            local unit = ...
+            if unit == "player" then
+                self:RebuildSegments()
+            end
         end
-    elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-        CheckSpec()
-    elseif event == "PLAYER_REGEN_DISABLED" then
-        inCombat = true
-        UpdateVisibility()
-    elseif event == "PLAYER_REGEN_ENABLED" then
-        inCombat = false
-        UpdateVisibility()
-    elseif event == "PLAYER_ENTERING_WORLD" then
-        CheckSpec()
-        inCombat = UnitAffectingCombat("player")
-        UpdateVisibility()
-    elseif event == "UNIT_MAXPOWER" then
-        local unit = ...
-        if unit == "player" then
-            ChiBar:RebuildSegments()
-        end
-    end
+    end)
 end
 
-ChiBar:RegisterEvent("ADDON_LOADED")
-ChiBar:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-ChiBar:RegisterEvent("PLAYER_REGEN_DISABLED")
-ChiBar:RegisterEvent("PLAYER_REGEN_ENABLED")
-ChiBar:RegisterEvent("PLAYER_ENTERING_WORLD")
-ChiBar:RegisterEvent("UNIT_MAXPOWER")
-ChiBar:SetScript("OnEvent", OnEvent)
-ChiBar:SetScript("OnUpdate", OnUpdate)
+local function OnEnable(frame)
+    NivUI.ChiBar = frame
 
-NivUI = NivUI or {}
-NivUI.ChiBar = ChiBar
-NivUI.ChiBar.defaults = defaults
-NivUI.ChiBar.UpdateVisibility = UpdateVisibility
-NivUI.ChiBar.ApplyColors = ApplyColors
-NivUI.ChiBar.ApplyBorder = ApplyBorder
-NivUI.ChiBar.ApplyLockState = ApplyLockState
-NivUI.ChiBar.LoadPosition = LoadPosition
+    LoadPosition(frame)
+    ApplyBorder(frame)
+    EnableDragging(frame)
+    CheckSpec()
+    frame:RebuildSegments()
+end
+
+local function OnDisable(_frame)
+    NivUI.ChiBar = nil
+end
+
+local ChiBarModule = NivUI.BarBase.CreateModule({
+    barType = "chi",
+    createUI = CreateChiBarUI,
+    registerEvents = RegisterEvents,
+    onUpdate = OnUpdate,
+    onEnable = OnEnable,
+    onDisable = OnDisable,
+})
+
+NivUI.ChiBarModule = ChiBarModule
+NivUI.ChiBar = nil
+NivUI.ChiBar_UpdateVisibility = UpdateVisibility
+NivUI.ChiBar_ApplyColors = function() if NivUI.ChiBar then ApplyColors(NivUI.ChiBar) end end
+NivUI.ChiBar_ApplyBorder = function() if NivUI.ChiBar then ApplyBorder(NivUI.ChiBar) end end
+NivUI.ChiBar_ApplyLockState = function() if NivUI.ChiBar then ApplyLockState(NivUI.ChiBar) end end
+NivUI.ChiBar_LoadPosition = function() if NivUI.ChiBar then LoadPosition(NivUI.ChiBar) end end

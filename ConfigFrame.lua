@@ -424,8 +424,17 @@ local function SetupStaggerBarContent(parent)
         table.insert(allFrames, frame)
     end
 
+    local enableCheckbox = Components.GetCheckbox(
+        content,
+        "Enable Stagger Bar",
+        function(checked)
+            NivUI:SetClassBarEnabled("stagger", checked)
+        end
+    )
+    AddFrame(enableCheckbox)
+
     local generalHeader = Components.GetHeader(content, "General")
-    AddFrame(generalHeader)
+    AddFrame(generalHeader, SECTION_SPACING)
 
     local visibilityDropdown = Components.GetBasicDropdown(
         content,
@@ -643,6 +652,7 @@ local function SetupStaggerBarContent(parent)
         local db = NivUI_DB.staggerBar
         local defaults = NivUI.defaults
 
+        enableCheckbox:SetValue(NivUI:IsClassBarEnabled("stagger"))
         visibilityDropdown:SetValue()
 
         fgTextureDropdown:SetValue()
@@ -700,7 +710,7 @@ local function SetupChiBarContent(parent)
         table.insert(allFrames, frame)
     end
 
-    local chiDefaults = NivUI.ChiBar and NivUI.ChiBar.defaults or {
+    local chiDefaults = NivUI.chiBarDefaults or {
         visibility = "combat",
         spacing = 2,
         width = 200,
@@ -712,8 +722,17 @@ local function SetupChiBarContent(parent)
         updateInterval = 0.05,
     }
 
+    local enableCheckbox = Components.GetCheckbox(
+        content,
+        "Enable Chi Bar",
+        function(checked)
+            NivUI:SetClassBarEnabled("chi", checked)
+        end
+    )
+    AddFrame(enableCheckbox)
+
     local generalHeader = Components.GetHeader(content, "General")
-    AddFrame(generalHeader)
+    AddFrame(generalHeader, SECTION_SPACING)
 
     local visibilityDropdown = Components.GetBasicDropdown(
         content,
@@ -726,7 +745,7 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.visibility = value
-            NivUI.ChiBar.UpdateVisibility()
+            NivUI.ChiBar_UpdateVisibility()
         end
     )
     AddFrame(visibilityDropdown)
@@ -741,7 +760,7 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.spacing = value
-            NivUI.ChiBar:RebuildSegments()
+            if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end
         end
     )
     AddFrame(spacingSlider)
@@ -753,7 +772,7 @@ local function SetupChiBarContent(parent)
         function(color)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.emptyColor = color
-            NivUI.ChiBar.ApplyColors()
+            NivUI.ChiBar_ApplyColors()
         end
     )
     AddFrame(emptyColorPicker)
@@ -765,7 +784,7 @@ local function SetupChiBarContent(parent)
         function(color)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.filledColor = color
-            NivUI.ChiBar.ApplyColors()
+            NivUI.ChiBar_ApplyColors()
         end
     )
     AddFrame(filledColorPicker)
@@ -777,7 +796,7 @@ local function SetupChiBarContent(parent)
         function(color)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.borderColor = color
-            NivUI.ChiBar.ApplyBorder()
+            NivUI.ChiBar_ApplyBorder()
         end
     )
     AddFrame(borderColorPicker)
@@ -791,7 +810,7 @@ local function SetupChiBarContent(parent)
         function(checked)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.locked = checked
-            NivUI.ChiBar.ApplyLockState()
+            NivUI.ChiBar_ApplyLockState()
         end
     )
     AddFrame(lockedCheck)
@@ -803,8 +822,8 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.width = value
-            NivUI.ChiBar.LoadPosition()
-            NivUI.ChiBar:RebuildSegments()
+            NivUI.ChiBar_LoadPosition()
+            if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end
         end
     )
     AddFrame(widthSlider)
@@ -816,8 +835,8 @@ local function SetupChiBarContent(parent)
         function(value)
             NivUI_DB.chiBar = NivUI_DB.chiBar or {}
             NivUI_DB.chiBar.height = value
-            NivUI.ChiBar.LoadPosition()
-            NivUI.ChiBar:RebuildSegments()
+            NivUI.ChiBar_LoadPosition()
+            if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end
         end
     )
     AddFrame(heightSlider)
@@ -836,6 +855,7 @@ local function SetupChiBarContent(parent)
     container:SetScript("OnShow", function()
         local db = NivUI_DB.chiBar or {}
 
+        enableCheckbox:SetValue(NivUI:IsClassBarEnabled("chi"))
         visibilityDropdown:SetValue()
         spacingSlider:SetValue(db.spacing or chiDefaults.spacing)
         emptyColorPicker:SetValue(db.emptyColor or chiDefaults.emptyColor)
@@ -877,7 +897,7 @@ local function SetupEssenceBarContent(parent)
         table.insert(allFrames, frame)
     end
 
-    local essenceDefaults = NivUI.EssenceBar and NivUI.EssenceBar.defaults or {
+    local essenceDefaults = NivUI.essenceBarDefaults or {
         visibility = "combat",
         spacing = 2,
         width = 200,
@@ -889,8 +909,17 @@ local function SetupEssenceBarContent(parent)
         updateInterval = 0.05,
     }
 
+    local enableCheckbox = Components.GetCheckbox(
+        content,
+        "Enable Essence Bar",
+        function(checked)
+            NivUI:SetClassBarEnabled("essence", checked)
+        end
+    )
+    AddFrame(enableCheckbox)
+
     local generalHeader = Components.GetHeader(content, "General")
-    AddFrame(generalHeader)
+    AddFrame(generalHeader, SECTION_SPACING)
 
     local visibilityDropdown = Components.GetBasicDropdown(
         content,
@@ -903,7 +932,7 @@ local function SetupEssenceBarContent(parent)
         function(value)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.visibility = value
-            NivUI.EssenceBar.UpdateVisibility()
+            NivUI.EssenceBar_UpdateVisibility()
         end
     )
     AddFrame(visibilityDropdown)
@@ -918,7 +947,7 @@ local function SetupEssenceBarContent(parent)
         function(value)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.spacing = value
-            NivUI.EssenceBar:RebuildSegments()
+            if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end
         end
     )
     AddFrame(spacingSlider)
@@ -930,7 +959,7 @@ local function SetupEssenceBarContent(parent)
         function(color)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.emptyColor = color
-            NivUI.EssenceBar.ApplyColors()
+            NivUI.EssenceBar_ApplyColors()
         end
     )
     AddFrame(emptyColorPicker)
@@ -942,7 +971,7 @@ local function SetupEssenceBarContent(parent)
         function(color)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.filledColor = color
-            NivUI.EssenceBar.ApplyColors()
+            NivUI.EssenceBar_ApplyColors()
         end
     )
     AddFrame(filledColorPicker)
@@ -954,7 +983,7 @@ local function SetupEssenceBarContent(parent)
         function(color)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.borderColor = color
-            NivUI.EssenceBar.ApplyBorder()
+            NivUI.EssenceBar_ApplyBorder()
         end
     )
     AddFrame(borderColorPicker)
@@ -968,7 +997,7 @@ local function SetupEssenceBarContent(parent)
         function(checked)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.locked = checked
-            NivUI.EssenceBar.ApplyLockState()
+            NivUI.EssenceBar_ApplyLockState()
         end
     )
     AddFrame(lockedCheck)
@@ -980,8 +1009,8 @@ local function SetupEssenceBarContent(parent)
         function(value)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.width = value
-            NivUI.EssenceBar.LoadPosition()
-            NivUI.EssenceBar:RebuildSegments()
+            NivUI.EssenceBar_LoadPosition()
+            if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end
         end
     )
     AddFrame(widthSlider)
@@ -993,8 +1022,8 @@ local function SetupEssenceBarContent(parent)
         function(value)
             NivUI_DB.essenceBar = NivUI_DB.essenceBar or {}
             NivUI_DB.essenceBar.height = value
-            NivUI.EssenceBar.LoadPosition()
-            NivUI.EssenceBar:RebuildSegments()
+            NivUI.EssenceBar_LoadPosition()
+            if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end
         end
     )
     AddFrame(heightSlider)
@@ -1013,6 +1042,7 @@ local function SetupEssenceBarContent(parent)
     container:SetScript("OnShow", function()
         local db = NivUI_DB.essenceBar or {}
 
+        enableCheckbox:SetValue(NivUI:IsClassBarEnabled("essence"))
         visibilityDropdown:SetValue()
         spacingSlider:SetValue(db.spacing or essenceDefaults.spacing)
         emptyColorPicker:SetValue(db.emptyColor or essenceDefaults.emptyColor)

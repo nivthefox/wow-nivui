@@ -2,6 +2,8 @@ NivUI = NivUI or {}
 
 NivUI_DB = NivUI_DB or {}
 
+NivUI.eventCallbacks = NivUI.eventCallbacks or {}
+
 NivUI.staggerBarDefaults = {
     visibility = "combat",
     updateInterval = 0.2,
@@ -33,6 +35,36 @@ NivUI.staggerBarDefaults = {
 
 NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture
 NivUI.defaults = NivUI.staggerBarDefaults
+
+NivUI.chiBarDefaults = {
+    point = "CENTER",
+    x = 0,
+    y = -250,
+    width = 200,
+    height = 20,
+    spacing = 2,
+    locked = true,
+    visibility = "combat",
+    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
+    filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },
+    borderColor = { r = 0, g = 0, b = 0, a = 1 },
+    updateInterval = 0.05,
+}
+
+NivUI.essenceBarDefaults = {
+    point = "CENTER",
+    x = 0,
+    y = -280,
+    width = 200,
+    height = 20,
+    spacing = 2,
+    locked = true,
+    visibility = "combat",
+    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
+    filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },
+    borderColor = { r = 0, g = 0, b = 0, a = 1 },
+    updateInterval = 0.05,
+}
 
 local BUILTIN_TEXTURES = {
     { value = "Default", name = "Default", path = "Interface\\TargetingFrame\\UI-StatusBar" },
@@ -138,7 +170,7 @@ end
 NivUI.barTextures = nil  -- Legacy
 NivUI.fonts = nil  -- Legacy
 
-NivUI.applyCallbacks = {}
+NivUI.applyCallbacks = NivUI.applyCallbacks or {}
 
 function NivUI:RegisterApplyCallback(name, callback)
     self.applyCallbacks[name] = callback
@@ -186,11 +218,32 @@ function NivUI:InitializeDB()
     if not NivUI_DB.staggerBar then
         NivUI_DB.staggerBar = {}
     end
-
     for k, v in pairs(self.staggerBarDefaults) do
         if NivUI_DB.staggerBar[k] == nil then
             NivUI_DB.staggerBar[k] = DeepCopy(v)
         end
+    end
+
+    if not NivUI_DB.chiBar then
+        NivUI_DB.chiBar = {}
+    end
+    for k, v in pairs(self.chiBarDefaults) do
+        if NivUI_DB.chiBar[k] == nil then
+            NivUI_DB.chiBar[k] = DeepCopy(v)
+        end
+    end
+
+    if not NivUI_DB.essenceBar then
+        NivUI_DB.essenceBar = {}
+    end
+    for k, v in pairs(self.essenceBarDefaults) do
+        if NivUI_DB.essenceBar[k] == nil then
+            NivUI_DB.essenceBar[k] = DeepCopy(v)
+        end
+    end
+
+    if not NivUI_DB.classBarEnabled then
+        NivUI_DB.classBarEnabled = {}
     end
 
     if not NivUI_DB.unitFrameStyles then
@@ -208,5 +261,53 @@ function NivUI:InitializeDB()
             arena = "Default",
             targettarget = "Default",
         }
+    end
+end
+
+function NivUI:RegisterCallback(event, callback)
+    if not self.eventCallbacks[event] then
+        self.eventCallbacks[event] = {}
+    end
+    table.insert(self.eventCallbacks[event], callback)
+end
+
+function NivUI:TriggerEvent(event, data)
+    if not self.eventCallbacks[event] then return end
+    for _, callback in ipairs(self.eventCallbacks[event]) do
+        callback(data)
+    end
+end
+
+function NivUI:IsClassBarEnabled(barType)
+    if not NivUI_DB.classBarEnabled then
+        return false
+    end
+    return NivUI_DB.classBarEnabled[barType] == true
+end
+
+function NivUI:SetClassBarEnabled(barType, enabled)
+    if not NivUI_DB.classBarEnabled then
+        NivUI_DB.classBarEnabled = {}
+    end
+
+    NivUI_DB.classBarEnabled[barType] = enabled
+
+    self:TriggerEvent("ClassBarEnabledChanged", { barType = barType, enabled = enabled })
+end
+
+SLASH_NIVUI1 = "/nivui"
+SlashCmdList["NIVUI"] = function(msg)
+    if not msg or msg == "" then
+        if NivUI.ConfigFrame then
+            if NivUI.ConfigFrame:IsShown() then
+                NivUI.ConfigFrame:Hide()
+            else
+                NivUI.ConfigFrame:Show()
+            end
+        else
+            print("NivUI: Config frame not loaded")
+        end
+    else
+        print("NivUI: Use /nivui to open the config panel")
     end
 end
