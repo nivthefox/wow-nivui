@@ -519,7 +519,7 @@ local function DestroyRaidFrames(raidSize)
     wipe(state.groupFrames)
 
     if state.container then
-        state.container:Hide()
+        Base.SetSecureVisibility(state.container, false)
         state.container:SetParent(nil)
         state.container = nil
     end
@@ -541,7 +541,7 @@ local function OnGroupRosterUpdate()
                     UnregisterStateDriver(state.container, "visibility")
                     NivUI.EditMode:UnregisterVisibilityDriver(raidSize)
                     state.hasVisibilityDriver = false
-                    state.container:Hide()
+                    Base.SetSecureVisibility(state.container, false)
                 end
             end
 
@@ -550,22 +550,12 @@ local function OnGroupRosterUpdate()
                 if state.container and state.container:IsShown() then
                     UpdateAllRaidMembers(raidSize)
                 end
-            elseif state.previewMode then
-                if state.container then
-                    state.container:Show()
-                end
-                LayoutGroupFrames(raidSize)
-                UpdateAllRaidMembers(raidSize)
-            elseif isActive then
-                if state.container then
-                    state.container:Show()
-                end
+            elseif state.previewMode or isActive then
+                Base.SetSecureVisibility(state.container, true)
                 LayoutGroupFrames(raidSize)
                 UpdateAllRaidMembers(raidSize)
             else
-                if state.container then
-                    state.container:Hide()
-                end
+                Base.SetSecureVisibility(state.container, false)
             end
         end
     end
@@ -601,11 +591,7 @@ function RaidFrame.Enable(raidSize)
     HideBlizzardRaidFrames()
 
     if not state.hasVisibilityDriver then
-        if ShouldShowRaidFrames(raidSize) then
-            state.container:Show()
-        else
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(raidSize))
     end
 end
 
@@ -624,11 +610,7 @@ function RaidFrame.Refresh(raidSize)
 
     BuildRaidFrames(raidSize)
     if not state.hasVisibilityDriver then
-        if ShouldShowRaidFrames(raidSize) then
-            state.container:Show()
-        else
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(raidSize))
     end
 end
 
@@ -642,11 +624,7 @@ function RaidFrame.SetPreviewMode(raidSize, enabled)
         UpdateAllRaidMembers(raidSize)
 
         if not state.hasVisibilityDriver then
-            if enabled then
-                state.container:Show()
-            elseif not ShouldShowRaidFrames(raidSize) then
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, enabled or ShouldShowRaidFrames(raidSize))
         end
     end
 end
@@ -734,11 +712,7 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
                 UnregisterStateDriver(state.container, "visibility")
                 NivUI.EditMode:UnregisterVisibilityDriver(data.frameType)
             end
-            if ShouldShowRaidFrames(data.frameType) then
-                state.container:Show()
-            else
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(data.frameType))
         end
     end
 end)

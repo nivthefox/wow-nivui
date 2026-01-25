@@ -312,7 +312,7 @@ local function DestroyArenaFrames()
     end
 
     if state.container then
-        state.container:Hide()
+        Base.SetSecureVisibility(state.container, false)
         state.container:SetParent(nil)
         state.container = nil
     end
@@ -327,15 +327,11 @@ local function OnArenaOpponentUpdate()
             UpdateAllMemberFrames()
         end
     elseif ShouldShowArenaFrames() then
-        if state.container then
-            state.container:Show()
-        end
+        Base.SetSecureVisibility(state.container, true)
         LayoutMemberFrames()
         UpdateAllMemberFrames()
     else
-        if state.container then
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, false)
     end
 end
 
@@ -365,11 +361,7 @@ function ArenaFrame.Enable()
     HideBlizzardArenaFrames()
 
     if not state.hasVisibilityDriver then
-        if ShouldShowArenaFrames() then
-            state.container:Show()
-        else
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, ShouldShowArenaFrames())
     end
 end
 
@@ -383,11 +375,7 @@ function ArenaFrame.Refresh()
     if state.enabled then
         BuildArenaFrames()
         if not state.hasVisibilityDriver then
-            if ShouldShowArenaFrames() then
-                state.container:Show()
-            else
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, ShouldShowArenaFrames())
         end
     end
 end
@@ -399,11 +387,7 @@ function ArenaFrame.SetPreviewMode(enabled)
         UpdateAllMemberFrames()
 
         if not state.hasVisibilityDriver then
-            if enabled then
-                state.container:Show()
-            elseif not ShouldShowArenaFrames() then
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, enabled or ShouldShowArenaFrames())
         end
     end
 end
@@ -484,11 +468,7 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
             state.hasVisibilityDriver = false
             UnregisterStateDriver(state.container, "visibility")
             NivUI.EditMode:UnregisterVisibilityDriver("arena")
-            if ShouldShowArenaFrames() then
-                state.container:Show()
-            else
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, ShouldShowArenaFrames())
         end
     end
 end)

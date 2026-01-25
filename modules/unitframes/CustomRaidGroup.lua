@@ -326,11 +326,7 @@ local function BuildCustomGroupFrames(groupId)
     state.enabled = groupConfig.enabled
     LayoutMemberFrames(groupId)
 
-    if state.enabled then
-        state.container:Show()
-    else
-        state.container:Hide()
-    end
+    Base.SetSecureVisibility(state.container, state.enabled)
 end
 
 local function DestroyCustomGroupFrames(groupId)
@@ -342,7 +338,7 @@ local function DestroyCustomGroupFrames(groupId)
     end
 
     if state.container then
-        state.container:Hide()
+        Base.SetSecureVisibility(state.container, false)
         state.container:SetParent(nil)
         state.container = nil
     end
@@ -373,9 +369,7 @@ function CustomRaidGroup.Disable(groupId)
     local state = groupStates[groupId]
     if state then
         state.enabled = false
-        if state.container then
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, false)
     end
 end
 

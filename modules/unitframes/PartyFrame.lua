@@ -340,7 +340,7 @@ local function DestroyPartyFrames()
     end
 
     if state.container then
-        state.container:Hide()
+        Base.SetSecureVisibility(state.container, false)
         state.container:SetParent(nil)
         state.container = nil
     end
@@ -355,15 +355,11 @@ local function OnGroupRosterUpdate()
             UpdateAllMemberFrames()
         end
     elseif ShouldShowPartyFrames() then
-        if state.container then
-            state.container:Show()
-        end
+        Base.SetSecureVisibility(state.container, true)
         LayoutMemberFrames()
         UpdateAllMemberFrames()
     else
-        if state.container then
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, false)
     end
 end
 
@@ -400,11 +396,7 @@ function PartyFrame.Enable()
     HideBlizzardPartyFrames()
 
     if not state.hasVisibilityDriver then
-        if ShouldShowPartyFrames() then
-            state.container:Show()
-        else
-            state.container:Hide()
-        end
+        Base.SetSecureVisibility(state.container, ShouldShowPartyFrames())
     end
 end
 
@@ -418,11 +410,7 @@ function PartyFrame.Refresh()
     if state.enabled then
         BuildPartyFrames()
         if not state.hasVisibilityDriver then
-            if ShouldShowPartyFrames() then
-                state.container:Show()
-            else
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, ShouldShowPartyFrames())
         end
     end
 end
@@ -434,11 +422,7 @@ function PartyFrame.SetPreviewMode(enabled)
         UpdateAllMemberFrames()
 
         if not state.hasVisibilityDriver then
-            if enabled then
-                state.container:Show()
-            elseif not ShouldShowPartyFrames() then
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, enabled or ShouldShowPartyFrames())
         end
     end
 end
@@ -503,12 +487,11 @@ NivUI:RegisterCallback("PartySettingsChanged", function(data)
             LayoutMemberFrames()
         elseif data.setting == "showWhenSolo" then
             if not state.hasVisibilityDriver then
-                if ShouldShowPartyFrames() then
-                    state.container:Show()
+                local shouldShow = ShouldShowPartyFrames()
+                Base.SetSecureVisibility(state.container, shouldShow)
+                if shouldShow then
                     LayoutMemberFrames()
                     UpdateAllMemberFrames()
-                else
-                    state.container:Hide()
                 end
             end
         end
@@ -529,11 +512,7 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
             state.hasVisibilityDriver = false
             UnregisterStateDriver(state.container, "visibility")
             NivUI.EditMode:UnregisterVisibilityDriver("party")
-            if ShouldShowPartyFrames() then
-                state.container:Show()
-            else
-                state.container:Hide()
-            end
+            Base.SetSecureVisibility(state.container, ShouldShowPartyFrames())
         end
     end
 end)

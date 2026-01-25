@@ -45,6 +45,16 @@ function UnitFrameBase.KillVisual(frame)
     end
 end
 
+--- Sets visibility on a protected frame using secure state drivers.
+--- Safe to call during combat. Use this instead of Show()/Hide() on containers
+--- that have SecureUnitButtonTemplate children.
+--- @param frame Frame The frame to show or hide
+--- @param visible boolean True to show, false to hide
+function UnitFrameBase.SetSecureVisibility(frame, visible)
+    if not frame then return end
+    RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
+end
+
 function UnitFrameBase.UpdateHealthBar(state)
     if not state.customFrame or not state.customFrame.widgets.healthBar then return end
     local widget = state.customFrame.widgets.healthBar
