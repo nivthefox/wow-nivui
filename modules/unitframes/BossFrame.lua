@@ -24,29 +24,6 @@ local function GetBossUnits()
     return units
 end
 
-local function ShouldShowBossFrames()
-    if state.previewMode then
-        return true
-    end
-
-    -- Show if any boss exists
-    for i = 1, MAX_BOSS_FRAMES do
-        if UnitExists("boss" .. i) then
-            return true
-        end
-    end
-
-    return false
-end
-
-local function ShouldShowUnit(unit)
-    if state.previewMode then
-        return true
-    end
-
-    return UnitExists(unit)
-end
-
 local function LayoutMemberFrames()
     if not state.container then return end
 
@@ -76,21 +53,17 @@ local function LayoutMemberFrames()
         end
     end
 
+    -- Position visible frames only; visibility is controlled by state drivers
     local visibleIndex = 0
     for _, unit in ipairs(units) do
         local frame = state.memberFrames[unit]
-        if frame then
-            if ShouldShowUnit(unit) then
-                frame:ClearAllPoints()
-                frame:SetPoint("TOPLEFT", state.container, "TOPLEFT", xOffset, yOffset)
-                frame:Show()
+        if frame and frame:IsShown() then
+            frame:ClearAllPoints()
+            frame:SetPoint("TOPLEFT", state.container, "TOPLEFT", xOffset, yOffset)
 
-                visibleIndex = visibleIndex + 1
-                xOffset = xOffset + xStep
-                yOffset = yOffset + yStep
-            else
-                frame:Hide()
-            end
+            visibleIndex = visibleIndex + 1
+            xOffset = xOffset + xStep
+            yOffset = yOffset + yStep
         end
     end
 
@@ -168,6 +141,11 @@ local function CreateMemberFrame(unit)
 
     frame.widgets = Base.CreateWidgets(frame, style, unit)
     Base.ApplyAnchors(frame, frame.widgets, style)
+
+    -- Use state driver for automatic visibility based on unit existence
+    local visibilityDriver = ("[@%s,exists] show; hide"):format(unit)
+    RegisterStateDriver(frame, "visibility", visibilityDriver)
+    frame._visibilityDriver = visibilityDriver
 
     local memberState = {
         unit = unit,
@@ -321,16 +299,10 @@ end
 local function OnInstanceEncounterEngageUnit()
     if not state.enabled then return end
 
-    if state.hasVisibilityDriver then
-        LayoutMemberFrames()
-        UpdateAllMemberFrames()
-    elseif ShouldShowBossFrames() then
-        Base.SetSecureVisibility(state.container, true)
-        LayoutMemberFrames()
-        UpdateAllMemberFrames()
-    else
-        Base.SetSecureVisibility(state.container, false)
-    end
+    -- Visibility is handled by individual frame state drivers;
+    -- we just need to update layout and widget state
+    LayoutMemberFrames()
+    UpdateAllMemberFrames()
 end
 
 local function HideBlizzardBossFrames()
@@ -364,10 +336,6 @@ function BossFrame.Enable()
     state.enabled = true
     BuildBossFrames()
     HideBlizzardBossFrames()
-
-    if not state.hasVisibilityDriver then
-        Base.SetSecureVisibility(state.container, ShouldShowBossFrames())
-    end
 end
 
 function BossFrame.Disable()
@@ -379,21 +347,22 @@ end
 function BossFrame.Refresh()
     if state.enabled then
         BuildBossFrames()
-        if not state.hasVisibilityDriver then
-            Base.SetSecureVisibility(state.container, ShouldShowBossFrames())
-        end
     end
 end
 
 function BossFrame.SetPreviewMode(enabled)
     state.previewMode = enabled
     if state.enabled then
+        -- Toggle visibility drivers: force show in preview, restore normal driver otherwise
+        for _, frame in pairs(state.memberFrames) do
+            if enabled then
+                RegisterStateDriver(frame, "visibility", "show")
+            else
+                RegisterStateDriver(frame, "visibility", frame._visibilityDriver)
+            end
+        end
         LayoutMemberFrames()
         UpdateAllMemberFrames()
-
-        if not state.hasVisibilityDriver then
-            Base.SetSecureVisibility(state.container, enabled or ShouldShowBossFrames())
-        end
     end
 end
 
@@ -475,7 +444,6 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
             state.hasVisibilityDriver = false
             UnregisterStateDriver(state.container, "visibility")
             NivUI.EditMode:UnregisterVisibilityDriver("boss")
-            Base.SetSecureVisibility(state.container, ShouldShowBossFrames())
         end
     end
 end)
