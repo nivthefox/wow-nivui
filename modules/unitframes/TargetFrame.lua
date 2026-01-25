@@ -3,67 +3,12 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
-local function HideBlizzardTargetFrame(state)
-    if not TargetFrame then return end
-
-    if InCombatLockdown and InCombatLockdown() then
-        state.pendingHide = true
-        return
-    end
-
-    state.pendingHide = false
-
-    -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
-    if TargetFrame.EnableMouse then
-        TargetFrame:EnableMouse(false)
-    end
-    if TargetFrame.SetMouseClickEnabled then
-        TargetFrame:SetMouseClickEnabled(false)
-    end
-    if TargetFrame.SetMouseMotionEnabled then
-        TargetFrame:SetMouseMotionEnabled(false)
-    end
-    if TargetFrame.SetHitRectInsets then
-        TargetFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
-    end
-
-    Base.HideRegions(TargetFrame)
-
-    Base.KillVisual(TargetFrame.TargetFrameContainer)
-    Base.KillVisual(TargetFrame.TargetFrameContent)
-    Base.KillVisual(TargetFrame.healthbar)
-    Base.KillVisual(TargetFrame.manabar)
-
-    if TargetFrame.auraPools then
-        TargetFrame.auraPools:ReleaseAll()
-        if not state.aurasDisabled then
-            state.aurasDisabled = true
-            TargetFrame.UpdateAuras = function() end
-        end
-    end
-
-    local children = { TargetFrame:GetChildren() }
-    for _, child in ipairs(children) do
-        local name = child:GetName()
-        if name and name:find("^TargetFrame") then
-            Base.KillVisual(child)
-        end
-    end
-
-    state.blizzardHidden = true
-
-    if not state.softHideHooked then
-        state.softHideHooked = true
-        TargetFrame:HookScript("OnShow", function(self)
-            if state.blizzardHidden then
-                self:SetAlpha(0)
-                if not InCombatLockdown() then
-                    HideBlizzardTargetFrame(state)
-                end
-            end
-        end)
-    end
-end
+local hideBlizzard = Base.CreateHideBlizzardFrame(TargetFrame, {
+    childPrefix = "^TargetFrame",
+    hasAuras = true,
+    containerKey = "TargetFrameContainer",
+    contentKey = "TargetFrameContent",
+})
 
 local function GetDisplayUnit()
     if UnitExists("target") then
@@ -120,7 +65,7 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorFrame = TargetFrame,
     anchorOffsetX = 24,
     anchorOffsetY = 0,
-    hideBlizzard = HideBlizzardTargetFrame,
+    hideBlizzard = hideBlizzard,
     visibilityDriver = "[@target,exists] show; [@softenemy,exists] show; [@softfriend,exists] show; hide",
 
     registerEvents = function(frame)

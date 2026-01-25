@@ -45,6 +45,89 @@ function UnitFrameBase.KillVisual(frame)
     end
 end
 
+function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
+    options = options or {}
+    local childPrefix = options.childPrefix
+    local hasAuras = options.hasAuras
+    local extraKills = options.extraKills or {}
+    local containerKey = options.containerKey
+    local contentKey = options.contentKey
+
+    local function HideBlizzardFrame(state)
+        if not blizzardFrame then return end
+
+        if InCombatLockdown and InCombatLockdown() then
+            state.pendingHide = true
+            return
+        end
+
+        state.pendingHide = false
+
+        -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
+        if blizzardFrame.EnableMouse then
+            blizzardFrame:EnableMouse(false)
+        end
+        if blizzardFrame.SetMouseClickEnabled then
+            blizzardFrame:SetMouseClickEnabled(false)
+        end
+        if blizzardFrame.SetMouseMotionEnabled then
+            blizzardFrame:SetMouseMotionEnabled(false)
+        end
+        if blizzardFrame.SetHitRectInsets then
+            blizzardFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
+        end
+
+        UnitFrameBase.HideRegions(blizzardFrame)
+
+        if containerKey then
+            UnitFrameBase.KillVisual(blizzardFrame[containerKey])
+        end
+        if contentKey then
+            UnitFrameBase.KillVisual(blizzardFrame[contentKey])
+        end
+        UnitFrameBase.KillVisual(blizzardFrame.healthbar)
+        UnitFrameBase.KillVisual(blizzardFrame.manabar)
+
+        for _, key in ipairs(extraKills) do
+            UnitFrameBase.KillVisual(blizzardFrame[key])
+        end
+
+        if hasAuras and blizzardFrame.auraPools then
+            blizzardFrame.auraPools:ReleaseAll()
+            if not state.aurasDisabled then
+                state.aurasDisabled = true
+                blizzardFrame.UpdateAuras = function() end
+            end
+        end
+
+        if childPrefix then
+            local children = { blizzardFrame:GetChildren() }
+            for _, child in ipairs(children) do
+                local name = child:GetName()
+                if name and name:find(childPrefix) then
+                    UnitFrameBase.KillVisual(child)
+                end
+            end
+        end
+
+        state.blizzardHidden = true
+
+        if not state.softHideHooked then
+            state.softHideHooked = true
+            blizzardFrame:HookScript("OnShow", function(self)
+                if state.blizzardHidden then
+                    self:SetAlpha(0)
+                    if not InCombatLockdown() then
+                        HideBlizzardFrame(state)
+                    end
+                end
+            end)
+        end
+    end
+
+    return HideBlizzardFrame
+end
+
 function UnitFrameBase.SetSecureVisibility(frame, visible)
     if not frame then return end
     RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
