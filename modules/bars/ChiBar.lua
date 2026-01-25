@@ -76,7 +76,6 @@ local function GetSetting(key)
     return defaults[key]
 end
 
--- Safe UnitPower call (defensive against secret values)
 local function SafeGetChi()
     local ok, chi = pcall(UnitPower, "player", Enum.PowerType.Chi)
     if not ok then return nil end
@@ -89,7 +88,6 @@ local function SafeGetMaxChi()
     return maxChi
 end
 
--- Safe comparison (defensive against secret values)
 local function SafeIsActive(index, chi)
     if chi == nil then return false end
     local ok, result = pcall(function() return index <= chi end)
@@ -175,7 +173,6 @@ local function ShouldShow()
 
     if visibility == "always" then return true end
 
-    -- "combat" mode: show only in combat (chi doesn't decay like stagger)
     return inCombat
 end
 
@@ -195,10 +192,9 @@ local function CheckSpec()
     end
 
     local spec = GetSpecialization()
-    isWindwalker = (spec == 3)  -- Windwalker is spec 3
+    isWindwalker = (spec == 3)
     UpdateVisibility()
 
-    -- Rebuild segments when spec changes (max chi might differ)
     if isWindwalker then
         ChiBar:RebuildSegments()
     end

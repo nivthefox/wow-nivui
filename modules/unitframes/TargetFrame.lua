@@ -121,7 +121,6 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorOffsetX = 24,
     anchorOffsetY = 0,
     hideBlizzard = HideBlizzardTargetFrame,
-    -- Show if any target exists: hard target, soft enemy, or soft friend
     visibilityDriver = "[@target,exists] show; [@softenemy,exists] show; [@softfriend,exists] show; hide",
 
     registerEvents = function(frame)

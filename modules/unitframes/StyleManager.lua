@@ -228,7 +228,6 @@ function NivUI:SetVisibilityOverride(frameType, driver)
         NivUI_DB.unitFrameVisibilityOverrides = {}
     end
 
-    -- Empty string means clear the override
     if driver == "" then
         driver = nil
     end
@@ -303,8 +302,6 @@ function NivUI:SetPartySortMode(value)
 
     self:TriggerEvent("PartySettingsChanged", { setting = "sortMode", value = value })
 end
-
--- Raid Settings (per raid size: "raid10", "raid20", "raid40")
 
 local function EnsureRaidSettings(raidSize)
     if not NivUI_DB.raidSettings then
@@ -385,8 +382,6 @@ function NivUI:SetRaidSortMode(raidSize, value)
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "sortMode", value = value })
 end
 
--- Boss Settings
-
 function NivUI:GetBossSpacing()
     return NivUI_DB.bossSpacing or 2
 end
@@ -417,8 +412,6 @@ function NivUI:SetBossGrowthDirection(value)
     self:TriggerEvent("BossSettingsChanged", { setting = "growthDirection", value = value })
 end
 
--- Arena Settings
-
 function NivUI:GetArenaSpacing()
     return NivUI_DB.arenaSpacing or 2
 end
@@ -448,8 +441,6 @@ function NivUI:SetArenaGrowthDirection(value)
 
     self:TriggerEvent("ArenaSettingsChanged", { setting = "growthDirection", value = value })
 end
-
--- Custom Raid Groups
 
 local function GenerateCustomRaidGroupId()
     return "custom_" .. time() .. "_" .. math.random(1000, 9999)
@@ -522,7 +513,6 @@ function NivUI:DeleteCustomRaidGroup(id)
     local name = NivUI_DB.customRaidGroups[id].name
     NivUI_DB.customRaidGroups[id] = nil
 
-    -- Clean up positions
     if NivUI_DB.unitFramePositions then
         NivUI_DB.unitFramePositions["customRaid_" .. id] = nil
     end

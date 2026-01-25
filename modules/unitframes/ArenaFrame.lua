@@ -29,7 +29,6 @@ local function ShouldShowArenaFrames()
         return true
     end
 
-    -- Show if any arena opponent exists
     for i = 1, MAX_ARENA_FRAMES do
         if UnitExists("arena" .. i) then
             return true

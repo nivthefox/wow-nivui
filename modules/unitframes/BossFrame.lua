@@ -53,7 +53,6 @@ local function LayoutMemberFrames()
         end
     end
 
-    -- Position visible frames only; visibility is controlled by state drivers
     local visibleIndex = 0
     for _, unit in ipairs(units) do
         local frame = state.memberFrames[unit]
@@ -142,7 +141,6 @@ local function CreateMemberFrame(unit)
     frame.widgets = Base.CreateWidgets(frame, style, unit)
     Base.ApplyAnchors(frame, frame.widgets, style)
 
-    -- Use state driver for automatic visibility based on unit existence
     local visibilityDriver = ("[@%s,exists] show; hide"):format(unit)
     RegisterStateDriver(frame, "visibility", visibilityDriver)
     frame._visibilityDriver = visibilityDriver
@@ -299,8 +297,6 @@ end
 local function OnInstanceEncounterEngageUnit()
     if not state.enabled then return end
 
-    -- Visibility is handled by individual frame state drivers;
-    -- we just need to update layout and widget state
     LayoutMemberFrames()
     UpdateAllMemberFrames()
 end
@@ -353,7 +349,6 @@ end
 function BossFrame.SetPreviewMode(enabled)
     state.previewMode = enabled
     if state.enabled then
-        -- Toggle visibility drivers: force show in preview, restore normal driver otherwise
         for _, frame in pairs(state.memberFrames) do
             if enabled then
                 RegisterStateDriver(frame, "visibility", "show")

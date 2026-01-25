@@ -242,12 +242,10 @@ local function CreateWidgetList(parent, onSelect)
     frame:SetPoint("TOPLEFT", 0, 0)
     frame:SetPoint("BOTTOMLEFT", 0, 0)
 
-    -- Background
     local bg = frame:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
     bg:SetColorTexture(0.08, 0.08, 0.08, 0.9)
 
-    -- Scroll frame
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 4, -4)
     scrollFrame:SetPoint("BOTTOMRIGHT", -24, 4)
@@ -261,7 +259,6 @@ local function CreateWidgetList(parent, onSelect)
     frame.selected = nil
 
     function frame:Populate()
-        -- Clear existing buttons
         for _, btn in pairs(self.buttons) do
             btn:Hide()
         end
@@ -301,7 +298,6 @@ local function CreateWidgetList(parent, onSelect)
     end
 
     function frame:Select(widgetType)
-        -- Deselect previous
         if self.selected and self.buttons[self.selected] then
             self.buttons[self.selected].selected:Hide()
             self.buttons[self.selected].text:SetFontObject("GameFontHighlight")
@@ -309,7 +305,6 @@ local function CreateWidgetList(parent, onSelect)
 
         self.selected = widgetType
 
-        -- Select new
         if widgetType and self.buttons[widgetType] then
             self.buttons[widgetType].selected:Show()
             self.buttons[widgetType].text:SetFontObject("GameFontNormal")
@@ -322,12 +317,10 @@ end
 local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPreview)
     local frame = CreateFrame("Frame", nil, parent)
 
-    -- Background
     local bg = frame:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
     bg:SetColorTexture(0.06, 0.06, 0.06, 0.9)
 
-    -- Tab buttons at top
     frame.tabButtons = {}
     frame.tabPanels = {}
     frame.currentTab = 1
@@ -339,7 +332,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     tabHolder:SetPoint("TOPRIGHT", 0, 0)
     frame.tabHolder = tabHolder
 
-    -- Content area
     local contentArea = CreateFrame("Frame", nil, frame)
     contentArea:SetPoint("TOPLEFT", 0, -32)
     contentArea:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -363,7 +355,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     end
 
     function frame:BuildForWidget(widgetType)
-        -- Save scroll positions before clearing
         local savedScrollPositions = {}
         for i, panel in ipairs(self.tabPanels) do
             savedScrollPositions[i] = panel:GetVerticalScroll()
@@ -372,7 +363,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
 
         self.currentWidget = widgetType
 
-        -- Clear existing tabs and panels
         for _, btn in ipairs(self.tabButtons) do
             btn:Hide()
         end
@@ -396,7 +386,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         local style = getStyle()
         local widgetData = style and style[widgetType] or {}
 
-        -- Create tabs
         for i, tabConfig in ipairs(config) do
             local tab = CreateFrame("Button", nil, self.tabHolder, "PanelTopTabButtonTemplate")
             tab:SetText(tabConfig.label)
@@ -408,7 +397,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 self:SelectTab(i)
             end)
 
-            -- Position: first tab at left, others anchor to previous
             if #self.tabButtons == 0 then
                 tab:SetPoint("TOPLEFT", 0, 0)
             else
@@ -417,7 +405,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
 
             table.insert(self.tabButtons, tab)
 
-            -- Create panel for this tab
             local panel = CreateFrame("ScrollFrame", nil, self.contentArea, "UIPanelScrollFrameTemplate")
             panel:SetPoint("TOPLEFT", 0, 0)
             panel:SetPoint("BOTTOMRIGHT", -24, 0)
@@ -428,10 +415,8 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             panelContent:SetHeight(1)
             panel:SetScrollChild(panelContent)
 
-            -- Build entries
             local yOffset = 0
             for _, entry in ipairs(tabConfig.entries) do
-                -- Check showIf/hideIf conditions
                 local show = true
                 if entry.showIf then
                     local checkValue = DeepGet(widgetData, entry.showIf.key)
@@ -455,7 +440,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             table.insert(self.tabPanels, panel)
         end
 
-        -- Restore previous tab if valid, otherwise select first
         if #self.tabButtons > 0 then
             local tabToSelect = savedTab
             if tabToSelect > #self.tabButtons then
@@ -464,7 +448,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             self:SelectTab(tabToSelect)
         end
 
-        -- Restore scroll positions after frame layout settles
         C_Timer.After(0, function()
             for i, panel in ipairs(self.tabPanels) do
                 if savedScrollPositions[i] then
@@ -585,7 +568,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                                 DeepSet(style[widgetType], entry.key, opt.value)
                                 saveStyle(style)
                                 refreshPreview()
-                                -- Rebuild panel to handle showIf changes
                                 self:BuildForWidget(widgetType)
                             end
                         end
@@ -721,7 +703,7 @@ local function CreateAssignmentsPanel(parent, Components)
     local frame = CreateFrame("Frame", nil, parent)
 
     local allFrames = {}
-    local checkboxes = {}  -- Store checkbox references for OnShow refresh
+    local checkboxes = {}
 
     local function AddRow(row, spacing)
         spacing = spacing or 0
@@ -733,18 +715,15 @@ local function CreateAssignmentsPanel(parent, Components)
         table.insert(allFrames, row)
     end
 
-    -- Header
     local header = Components.GetHeader(frame, "Frame Style Assignments")
     AddRow(header)
 
-    -- Create a row with checkbox + dropdown for each frame type
     for _, frameInfo in ipairs(NivUI.UnitFrames.FRAME_TYPES) do
         local row = CreateFrame("Frame", nil, frame)
         row:SetHeight(24)
         row:SetPoint("LEFT", 20, 0)
         row:SetPoint("RIGHT", -20, 0)
 
-        -- Enabled checkbox (left side)
         local checkbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
         checkbox:SetText("")  -- Required for template to render
@@ -752,7 +731,6 @@ local function CreateAssignmentsPanel(parent, Components)
             if self:GetChecked() then
                 NivUI:SetFrameEnabled(frameInfo.value, true)
             else
-                -- Show confirmation dialog for disable (requires reload)
                 local dialog = StaticPopup_Show("NIVUI_CONFIRM_RELOAD")
                 if dialog then
                     dialog.data = { frameType = frameInfo.value, checkbox = self }
@@ -760,17 +738,14 @@ local function CreateAssignmentsPanel(parent, Components)
             end
         end)
 
-        -- Store reference for OnShow refresh
         table.insert(checkboxes, { checkbox = checkbox, frameType = frameInfo.value, kind = "enabled" })
 
-        -- Frame type label
         local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
         label:SetText(frameInfo.name .. ":")
         label:SetWidth(100)
         label:SetJustifyH("LEFT")
 
-        -- Style dropdown
         local dropdown = CreateFrame("DropdownButton", nil, row, "WowStyle1DropdownTemplate")
         dropdown:SetPoint("LEFT", label, "RIGHT", 8, 0)
         dropdown:SetWidth(150)
@@ -787,7 +762,6 @@ local function CreateAssignmentsPanel(parent, Components)
             end
         end)
 
-        -- Real-time updates checkbox
         local realtimeCheckbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
         realtimeCheckbox:SetPoint("LEFT", dropdown, "RIGHT", 16, 0)
         realtimeCheckbox:SetText("")  -- Required for template to render
@@ -795,14 +769,12 @@ local function CreateAssignmentsPanel(parent, Components)
             NivUI:SetRealTimeUpdates(frameInfo.value, self:GetChecked())
         end)
 
-        -- Store reference for OnShow refresh
         table.insert(checkboxes, { checkbox = realtimeCheckbox, frameType = frameInfo.value, kind = "realtime" })
 
         local realtimeLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         realtimeLabel:SetPoint("LEFT", realtimeCheckbox, "RIGHT", 2, 0)
         realtimeLabel:SetText("Real-Time")
 
-        -- Tooltip on both checkbox and label
         local function ShowRealtimeTooltip(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Real-Time Updates")
@@ -816,7 +788,6 @@ local function CreateAssignmentsPanel(parent, Components)
         AddRow(row, 4)
     end
 
-    -- Refresh checkbox states from DB when shown (SavedVariables may not be loaded at creation time)
     frame:SetScript("OnShow", function()
         for _, entry in ipairs(checkboxes) do
             if entry.kind == "enabled" then
@@ -836,7 +807,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
     container:SetPoint("BOTTOMRIGHT", -8, 8)
     container:Hide()
 
-    -- State (use module-level currentStyleName)
     local currentStyle = nil
 
     local function getStyle()
@@ -848,23 +818,17 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         NivUI:SaveStyle(NivUI.UnitFrames.currentStyleName, style)
     end
 
-    -- Ensure default style exists
     NivUI:InitializeDefaultStyle()
 
-    ----------------------------------------------------------------------------
-    -- Top Bar: Style selector and actions
-    ----------------------------------------------------------------------------
     local topBar = CreateFrame("Frame", nil, container)
     topBar:SetHeight(36)
     topBar:SetPoint("TOPLEFT", 0, 0)
     topBar:SetPoint("TOPRIGHT", 0, 0)
 
-    -- Style label
     local styleLabel = topBar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     styleLabel:SetPoint("LEFT", 10, 0)
     styleLabel:SetText("Style:")
 
-    -- Style dropdown
     local styleDropdown = CreateFrame("DropdownButton", nil, topBar, "WowStyle1DropdownTemplate")
     styleDropdown:SetWidth(150)
     styleDropdown:SetPoint("LEFT", styleLabel, "RIGHT", 10, 0)
@@ -886,7 +850,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         end)
     end
 
-    -- New button
     local newBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     newBtn:SetSize(60, 22)
     newBtn:SetPoint("LEFT", styleDropdown, "RIGHT", 10, 0)
@@ -895,7 +858,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         StaticPopup_Show("NIVUI_NEW_STYLE")
     end)
 
-    -- Duplicate button
     local dupBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     dupBtn:SetSize(70, 22)
     dupBtn:SetPoint("LEFT", newBtn, "RIGHT", 4, 0)
@@ -904,7 +866,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         StaticPopup_Show("NIVUI_DUPLICATE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
-    -- Rename button
     local renameBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     renameBtn:SetSize(70, 22)
     renameBtn:SetPoint("LEFT", dupBtn, "RIGHT", 4, 0)
@@ -913,7 +874,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         StaticPopup_Show("NIVUI_RENAME_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
-    -- Delete button
     local delBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     delBtn:SetSize(60, 22)
     delBtn:SetPoint("LEFT", renameBtn, "RIGHT", 4, 0)
@@ -922,9 +882,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         StaticPopup_Show("NIVUI_DELETE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
-    ----------------------------------------------------------------------------
-    -- Preview Area
-    ----------------------------------------------------------------------------
     local previewContainer = CreateFrame("Frame", nil, container)
     previewContainer:SetHeight(180)
     previewContainer:SetPoint("TOPLEFT", topBar, "BOTTOMLEFT", 0, -8)
@@ -933,9 +890,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
     local designer = NivUI.Designer:Create(previewContainer)
     designer:SetAllPoints()
 
-    ----------------------------------------------------------------------------
-    -- Bottom Split: Widget List + Settings
-    ----------------------------------------------------------------------------
     local bottomArea = CreateFrame("Frame", nil, container)
     bottomArea:SetPoint("TOPLEFT", previewContainer, "BOTTOMLEFT", 0, -8)
     bottomArea:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -959,37 +913,27 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
     settingsPanel:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
     settingsPanel:SetPoint("BOTTOMRIGHT", 0, 0)
 
-    -- Link designer selection to widget list
     designer.onSelectionChanged = function(widgetType)
         widgetList:Select(widgetType)
         settingsPanel:BuildForWidget(widgetType)
     end
 
-    ----------------------------------------------------------------------------
-    -- Refresh function
-    ----------------------------------------------------------------------------
     function container:RefreshAll()
         currentStyle = NivUI:GetStyleWithDefaults(NivUI.UnitFrames.currentStyleName)
         RefreshStyleDropdown()
         widgetList:Populate()
         NivUI.Designer:BuildPreview(designer, NivUI.UnitFrames.currentStyleName)
 
-        -- Select first widget by default
         local firstWidget = NivUI.UnitFrames.WIDGET_ORDER[1]
         widgetList:Select(firstWidget)
         designer:SelectWidget(firstWidget)
         settingsPanel:BuildForWidget(firstWidget)
     end
 
-    ----------------------------------------------------------------------------
-    -- OnShow
-    ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
-        -- Register this container's refresh as the callback for dialogs
         NivUI.UnitFrames.refreshCallback = function()
             container:RefreshAll()
         end
-        -- Select first style alphabetically if current doesn't exist
         local names = NivUI:GetStyleNames()
         if not NivUI:StyleExists(NivUI.UnitFrames.currentStyleName) then
             NivUI.UnitFrames.currentStyleName = names[1] or "Default"
@@ -1006,7 +950,6 @@ function NivUI.UnitFrames:SetupAssignmentsTab(parent, Components)
     container:SetPoint("BOTTOMRIGHT", -8, 8)
     container:Hide()
 
-    -- Create assignments panel
     local assignmentsPanel = CreateAssignmentsPanel(container, Components)
     assignmentsPanel:SetAllPoints()
 
@@ -1031,7 +974,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
     end
 
     local function RefreshPanel()
-        -- Clear existing rows
         for _, row in ipairs(allFrames) do
             row:Hide()
             row:SetParent(nil)
@@ -1043,7 +985,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
         local groupData = NivUI:GetCustomRaidGroup(groupId)
         if not groupData then return end
 
-        -- Header row with group name and delete button
         local headerRow = CreateFrame("Frame", nil, frame)
         headerRow:SetHeight(32)
         headerRow:SetPoint("LEFT", 20, 0)
@@ -1066,7 +1007,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
 
         AddRow(headerRow)
 
-        -- Filter type dropdown
         local filterRow = CreateFrame("Frame", nil, frame)
         filterRow:SetHeight(28)
         filterRow:SetPoint("LEFT", 20, 0)
@@ -1100,7 +1040,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
 
         AddRow(filterRow, 8)
 
-        -- Show role checkboxes or member checkboxes based on filter type
         if groupData.filterType == "role" then
             local rolesHeader = Components.GetHeader(frame, "Roles to Include")
             AddRow(rolesHeader, 12)
@@ -1135,11 +1074,10 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
                 AddRow(roleRow, 4)
             end
 
-        else -- member filter
+        else
             local membersHeader = Components.GetHeader(frame, "Raid Members to Include")
             AddRow(membersHeader, 12)
 
-            -- Create a scrollable list of current raid members
             local scrollContainer = CreateFrame("Frame", nil, frame)
             scrollContainer:SetHeight(200)
             scrollContainer:SetPoint("LEFT", 30, 0)
@@ -1158,19 +1096,16 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
             content:SetHeight(1)
             scrollFrame:SetScrollChild(content)
 
-            -- Get current raid roster
             local raidMembers = {}
             if IsInRaid() then
                 for i = 1, 40 do
                     local name = GetRaidRosterInfo(i)
                     if name then
-                        -- Strip realm name if present
                         local shortName = strsplit("-", name)
                         table.insert(raidMembers, shortName)
                     end
                 end
             else
-                -- Show party members if not in raid
                 local playerName = UnitName("player")
                 table.insert(raidMembers, playerName)
                 for i = 1, 4 do
@@ -1181,7 +1116,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
                 end
             end
 
-            -- Also show any previously saved members that aren't in the current roster
             for savedName in pairs(groupData.members) do
                 local found = false
                 for _, name in ipairs(raidMembers) do
@@ -1237,7 +1171,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
             AddRow(scrollContainer, 4)
         end
 
-        -- Style dropdown
         local styleRow = CreateFrame("Frame", nil, frame)
         styleRow:SetHeight(28)
         styleRow:SetPoint("LEFT", 20, 0)
@@ -1267,7 +1200,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
 
         AddRow(styleRow, 12)
 
-        -- Enabled checkbox
         local enabledRow = CreateFrame("Frame", nil, frame)
         enabledRow:SetHeight(24)
         enabledRow:SetPoint("LEFT", 20, 0)
@@ -1294,7 +1226,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
         RefreshPanel()
     end)
 
-    -- Listen for roster changes to refresh member list
     local eventFrame = CreateFrame("Frame", nil, frame)
     eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
     eventFrame:SetScript("OnEvent", function()
@@ -1317,7 +1248,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     local currentSubTab = "designer"
     local addButton
 
-    -- Static tab definitions
     local staticTabDefinitions = {
         {
             id = "designer",
@@ -1337,7 +1267,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         },
     }
 
-    -- Create static tabs
     for _, def in ipairs(staticTabDefinitions) do
         local tabContainer = CreateFrame("Frame", nil, container)
         tabContainer:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1363,7 +1292,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         table.insert(allTabs, tabData)
     end
 
-    -- Create [+] button styled as a tab
     addButton = Components.GetTab(container, "+")
     PanelTemplates_DeselectTab(addButton)
 
@@ -1382,7 +1310,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         GameTooltip:Hide()
     end)
 
-    -- Function to create a custom group tab
     local function CreateCustomGroupTab(groupId, groupData)
         local tabContainer = CreateFrame("Frame", nil, container)
         tabContainer:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1409,9 +1336,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         return tabData
     end
 
-    -- Function to rebuild custom group tabs
     local function RebuildCustomGroupTabs()
-        -- Remove existing custom group tabs
         for _, tabData in ipairs(customGroupTabs) do
             tabData.tab:Hide()
             tabData.tab:SetParent(nil)
@@ -1420,14 +1345,12 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end
         wipe(customGroupTabs)
 
-        -- Remove custom tabs from allTabs
         for i = #allTabs, 1, -1 do
             if allTabs[i].isCustomGroup then
                 table.remove(allTabs, i)
             end
         end
 
-        -- Create tabs for each custom group
         local customGroups = NivUI:GetCustomRaidGroups()
         for groupId, groupData in pairs(customGroups) do
             local tabData = CreateCustomGroupTab(groupId, groupData)
@@ -1436,7 +1359,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end
     end
 
-    -- Find tab data by id
     local function FindTabById(tabId)
         for _, tabData in ipairs(allTabs) do
             if tabData.id == tabId then
@@ -1446,7 +1368,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         return nil
     end
 
-    -- Find first visible tab
     local function FindFirstVisibleTab()
         for _, tabData in ipairs(allTabs) do
             if tabData.tab:IsShown() then
@@ -1456,7 +1377,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         return nil
     end
 
-    -- Select a tab by id
     function SelectSubTab(tabId)
         for _, tabData in ipairs(allTabs) do
             if tabData.id == tabId and tabData.tab:IsShown() then
@@ -1470,7 +1390,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end
     end
 
-    -- Layout tabs with wrapping
     local function LayoutTabs()
         local containerWidth = container:GetWidth()
         if containerWidth == 0 then
@@ -1486,17 +1405,14 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
             if shouldShow then
                 tabData.tab:Show()
 
-                -- Get tab width after it's shown (triggers resize)
                 local tabWidth = tabData.tab:GetWidth()
 
-                -- Check if we need to wrap to next row
                 if x + tabWidth > containerWidth and x > 0 then
                     x = 0
                     y = y - TAB_HEIGHT
                     numRows = numRows + 1
                 end
 
-                -- Position tab
                 tabData.tab:ClearAllPoints()
                 tabData.tab:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
 
@@ -1506,7 +1422,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
             end
         end
 
-        -- Position the [+] button after all tabs
         local addBtnWidth = addButton:GetWidth()
         if x + addBtnWidth > containerWidth and x > 0 then
             x = 0
@@ -1516,7 +1431,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         addButton:ClearAllPoints()
         addButton:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
 
-        -- Update content container positions based on number of tab rows
         local contentOffset = -(numRows * TAB_HEIGHT)
         for _, tabData in ipairs(allTabs) do
             tabData.container:ClearAllPoints()
@@ -1524,7 +1438,6 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
             tabData.container:SetPoint("BOTTOMRIGHT", 0, 0)
         end
 
-        -- If current tab is now hidden, select first visible tab
         local currentTabData = FindTabById(currentSubTab)
         if not currentTabData or not currentTabData.tab:IsShown() then
             local firstVisible = FindFirstVisibleTab()
@@ -1534,38 +1447,32 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end
     end
 
-    -- Handle container resize
     container:SetScript("OnSizeChanged", function()
         LayoutTabs()
     end)
 
-    -- Handle show - layout tabs and select current
     container:SetScript("OnShow", function()
         RebuildCustomGroupTabs()
         LayoutTabs()
         SelectSubTab(currentSubTab)
     end)
 
-    -- Listen for frame enabled changes
     NivUI:RegisterCallback("FrameEnabledChanged", function(_data)
         if container:IsShown() then
             LayoutTabs()
         end
     end)
 
-    -- Listen for custom group changes
     NivUI:RegisterCallback("CustomRaidGroupCreated", function(data)
         if container:IsShown() then
             RebuildCustomGroupTabs()
             LayoutTabs()
-            -- Select the newly created tab
             SelectSubTab("customGroup_" .. data.id)
         end
     end)
 
     NivUI:RegisterCallback("CustomRaidGroupDeleted", function(_data)
         if container:IsShown() then
-            -- If we were viewing the deleted group, switch to first tab
             if currentSubTab:find("customGroup_") then
                 currentSubTab = "designer"
             end
@@ -1581,7 +1488,6 @@ end
 function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     local container = CreateFrame("Frame", nil, parent)
 
-    -- State (use module-level currentStyleName)
     local currentStyle = nil
 
     local function getStyle()
@@ -1593,23 +1499,17 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         NivUI:SaveStyle(NivUI.UnitFrames.currentStyleName, style)
     end
 
-    -- Ensure default style exists
     NivUI:InitializeDefaultStyle()
 
-    ----------------------------------------------------------------------------
-    -- Top Bar: Style selector and actions
-    ----------------------------------------------------------------------------
     local topBar = CreateFrame("Frame", nil, container)
     topBar:SetHeight(36)
     topBar:SetPoint("TOPLEFT", 0, 0)
     topBar:SetPoint("TOPRIGHT", 0, 0)
 
-    -- Style label
     local styleLabel = topBar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     styleLabel:SetPoint("LEFT", 10, 0)
     styleLabel:SetText("Style:")
 
-    -- Style dropdown
     local styleDropdown = CreateFrame("DropdownButton", nil, topBar, "WowStyle1DropdownTemplate")
     styleDropdown:SetWidth(120)
     styleDropdown:SetPoint("LEFT", styleLabel, "RIGHT", 10, 0)
@@ -1631,7 +1531,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         end)
     end
 
-    -- New button
     local newBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     newBtn:SetSize(50, 22)
     newBtn:SetPoint("LEFT", styleDropdown, "RIGHT", 6, 0)
@@ -1640,7 +1539,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         StaticPopup_Show("NIVUI_NEW_STYLE")
     end)
 
-    -- Duplicate button
     local dupBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     dupBtn:SetSize(50, 22)
     dupBtn:SetPoint("LEFT", newBtn, "RIGHT", 2, 0)
@@ -1649,7 +1547,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         StaticPopup_Show("NIVUI_DUPLICATE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
-    -- Rename button
     local renameBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     renameBtn:SetSize(60, 22)
     renameBtn:SetPoint("LEFT", dupBtn, "RIGHT", 2, 0)
@@ -1658,7 +1555,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         StaticPopup_Show("NIVUI_RENAME_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
-    -- Delete button
     local delBtn = CreateFrame("Button", nil, topBar, "UIPanelButtonTemplate")
     delBtn:SetSize(50, 22)
     delBtn:SetPoint("LEFT", renameBtn, "RIGHT", 2, 0)
@@ -1667,9 +1563,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         StaticPopup_Show("NIVUI_DELETE_STYLE", NivUI.UnitFrames.currentStyleName)
     end)
 
-    ----------------------------------------------------------------------------
-    -- Preview Area
-    ----------------------------------------------------------------------------
     local previewContainer = CreateFrame("Frame", nil, container)
     previewContainer:SetHeight(140)
     previewContainer:SetPoint("TOPLEFT", topBar, "BOTTOMLEFT", 0, -4)
@@ -1678,9 +1571,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     local designer = NivUI.Designer:Create(previewContainer)
     designer:SetAllPoints()
 
-    ----------------------------------------------------------------------------
-    -- Bottom Split: Widget List + Settings
-    ----------------------------------------------------------------------------
     local bottomArea = CreateFrame("Frame", nil, container)
     bottomArea:SetPoint("TOPLEFT", previewContainer, "BOTTOMLEFT", 0, -4)
     bottomArea:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1704,37 +1594,27 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     settingsPanel:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
     settingsPanel:SetPoint("BOTTOMRIGHT", 0, 0)
 
-    -- Link designer selection to widget list
     designer.onSelectionChanged = function(widgetType)
         widgetList:Select(widgetType)
         settingsPanel:BuildForWidget(widgetType)
     end
 
-    ----------------------------------------------------------------------------
-    -- Refresh function
-    ----------------------------------------------------------------------------
     function container:RefreshAll()
         currentStyle = NivUI:GetStyleWithDefaults(NivUI.UnitFrames.currentStyleName)
         RefreshStyleDropdown()
         widgetList:Populate()
         NivUI.Designer:BuildPreview(designer, NivUI.UnitFrames.currentStyleName)
 
-        -- Select first widget by default
         local firstWidget = NivUI.UnitFrames.WIDGET_ORDER[1]
         widgetList:Select(firstWidget)
         designer:SelectWidget(firstWidget)
         settingsPanel:BuildForWidget(firstWidget)
     end
 
-    ----------------------------------------------------------------------------
-    -- OnShow
-    ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
-        -- Register this container's refresh as the callback for dialogs
         NivUI.UnitFrames.refreshCallback = function()
             container:RefreshAll()
         end
-        -- Select first style alphabetically if current doesn't exist
         local names = NivUI:GetStyleNames()
         if not NivUI:StyleExists(NivUI.UnitFrames.currentStyleName) then
             NivUI.UnitFrames.currentStyleName = names[1] or "Default"

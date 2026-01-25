@@ -33,7 +33,6 @@ local function GetPartyUnits()
         table.insert(units, "party" .. i)
     end
 
-    -- Sort by role if that mode is active
     local sortMode = NivUI:GetPartySortMode()
     if sortMode == "ROLE" then
         table.sort(units, function(a, b)

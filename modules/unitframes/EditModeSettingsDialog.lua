@@ -5,7 +5,6 @@ local DIALOG_WIDTH = 320
 local SETTING_HEIGHT = 32
 local LABEL_WIDTH = 120
 
--- Setting type constants (matching Blizzard's pattern)
 local SettingType = {
     Dropdown = "dropdown",
     Slider = "slider",
@@ -13,7 +12,6 @@ local SettingType = {
     TextInput = "textinput",
 }
 
--- Default visibility drivers per frame type (for placeholder display)
 local DefaultVisibilityDrivers = {
     player = "show",
     target = "[@target,exists] show; [@softenemy,exists] show; [@softfriend,exists] show; hide",
@@ -28,7 +26,6 @@ local DefaultVisibilityDrivers = {
     raid40 = "show",
 }
 
--- Common visibility setting factory
 local function CreateVisibilitySetting(frameType)
     return {
         key = "visibilityOverride",
@@ -41,7 +38,6 @@ local function CreateVisibilitySetting(frameType)
     }
 end
 
--- Settings definitions per frame type
 local FrameSettings = {
     player = {
         CreateVisibilitySetting("player"),
@@ -86,7 +82,6 @@ local FrameSettings = {
             get = function() return NivUI:GetPartyOrientation() end,
             set = function(value)
                 NivUI:SetPartyOrientation(value)
-                -- Reset growth direction to sensible default
                 if value == "VERTICAL" then
                     NivUI:SetPartyGrowthDirection("DOWN")
                 else
@@ -249,7 +244,6 @@ local FrameSettings = {
     },
 }
 
--- Raid settings are parameterized by raid size
 local function CreateRaidSettings(raidSize)
     return {
         {
@@ -334,7 +328,6 @@ FrameSettings.raid10 = CreateRaidSettings("raid10")
 FrameSettings.raid20 = CreateRaidSettings("raid20")
 FrameSettings.raid40 = CreateRaidSettings("raid40")
 
--- Frame display names
 local FrameNames = {
     player = "Player Frame",
     target = "Target Frame",
@@ -349,7 +342,6 @@ local FrameNames = {
     raid40 = "Raid Frames (40)",
 }
 
--- The dialog singleton
 local dialog = nil
 local settingControls = {}
 local currentFrameType = nil
@@ -388,7 +380,6 @@ local function CreateSettingControl(parent, settingDef, index)
                         function() return self.settingDef.get() == opt.value end,
                         function()
                             self.settingDef.set(opt.value)
-                            -- Refresh all controls since options may have changed
                             NivUI.EditMode:RefreshSettingsDialog()
                         end
                     )
@@ -456,7 +447,6 @@ local function CreateSettingControl(parent, settingDef, index)
         editBox:SetAutoFocus(false)
         editBox:SetFontObject("ChatFontSmall")
 
-        -- Placeholder text (shown when empty and not focused)
         local placeholder = editBox:CreateFontString(nil, "ARTWORK", "ChatFontSmall")
         placeholder:SetPoint("LEFT", 5, 0)
         placeholder:SetPoint("RIGHT", -5, 0)
@@ -524,7 +514,6 @@ local function CreateDialog()
     frame:RegisterForDrag("LeftButton")
     frame:Hide()
 
-    -- Use the same translucent dialog border as Blizzard's Edit Mode dialogs
     local border = CreateFrame("Frame", nil, frame, "DialogBorderTranslucentTemplate")
     border:SetAllPoints()
     frame.Border = border
@@ -537,12 +526,10 @@ local function CreateDialog()
         self:StopMovingOrSizing()
     end)
 
-    -- Title
     local title = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
     title:SetPoint("TOP", 0, -15)
     frame.title = title
 
-    -- Close button
     local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     closeButton:SetPoint("TOPRIGHT", 2, 2)
     closeButton:SetScript("OnClick", function()
@@ -550,7 +537,6 @@ local function CreateDialog()
         NivUI.EditMode:ClearSelection()
     end)
 
-    -- Settings container
     local settingsContainer = CreateFrame("Frame", nil, frame)
     settingsContainer:SetPoint("TOPLEFT", 20, -45)
     settingsContainer:SetPoint("BOTTOMRIGHT", -20, 20)
@@ -588,7 +574,6 @@ function NivUI.EditMode:ShowSettingsDialog(frameType, targetFrame)
 
     local dlg = self:GetSettingsDialog()
 
-    -- Clear old controls
     for _, control in ipairs(settingControls) do
         control:Hide()
         control:SetParent(nil)
@@ -597,10 +582,8 @@ function NivUI.EditMode:ShowSettingsDialog(frameType, targetFrame)
 
     currentFrameType = frameType
 
-    -- Set title
     dlg.title:SetText(FrameNames[frameType] or frameType)
 
-    -- Create setting controls
     local yOffset = 0
     for i, settingDef in ipairs(settings) do
         local control = CreateSettingControl(dlg.settingsContainer, settingDef, i)
@@ -611,11 +594,9 @@ function NivUI.EditMode:ShowSettingsDialog(frameType, targetFrame)
         yOffset = yOffset + SETTING_HEIGHT + 2
     end
 
-    -- Resize dialog to fit content
-    local contentHeight = yOffset + 65  -- padding for title and bottom
+    local contentHeight = yOffset + 65
     dlg:SetHeight(math.max(contentHeight, 120))
 
-    -- Position near the target frame if provided
     if targetFrame then
         dlg:ClearAllPoints()
         local left = targetFrame:GetLeft()
@@ -623,7 +604,6 @@ function NivUI.EditMode:ShowSettingsDialog(frameType, targetFrame)
         local screenWidth = GetScreenWidth()
 
         if left and right then
-            -- Position to the right of the frame if there's room, otherwise to the left
             if right + DIALOG_WIDTH + 20 < screenWidth then
                 dlg:SetPoint("TOPLEFT", targetFrame, "TOPRIGHT", 10, 10)
             else
@@ -647,12 +627,10 @@ function NivUI.EditMode:IsSettingsDialogShown()
     return dialog and dialog:IsShown()
 end
 
--- Check if a frame type has Edit Mode settings
 function NivUI.EditMode:HasSettings(frameType)
     return FrameSettings[frameType] ~= nil
 end
 
--- Update container sizes when settings change during Edit Mode
 local function OnSettingsChanged()
     if NivUI.EditMode:IsActive() then
         NivUI.EditMode:UpdateContainerSizes()

@@ -1,20 +1,6 @@
 NivUI = NivUI or {}
 NivUI.WidgetFactories = {}
 
--- WARNING: Does arithmetic, fails on secret values during combat.
--- For combat-safe code, pass values directly to StatusBar:SetValue().
-function NivUI.WidgetFactories.SafeNumber(value, fallback)
-    if value == nil then
-        return fallback or 0
-    end
-    -- Try to perform arithmetic - this catches secret values that claim to be numbers
-    local success, result = pcall(function() return value + 0 end)
-    if success then
-        return result
-    end
-    return fallback or 0
-end
-
 function NivUI.WidgetFactories.GetClassColor(unit)
     local _, class = UnitClass(unit or "player")
     if class then
@@ -68,7 +54,6 @@ function WF.healthBar(parent, config, _style, unit)
     frame.bg:SetVertexColor(bgR, bgG, bgB, bgA)
     frame:SetStatusBarColor(r, g, b, a)
 
-    -- StatusBar accepts secret values directly
     local health = UnitHealth(unit)
     local maxHealth = UnitHealthMax(unit)
     if issecretvalue(maxHealth) or (maxHealth and maxHealth > 0) then
@@ -111,7 +96,6 @@ function WF.powerBar(parent, config, _style, unit)
     end
     frame:SetStatusBarColor(r, g, b, a)
 
-    -- StatusBar accepts secret values directly
     local powerType = UnitPowerType(unit)
     local power = UnitPower(unit, powerType)
     local maxPower = UnitPowerMax(unit, powerType)
@@ -151,7 +135,6 @@ function WF.portrait(parent, config, _style, unit)
             end
         end
     else
-        -- 2D texture
         frame = CreateFrame("Frame", nil, parent)
         frame:SetSize(config.size.width, config.size.height)
         frame.texture = frame:CreateTexture(nil, "ARTWORK")
@@ -162,7 +145,6 @@ function WF.portrait(parent, config, _style, unit)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
-    -- Border
     if config.borderWidth > 0 then
         frame.border = CreateFrame("Frame", nil, frame, "BackdropTemplate")
         frame.border:SetPoint("TOPLEFT", -config.borderWidth, config.borderWidth)
@@ -175,7 +157,6 @@ function WF.portrait(parent, config, _style, unit)
         frame.border:SetBackdropBorderColor(bc.r, bc.g, bc.b, bc.a or 1)
     end
 
-    -- Circle mask for circle shape
     if config.shape == "circle" then
         local mask = frame:CreateMaskTexture()
         mask:SetAllPoints()
@@ -203,13 +184,11 @@ local function CreateTextWidget(parent, config, textValue, widgetType, unit)
     local fontPath = NivUI:GetFontPath(config.font)
     frame.text:SetFont(fontPath, config.fontSize, config.fontOutline or "")
 
-    -- Apply alignment
     local alignment = config.alignment or "CENTER"
     frame.text:SetJustifyH(alignment)
     frame.text:SetJustifyV("MIDDLE")
     frame.text:SetText(textValue)
 
-    -- Color
     local color = config.color or config.customColor or { r = 1, g = 1, b = 1, a = 1 }
     if config.colorByClass then
         local r, g, b = WF.GetClassColor(unit)
@@ -328,7 +307,6 @@ function WF.statusIndicators(parent, config, _style, unit)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
-    -- Just show combat icon as example in preview
     frame.combat = frame:CreateTexture(nil, "OVERLAY")
     frame.combat:SetSize(config.iconSize, config.iconSize)
     frame.combat:SetPoint("LEFT")
@@ -338,7 +316,7 @@ function WF.statusIndicators(parent, config, _style, unit)
     if UnitAffectingCombat(unit) or not config.showCombat then
         frame.combat:Show()
     else
-        frame.combat:SetAlpha(0.3)  -- Dim in preview when not in combat
+        frame.combat:SetAlpha(0.3)
     end
 
     frame.widgetType = "statusIndicators"
@@ -360,14 +338,13 @@ function WF.leaderIcon(parent, config, _style, unit, options)
     local isLeader = UnitIsGroupLeader(unit)
     local isAssist = UnitIsGroupAssistant and UnitIsGroupAssistant(unit)
     if isLeader or isAssist then
-        -- Show appropriate icon
         if isAssist and not isLeader then
             frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-AssistantIcon")
         end
     elseif options.forPreview then
-        frame.icon:SetAlpha(0.3)  -- Dim in preview when not leader
+        frame.icon:SetAlpha(0.3)
     else
-        frame:Hide()  -- Runtime: hide until unit becomes leader/assist
+        frame:Hide()
     end
 
     frame.widgetType = "leaderIcon"
@@ -390,11 +367,9 @@ function WF.raidMarker(parent, config, _style, unit, options)
     if index then
         SetRaidTargetIconTexture(frame.icon, index)
     elseif options.forPreview then
-        -- Show skull as preview in designer only
         SetRaidTargetIconTexture(frame.icon, 8)
         frame.icon:SetAlpha(0.3)
     else
-        -- Runtime: hide until unit gets a marker
         frame:Hide()
     end
 
@@ -420,13 +395,11 @@ function WF.roleIcon(parent, config, _style, unit, options)
             frame.icon:SetAtlas(atlas)
         end
     elseif options.forPreview then
-        -- Show tank icon as preview in designer only
         if GetMicroIconForRole then
             frame.icon:SetAtlas(GetMicroIconForRole("TANK"))
         end
         frame.icon:SetAlpha(0.3)
     else
-        -- Runtime: hide until unit has a role
         frame:Hide()
     end
 
@@ -441,28 +414,24 @@ function WF.castbar(parent, config, _style, _unit)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
-    -- Background texture (use WHITE8x8 + SetVertexColor like MSUF does)
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetTexture("Interface\\Buttons\\WHITE8x8")
     frame.bg:SetAllPoints(frame)
     local bgColor = config.backgroundColor
     frame.bg:SetVertexColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a or 0.8)
 
-    -- Bar texture
     local texturePath = NivUI:GetTexturePath(config.texture)
     frame:SetStatusBarTexture(texturePath)
     frame:SetMinMaxValues(0, 1)
 
-    -- Orientation and fill direction
     frame:SetOrientation(config.orientation or "HORIZONTAL")
     frame:SetReverseFill(config.reverseFill or false)
 
-    frame:SetValue(0.6)  -- Preview value
+    frame:SetValue(0.6)
 
     local color = config.castingColor
     frame:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
 
-    -- Icon
     if config.showIcon then
         frame.icon = frame:CreateTexture(nil, "ARTWORK")
         frame.icon:SetSize(config.size.height, config.size.height)
@@ -470,21 +439,18 @@ function WF.castbar(parent, config, _style, _unit)
         frame.icon:SetTexture("Interface\\Icons\\Spell_Nature_Lightning")
     end
 
-    -- Spell name
     if config.showSpellName then
         frame.spellName = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         frame.spellName:SetPoint("LEFT", 4, 0)
         frame.spellName:SetText("Lightning Bolt")
     end
 
-    -- Timer
     if config.showTimer then
         frame.timer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         frame.timer:SetPoint("RIGHT", -4, 0)
         frame.timer:SetText("1.2s")
     end
 
-    -- Empowered spell stage tracking
     frame.StagePoints = {}
     frame.StagePips = {}
     frame.StageTiers = {}
@@ -501,7 +467,6 @@ function WF.castbar(parent, config, _style, _unit)
         local barHeight = self:GetHeight()
         local sumDuration = 0
 
-        -- Calculate stage thresholds and create pips
         for i = 1, self.NumStages - 1 do
             local stageDuration = GetUnitEmpowerStageDuration(unit, i - 1)
             if stageDuration and not issecretvalue(stageDuration) and stageDuration > 0 then
@@ -510,7 +475,6 @@ function WF.castbar(parent, config, _style, _unit)
 
                 local offset = (sumDuration / totalDurationMS) * barWidth
 
-                -- Create pip (vertical divider line)
                 local pip = self.StagePips[i]
                 if not pip then
                     pip = self:CreateTexture(nil, "OVERLAY")
@@ -523,7 +487,6 @@ function WF.castbar(parent, config, _style, _unit)
                 pip:SetPoint("CENTER", self, "LEFT", offset, 0)
                 pip:Show()
 
-                -- Create tier (segment between this pip and the next, or bar end)
                 local tier = self.StageTiers[i]
                 if not tier then
                     tier = CreateFrame("Frame", nil, self)
@@ -542,16 +505,13 @@ function WF.castbar(parent, config, _style, _unit)
                     self.StageTiers[i] = tier
                 end
 
-                -- Position tier from previous pip (or bar start) to this pip
                 local prevOffset = i > 1 and ((self.StagePoints[i - 1] / totalDurationMS) * barWidth) or 0
                 tier:SetPoint("TOPLEFT", self, "TOPLEFT", prevOffset, 0)
                 tier:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", offset, 0)
 
-                -- Set tier color based on castbar color
                 local r, g, b = self:GetStatusBarColor()
                 tier.Normal:SetVertexColor(r, g, b, 1)
 
-                -- Start in disabled state
                 tier.Normal:Hide()
                 tier.Disabled:Show()
                 tier:Show()
@@ -588,13 +548,11 @@ function WF.castbar(parent, config, _style, _unit)
         if maxStage > self.CurrSpellStage and maxStage > 0 then
             self.CurrSpellStage = maxStage
 
-            -- Activate the tier for this stage
             local tier = self.StageTiers[maxStage]
             if tier then
                 tier.Normal:Show()
                 tier.Disabled:Hide()
 
-                -- Flash effect
                 tier.Glow:SetAlpha(1)
                 C_Timer.After(0.1, function()
                     if tier.Glow then
@@ -654,14 +612,12 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
         icon.texture:SetAllPoints()
         icon.texture:SetTexture(testAuras[i])
 
-        -- Duration text
         if config.showDuration then
             icon.duration = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             icon.duration:SetPoint("BOTTOM", 0, -2)
             icon.duration:SetText(math.random(5, 30) .. "s")
         end
 
-        -- Stack count
         if config.showStacks and math.random() > 0.5 then
             icon.stacks = icon:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             icon.stacks:SetPoint("BOTTOMRIGHT", 0, 0)

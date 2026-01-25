@@ -9,7 +9,6 @@ local registeredFrames = {}
 local visibilityDrivers = {}
 local suspendedDrivers = {}
 
--- Nine-slice layout matching Blizzard's EditModeSystemSelectionLayout
 local SelectionLayout = {
     ["TopRightCorner"] = { atlas = "%s-NineSlice-Corner", mirrorLayout = true, x = 8, y = 8 },
     ["TopLeftCorner"] = { atlas = "%s-NineSlice-Corner", mirrorLayout = true, x = -8, y = 8 },
@@ -81,30 +80,25 @@ local function ApplySelectionTexture(selection, textureKit)
     NineSliceUtil.ApplyLayout(selection, SelectionLayout, textureKit)
 end
 
--- Add magnetism-compatible methods to a frame
 local function SetupMagnetismMethods(frame, selection)
-    -- Returns selection frame sides, adjusted for scale: left, right, bottom, top
     function frame:GetScaledSelectionSides()
         local left, bottom, width, height = selection:GetRect()
         local scale = self:GetScale()
         return left * scale, (left + width) * scale, bottom * scale, (bottom + height) * scale
     end
 
-    -- Returns selection frame center, adjusted for scale: centerX, centerY
     function frame:GetScaledSelectionCenter()
         local centerX, centerY = selection:GetCenter()
         local scale = self:GetScale()
         return centerX * scale, centerY * scale
     end
 
-    -- Returns center, adjusted for scale: centerX, centerY
     function frame:GetScaledCenter()
         local centerX, centerY = self:GetCenter()
         local scale = self:GetScale()
         return centerX * scale, centerY * scale
     end
 
-    -- Safely get scaled selection sides from another frame (may have secret values or be hidden)
     local function SafeGetOtherFrameSides(otherFrame)
         local success, left, right, bottom, top = pcall(function()
             if otherFrame.GetScaledSelectionSides then
@@ -150,12 +144,10 @@ local function SetupMagnetismMethods(frame, selection)
         return (myRight >= otherLeft) and (myLeft <= otherRight)
     end
 
-    -- Determines if this frame can snap to another frame horizontally/vertically
     function frame:GetFrameMagneticEligibility(otherFrame)
         if otherFrame == self then
             return false, false
         end
-        -- Use pcall to safely check alignment - other frame may have secret/nil rect values
         local hSuccess, horizontalEligible = pcall(function()
             return self:IsVerticallyAlignedWithFrame(otherFrame)
         end)
@@ -165,7 +157,6 @@ local function SetupMagnetismMethods(frame, selection)
         return hSuccess and horizontalEligible or false, vSuccess and verticalEligible or false
     end
 
-    -- Get combined center offset from another frame
     function frame:GetCombinedCenterOffset(otherFrame)
         local centerX, centerY = self:GetScaledSelectionCenter()
         local frameCenterX, frameCenterY
@@ -186,7 +177,6 @@ local function SetupMagnetismMethods(frame, selection)
         return (centerX - frameCenterX) / scale, (centerY - frameCenterY) / scale
     end
 
-    -- Get selection offset for snapping
     function frame:GetCombinedSelectionOffset(frameInfo, forYOffset)
         local myLeft, myRight, myBottom, myTop = self:GetScaledSelectionSides()
         local otherLeft, otherRight, otherBottom, otherTop
@@ -229,7 +219,6 @@ local function SetupMagnetismMethods(frame, selection)
         end
     end
 
-    -- Calculate snap offsets
     function frame:GetSnapOffsets(frameInfo)
         local forYOffsetNo = false
         local forYOffsetYes = true
@@ -250,7 +239,6 @@ local function SetupMagnetismMethods(frame, selection)
         return offsetX, offsetY
     end
 
-    -- Snap to a frame using magnetism info
     function frame:SnapToFrame(frameInfo)
         local offsetX, offsetY = self:GetSnapOffsets(frameInfo)
         self:ClearAllPoints()
@@ -258,7 +246,6 @@ local function SetupMagnetismMethods(frame, selection)
     end
 end
 
--- Register a frame with the magnetism system
 function NivUI.EditMode:RegisterFrameForMagnetism(frame)
     if not EditModeMagnetismManager then return end
     if registeredFrames[frame] then return end
@@ -267,7 +254,6 @@ function NivUI.EditMode:RegisterFrameForMagnetism(frame)
     registeredFrames[frame] = true
 end
 
--- Unregister a frame from the magnetism system
 function NivUI.EditMode:UnregisterFrameFromMagnetism(frame)
     if not EditModeMagnetismManager then return end
     if not registeredFrames[frame] then return end
@@ -300,13 +286,10 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
     selection.textureShown = nil
     selection.isDragging = false
 
-    -- Set up magnetism methods on the custom frame
     SetupMagnetismMethods(customFrame, selection)
 
-    -- Store reference for Selection compatibility
     customFrame.Selection = selection
 
-    -- Create mouse-over highlight child frame
     selection.MouseOverHighlight = CreateFrame("Frame", nil, selection, "NineSliceCodeTemplate")
     selection.MouseOverHighlight:SetAllPoints(selection)
     selection.MouseOverHighlight:SetAlpha(0.4)
@@ -314,11 +297,9 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
     NineSliceUtil.ApplyLayout(selection.MouseOverHighlight, SelectionLayout, HIGHLIGHT_TEXTURE_KIT)
     selection.MouseOverHighlight:SetBlendMode("ADD")
 
-    -- Create label
     selection.Label = selection:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
     selection.Label:SetAllPoints(selection)
 
-    -- Use custom group name if this is a custom raid group
     local labelText = frameType
     if frameType:find("^customRaid_") then
         local groupId = frameType:gsub("^customRaid_", "")
@@ -336,7 +317,6 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
         self.customFrame:StartMoving()
         self.isDragging = true
 
-        -- Enable snap preview lines
         if EditModeManagerFrame and NivUI.EditMode:IsSnapEnabled() then
             EditModeManagerFrame:SetSnapPreviewFrame(self.customFrame)
         end
@@ -347,7 +327,6 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
         self.customFrame:SetMovable(false)
         self.isDragging = false
 
-        -- Clear snap preview and apply magnetism
         if EditModeManagerFrame then
             EditModeManagerFrame:ClearSnapPreviewFrame()
         end
@@ -404,16 +383,13 @@ function NivUI.EditMode:ShowSelected(frameType)
 end
 
 function NivUI.EditMode:SelectFrame(frameType, targetFrame)
-    -- Deselect previous
     if selectedFrame and selectedFrame ~= frameType then
         self:ShowHighlighted(selectedFrame)
     end
 
-    -- Select new
     selectedFrame = frameType
     self:ShowSelected(frameType)
 
-    -- Show settings dialog if this frame type has settings
     if self:HasSettings(frameType) then
         self:ShowSettingsDialog(frameType, targetFrame)
     end
@@ -442,8 +418,6 @@ function NivUI.EditMode:HideSelection(frameType)
     end
 end
 
--- Calculate projected container size for group frame types based on settings
--- This allows Edit Mode to show accurate frame sizes even when not in a group
 function NivUI.EditMode:GetProjectedContainerSize(frameType)
     local styleName = NivUI:GetAssignment(frameType)
     local style = NivUI:GetStyleWithDefaults(styleName)
@@ -490,11 +464,9 @@ function NivUI.EditMode:GetProjectedContainerSize(frameType)
         local groupOrientation = NivUI:GetRaidGroupOrientation(frameType)
         local playerGrowth = NivUI:GetRaidPlayerGrowthDirection(frameType)
 
-        -- Raid frames typically use smaller dimensions
         frameWidth = frameConfig.width or 80
         frameHeight = frameConfig.height or 40
 
-        -- Calculate group size (5 members per group)
         local groupWidth, groupHeight
         if playerGrowth == "DOWN" or playerGrowth == "UP" then
             groupWidth = frameWidth
@@ -504,7 +476,6 @@ function NivUI.EditMode:GetProjectedContainerSize(frameType)
             groupHeight = frameHeight
         end
 
-        -- Calculate container size based on group arrangement
         if groupOrientation == "VERTICAL" then
             return groupWidth, maxGroups * groupHeight + (maxGroups - 1) * spacing
         else
@@ -512,7 +483,6 @@ function NivUI.EditMode:GetProjectedContainerSize(frameType)
         end
 
     elseif frameType:find("^customRaid_") then
-        -- Custom raid groups - estimate based on a reasonable max member count
         local groupId = frameType:gsub("^customRaid_", "")
         local groupConfig = NivUI:GetCustomRaidGroup(groupId)
         if not groupConfig then return nil, nil end
@@ -523,8 +493,7 @@ function NivUI.EditMode:GetProjectedContainerSize(frameType)
         frameWidth = frameConfig.width or 80
         frameHeight = frameConfig.height or 40
 
-        -- Estimate max members: roles can have up to 40 members, member filter uses selection count
-        local maxMembers = 10  -- Reasonable default for preview
+        local maxMembers = 10
         if groupConfig.filterType == "member" then
             local memberCount = 0
             for _ in pairs(groupConfig.members) do
@@ -540,7 +509,6 @@ function NivUI.EditMode:GetProjectedContainerSize(frameType)
     return nil, nil
 end
 
--- Resize group frame containers to reflect projected size for Edit Mode
 function NivUI.EditMode:UpdateContainerSizes()
     local groupFrameTypes = {"party", "boss", "arena", "raid10", "raid20", "raid40"}
 
@@ -554,7 +522,6 @@ function NivUI.EditMode:UpdateContainerSizes()
         end
     end
 
-    -- Also update custom raid group sizes
     local customGroups = NivUI:GetCustomRaidGroups()
     for groupId in pairs(customGroups) do
         local frameType = "customRaid_" .. groupId
@@ -569,12 +536,10 @@ function NivUI.EditMode:UpdateContainerSizes()
 end
 
 function NivUI.EditMode:ShowAllSelections()
-    -- Update UIParent points for magnetism calculations
     if EditModeMagnetismManager and EditModeMagnetismManager.UpdateUIParentPoints then
         EditModeMagnetismManager:UpdateUIParentPoints()
     end
 
-    -- Resize group frame containers to reflect user settings
     self:UpdateContainerSizes()
 
     for frameType, driverInfo in pairs(visibilityDrivers) do
@@ -590,7 +555,6 @@ function NivUI.EditMode:ShowAllSelections()
             end
             self:ShowHighlighted(frameType)
 
-            -- Register for magnetism when visible
             self:RegisterFrameForMagnetism(selection.customFrame)
         end
     end
@@ -604,7 +568,6 @@ function NivUI.EditMode:HideAllSelections()
         selection:Hide()
         selection.textureShown = nil
 
-        -- Unregister from magnetism
         if selection.customFrame then
             self:UnregisterFrameFromMagnetism(selection.customFrame)
         end

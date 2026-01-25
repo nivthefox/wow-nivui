@@ -12,7 +12,6 @@ NivUI.staggerBarDefaults = {
     y = -200,
     locked = false,
 
-    -- Bar appearance
     foregroundTexture = "Default",
     backgroundTexture = "Default",
     backgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
@@ -20,7 +19,6 @@ NivUI.staggerBarDefaults = {
     borderColor = { r = 0, g = 0, b = 0, a = 1 },
     borderWidth = 1,
 
-    -- Font settings
     font = "Friz Quadrata",
     fontSize = 12,
     fontColor = { r = 1, g = 1, b = 1 },
@@ -33,8 +31,8 @@ NivUI.staggerBarDefaults = {
     },
 }
 
-NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture  -- Legacy alias
-NivUI.defaults = NivUI.staggerBarDefaults  -- Legacy alias
+NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture
+NivUI.defaults = NivUI.staggerBarDefaults
 
 local BUILTIN_TEXTURES = {
     { value = "Default", name = "Default", path = "Interface\\TargetingFrame\\UI-StatusBar" },

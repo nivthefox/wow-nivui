@@ -84,7 +84,6 @@ function Components.GetBasicDropdown(parent, labelText, getItems, isSelectedCall
     return frame
 end
 
--- Create a texture dropdown with preview
 function Components.GetTextureDropdown(parent, labelText, getTextures, getValue, onSelect)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetHeight(ROW_HEIGHT)
@@ -104,7 +103,6 @@ function Components.GetTextureDropdown(parent, labelText, getTextures, getValue,
     dropdown:SetupMenu(function(_, rootDescription)
         local textures = getTextures()
         for _, tex in ipairs(textures) do
-            -- Build preview: |Tpath:height:width|t name
             local preview
             if tex.path then
                 preview = "|T" .. tex.path .. ":16:80|t " .. tex.name
@@ -130,7 +128,6 @@ function Components.GetTextureDropdown(parent, labelText, getTextures, getValue,
     return frame
 end
 
--- Create a slider with +/- steppers AND an input box
 function Components.GetSliderWithInput(parent, labelText, min, max, step, isDecimal, callback)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetHeight(ROW_HEIGHT)
@@ -143,7 +140,6 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
     holder.Label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
     holder.Label:SetText(labelText)
 
-    -- Input box on the right
     local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
     editBox:SetSize(50, 20)
     editBox:SetPoint("RIGHT", -5, 0)
@@ -151,7 +147,6 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
     editBox:SetNumeric(not isDecimal)
     editBox:SetMaxLetters(6)
 
-    -- Slider in the middle
     holder.Slider = CreateFrame("Slider", nil, holder, "MinimalSliderWithSteppersTemplate")
     holder.Slider:SetPoint("LEFT", holder, "CENTER", -20, 0)
     holder.Slider:SetPoint("RIGHT", editBox, "LEFT", -10, 0)
@@ -227,7 +222,6 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
     return holder
 end
 
--- Create a color picker
 function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetHeight(ROW_HEIGHT)
@@ -276,7 +270,6 @@ function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
 
             ColorPickerFrame:SetupColorPickerAndShow(info)
         else
-            -- Right click resets to white
             swatch.currentColor = { r = 1, g = 1, b = 1, a = hasAlpha and 1 or nil }
             swatch:SetColor(CreateColor(1, 1, 1))
             if callback then callback(swatch.currentColor) end
@@ -298,7 +291,6 @@ function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
     return holder
 end
 
--- Create a section header
 function Components.GetHeader(parent, text)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetPoint("LEFT", 10, 0)
@@ -312,7 +304,6 @@ function Components.GetHeader(parent, text)
     return holder
 end
 
--- Create a top tab button (for sub-tabs)
 function Components.GetTab(parent, text)
     local tab = CreateFrame("Button", nil, parent, "PanelTopTabButtonTemplate")
     tab:SetText(text)
@@ -324,23 +315,19 @@ function Components.GetTab(parent, text)
     return tab
 end
 
--- Create a sidebar tab button (for left-side navigation)
 function Components.GetSidebarTab(parent, text)
     local btn = CreateFrame("Button", nil, parent)
     btn:SetSize(SIDEBAR_WIDTH - 8, 28)
 
-    -- Background (shown when selected)
     btn.selectedBg = btn:CreateTexture(nil, "BACKGROUND")
     btn.selectedBg:SetAllPoints()
     btn.selectedBg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
     btn.selectedBg:Hide()
 
-    -- Highlight
     btn.highlight = btn:CreateTexture(nil, "HIGHLIGHT")
     btn.highlight:SetAllPoints()
     btn.highlight:SetColorTexture(0.3, 0.3, 0.3, 0.5)
 
-    -- Text
     btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     btn.text:SetPoint("LEFT", 8, 0)
     btn.text:SetText(text)
@@ -358,23 +345,17 @@ function Components.GetSidebarTab(parent, text)
     return btn
 end
 
---------------------------------------------------------------------------------
--- Main Config Frame
---------------------------------------------------------------------------------
-
 local ConfigFrame = CreateFrame("Frame", "NivUIConfigFrame", UIParent, "ButtonFrameTemplate")
 ConfigFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
 ConfigFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 ConfigFrame:SetToplevel(true)
 ConfigFrame:Hide()
 
--- Customize ButtonFrameTemplate
 ButtonFrameTemplate_HidePortrait(ConfigFrame)
 ButtonFrameTemplate_HideButtonBar(ConfigFrame)
 ConfigFrame.Inset:Hide()
 ConfigFrame:SetTitle("NivUI")
 
--- Make movable
 ConfigFrame:SetMovable(true)
 ConfigFrame:SetClampedToScreen(true)
 ConfigFrame:EnableMouse(true)
@@ -385,28 +366,19 @@ ConfigFrame:SetScript("OnDragStop", function(self)
     self:SetUserPlaced(false)
 end)
 
--- Prevent mouse wheel from scrolling parent
 ConfigFrame:SetScript("OnMouseWheel", function() end)
 
--- Add to special frames so Escape closes it
 table.insert(UISpecialFrames, "NivUIConfigFrame")
 
---------------------------------------------------------------------------------
--- Sidebar Tab System
---------------------------------------------------------------------------------
-
--- Sidebar container
 local Sidebar = CreateFrame("Frame", nil, ConfigFrame)
 Sidebar:SetWidth(SIDEBAR_WIDTH)
 Sidebar:SetPoint("TOPLEFT", 8, -28)
 Sidebar:SetPoint("BOTTOMLEFT", 8, 8)
 
--- Sidebar background
 local sidebarBg = Sidebar:CreateTexture(nil, "BACKGROUND")
 sidebarBg:SetAllPoints()
 sidebarBg:SetColorTexture(0.05, 0.05, 0.05, 0.8)
 
--- Content area (right of sidebar)
 local ContentArea = CreateFrame("Frame", nil, ConfigFrame)
 ContentArea:SetPoint("TOPLEFT", Sidebar, "TOPRIGHT", 4, 0)
 ContentArea:SetPoint("BOTTOMRIGHT", -8, 8)
@@ -428,16 +400,10 @@ local function SelectSidebarTab(index)
     currentSidebarTab = index
 end
 
---------------------------------------------------------------------------------
--- Class Bars Tab
---------------------------------------------------------------------------------
-
--- Creates the Stagger Bar settings content (used as a subtab)
 local function SetupStaggerBarContent(parent)
     local container = CreateFrame("Frame", nil, parent)
     container:Hide()
 
-    -- ScrollFrame for content
     local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 0, 0)
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
@@ -458,9 +424,6 @@ local function SetupStaggerBarContent(parent)
         table.insert(allFrames, frame)
     end
 
-    ----------------------------------------------------------------------------
-    -- General Section
-    ----------------------------------------------------------------------------
     local generalHeader = Components.GetHeader(content, "General")
     AddFrame(generalHeader)
 
@@ -476,9 +439,6 @@ local function SetupStaggerBarContent(parent)
     )
     AddFrame(visibilityDropdown)
 
-    ----------------------------------------------------------------------------
-    -- Appearance Section
-    ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
     AddFrame(appearanceHeader, SECTION_SPACING)
 
@@ -540,9 +500,6 @@ local function SetupStaggerBarContent(parent)
     )
     AddFrame(borderColorPicker)
 
-    ----------------------------------------------------------------------------
-    -- Stagger Colors Section
-    ----------------------------------------------------------------------------
     local colorsHeader = Components.GetHeader(content, "Stagger Colors")
     AddFrame(colorsHeader, SECTION_SPACING)
 
@@ -590,9 +547,6 @@ local function SetupStaggerBarContent(parent)
     )
     AddFrame(extremeColorPicker)
 
-    ----------------------------------------------------------------------------
-    -- Text Section
-    ----------------------------------------------------------------------------
     local textHeader = Components.GetHeader(content, "Text")
     AddFrame(textHeader, SECTION_SPACING)
 
@@ -640,9 +594,6 @@ local function SetupStaggerBarContent(parent)
     )
     AddFrame(fontShadowCheck)
 
-    ----------------------------------------------------------------------------
-    -- Position Section
-    ----------------------------------------------------------------------------
     local positionHeader = Components.GetHeader(content, "Position")
     AddFrame(positionHeader, SECTION_SPACING)
 
@@ -688,31 +639,24 @@ local function SetupStaggerBarContent(parent)
     )
     AddFrame(intervalSlider)
 
-    ----------------------------------------------------------------------------
-    -- Refresh on show
-    ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
         local db = NivUI_DB.staggerBar
         local defaults = NivUI.defaults
 
-        -- General
         visibilityDropdown:SetValue()
 
-        -- Appearance
         fgTextureDropdown:SetValue()
         bgTextureDropdown:SetValue()
         bgColorPicker:SetValue(db.backgroundColor or defaults.backgroundColor)
         borderDropdown:SetValue()
         borderColorPicker:SetValue(db.borderColor or defaults.borderColor)
 
-        -- Stagger Colors
         local colors = db.colors or defaults.colors
         lightColorPicker:SetValue(colors.light)
         moderateColorPicker:SetValue(colors.moderate)
         heavyColorPicker:SetValue(colors.heavy)
         extremeColorPicker:SetValue(colors.extreme)
 
-        -- Text
         fontDropdown:SetValue()
         fontSizeSlider:SetValue(db.fontSize or defaults.fontSize)
         fontColorPicker:SetValue(db.fontColor or defaults.fontColor)
@@ -720,26 +664,22 @@ local function SetupStaggerBarContent(parent)
         if shadow == nil then shadow = defaults.fontShadow end
         fontShadowCheck:SetValue(shadow)
 
-        -- Position
         lockedCheck:SetValue(db.locked or false)
         widthSlider:SetValue(db.width or defaults.width)
         heightSlider:SetValue(db.height or defaults.height)
         intervalSlider:SetValue(db.updateInterval or defaults.updateInterval)
     end)
 
-    -- Store references for external updates
     container.widthSlider = widthSlider
     container.heightSlider = heightSlider
 
     return container
 end
 
--- Creates the Chi Bar settings content (used as a subtab)
 local function SetupChiBarContent(parent)
     local container = CreateFrame("Frame", nil, parent)
     container:Hide()
 
-    -- ScrollFrame for content
     local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 0, 0)
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
@@ -772,9 +712,6 @@ local function SetupChiBarContent(parent)
         updateInterval = 0.05,
     }
 
-    ----------------------------------------------------------------------------
-    -- General Section
-    ----------------------------------------------------------------------------
     local generalHeader = Components.GetHeader(content, "General")
     AddFrame(generalHeader)
 
@@ -794,9 +731,6 @@ local function SetupChiBarContent(parent)
     )
     AddFrame(visibilityDropdown)
 
-    ----------------------------------------------------------------------------
-    -- Appearance Section
-    ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
     AddFrame(appearanceHeader, SECTION_SPACING)
 
@@ -848,9 +782,6 @@ local function SetupChiBarContent(parent)
     )
     AddFrame(borderColorPicker)
 
-    ----------------------------------------------------------------------------
-    -- Position Section
-    ----------------------------------------------------------------------------
     local positionHeader = Components.GetHeader(content, "Position")
     AddFrame(positionHeader, SECTION_SPACING)
 
@@ -902,9 +833,6 @@ local function SetupChiBarContent(parent)
     )
     AddFrame(intervalSlider)
 
-    ----------------------------------------------------------------------------
-    -- Refresh on show
-    ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
         local db = NivUI_DB.chiBar or {}
 
@@ -925,7 +853,6 @@ local function SetupChiBarContent(parent)
     return container
 end
 
--- Creates the Essence Bar settings content (used as a subtab)
 local function SetupEssenceBarContent(parent)
     local container = CreateFrame("Frame", nil, parent)
     container:Hide()
@@ -962,9 +889,6 @@ local function SetupEssenceBarContent(parent)
         updateInterval = 0.05,
     }
 
-    ----------------------------------------------------------------------------
-    -- General Section
-    ----------------------------------------------------------------------------
     local generalHeader = Components.GetHeader(content, "General")
     AddFrame(generalHeader)
 
@@ -984,9 +908,6 @@ local function SetupEssenceBarContent(parent)
     )
     AddFrame(visibilityDropdown)
 
-    ----------------------------------------------------------------------------
-    -- Appearance Section
-    ----------------------------------------------------------------------------
     local appearanceHeader = Components.GetHeader(content, "Appearance")
     AddFrame(appearanceHeader, SECTION_SPACING)
 
@@ -1038,9 +959,6 @@ local function SetupEssenceBarContent(parent)
     )
     AddFrame(borderColorPicker)
 
-    ----------------------------------------------------------------------------
-    -- Position Section
-    ----------------------------------------------------------------------------
     local positionHeader = Components.GetHeader(content, "Position")
     AddFrame(positionHeader, SECTION_SPACING)
 
@@ -1092,9 +1010,6 @@ local function SetupEssenceBarContent(parent)
     )
     AddFrame(intervalSlider)
 
-    ----------------------------------------------------------------------------
-    -- Refresh on show
-    ----------------------------------------------------------------------------
     container:SetScript("OnShow", function()
         local db = NivUI_DB.essenceBar or {}
 
@@ -1115,16 +1030,14 @@ local function SetupEssenceBarContent(parent)
     return container
 end
 
--- Creates the Class Bars tab with subtabs
-local staggerContent  -- Forward declaration for OnBarMoved callback
-local chiContent  -- Forward declaration for OnBarMoved callback
-local essenceContent  -- Forward declaration for OnBarMoved callback
+local staggerContent
+local chiContent
+local essenceContent
 local function SetupClassBarsTabWithSubtabs()
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
     container:Hide()
 
-    -- Sub-tab system
     local subTabs = {}
     local subTabContainers = {}
     local currentSubTab = 1
@@ -1142,7 +1055,6 @@ local function SetupClassBarsTabWithSubtabs()
         currentSubTab = index
     end
 
-    -- Create Stagger sub-tab content
     staggerContent = SetupStaggerBarContent(container)
     staggerContent:SetPoint("TOPLEFT", 0, -32)
     staggerContent:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1153,7 +1065,6 @@ local function SetupClassBarsTabWithSubtabs()
     staggerTab:SetScript("OnClick", function() SelectSubTab(1) end)
     table.insert(subTabs, staggerTab)
 
-    -- Create Chi sub-tab content
     chiContent = SetupChiBarContent(container)
     chiContent:SetPoint("TOPLEFT", 0, -32)
     chiContent:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1164,7 +1075,6 @@ local function SetupClassBarsTabWithSubtabs()
     chiTab:SetScript("OnClick", function() SelectSubTab(2) end)
     table.insert(subTabs, chiTab)
 
-    -- Create Essence sub-tab content
     essenceContent = SetupEssenceBarContent(container)
     essenceContent:SetPoint("TOPLEFT", 0, -32)
     essenceContent:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1175,7 +1085,6 @@ local function SetupClassBarsTabWithSubtabs()
     essenceTab:SetScript("OnClick", function() SelectSubTab(3) end)
     table.insert(subTabs, essenceTab)
 
-    -- Select first sub-tab when shown
     container:SetScript("OnShow", function()
         SelectSubTab(currentSubTab)
     end)
@@ -1183,11 +1092,6 @@ local function SetupClassBarsTabWithSubtabs()
     return container
 end
 
---------------------------------------------------------------------------------
--- Initialize Sidebar Tabs
---------------------------------------------------------------------------------
-
--- Class Bars tab (includes Stagger as sub-tab)
 local classBarsContainer = SetupClassBarsTabWithSubtabs()
 table.insert(sidebarContainers, classBarsContainer)
 
@@ -1196,7 +1100,6 @@ classBarsTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)
 classBarsTab:SetScript("OnClick", function() SelectSidebarTab(1) end)
 table.insert(sidebarTabs, classBarsTab)
 
--- Unit Frames tab (includes Designer and Assignments as sub-tabs)
 local unitFramesContainer = NivUI.UnitFrames:SetupConfigTabWithSubtabs(ContentArea, Components)
 table.insert(sidebarContainers, unitFramesContainer)
 
@@ -1205,17 +1108,11 @@ unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
 unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
 table.insert(sidebarTabs, unitFramesTab)
 
--- Select first tab by default
 ConfigFrame:SetScript("OnShow", function()
     SelectSidebarTab(currentSidebarTab)
 end)
 
---------------------------------------------------------------------------------
--- Callback for bar moved/resized (updates position sliders)
---------------------------------------------------------------------------------
-
 NivUI.OnBarMoved = function()
-    -- Update Stagger sliders
     local staggerDb = NivUI_DB.staggerBar
     if staggerContent and staggerContent.widthSlider then
         staggerContent.widthSlider:SetValue(staggerDb.width or 394)
@@ -1224,7 +1121,6 @@ NivUI.OnBarMoved = function()
         staggerContent.heightSlider:SetValue(staggerDb.height or 20)
     end
 
-    -- Update Chi sliders
     local chiDb = NivUI_DB.chiBar or {}
     if chiContent and chiContent.widthSlider then
         chiContent.widthSlider:SetValue(chiDb.width or 200)
@@ -1233,7 +1129,6 @@ NivUI.OnBarMoved = function()
         chiContent.heightSlider:SetValue(chiDb.height or 20)
     end
 
-    -- Update Essence sliders
     local essenceDb = NivUI_DB.essenceBar or {}
     if essenceContent and essenceContent.widthSlider then
         essenceContent.widthSlider:SetValue(essenceDb.width or 200)
@@ -1243,6 +1138,5 @@ NivUI.OnBarMoved = function()
     end
 end
 
--- Export components for other modules
 NivUI.Components = Components
 NivUI.ConfigFrame = ConfigFrame

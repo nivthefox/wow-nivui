@@ -94,7 +94,6 @@ function NivUI.Designer:BuildPreview(container, styleName)
 
     container.widgets = Base.CreateWidgets(container.preview, style, nil, { forPreview = true })
 
-    -- Add mouse interactivity for selection
     for widgetType, widget in pairs(container.widgets) do
         widget:EnableMouse(true)
         widget:SetScript("OnMouseDown", function()

@@ -3,10 +3,8 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
--- State for each custom group, keyed by groupId
 local groupStates = {}
 
--- Map role filter keys to UnitGroupRolesAssigned return values
 local ROLE_MAP = {
     tank = "TANK",
     healer = "HEALER",
@@ -17,7 +15,6 @@ local function GetFilteredUnits(groupConfig)
     local units = {}
 
     if not IsInRaid() and GetNumGroupMembers() <= 5 then
-        -- In party or solo - use party units
         local partyUnits = { "player" }
         for i = 1, 4 do
             table.insert(partyUnits, "party" .. i)
@@ -48,7 +45,6 @@ local function GetFilteredUnits(groupConfig)
             end
         end
     else
-        -- In raid
         for i = 1, 40 do
             local unit = "raid" .. i
             if UnitExists(unit) then
@@ -62,10 +58,9 @@ local function GetFilteredUnits(groupConfig)
                             break
                         end
                     end
-                else -- member filter
+                else
                     local name = GetRaidRosterInfo(i)
                     if name then
-                        -- Strip realm name
                         local shortName = strsplit("-", name)
                         if groupConfig.members[shortName] then
                             shouldInclude = true
@@ -245,13 +240,11 @@ local function LayoutMemberFrames(groupId)
 
     local filteredUnits = GetFilteredUnits(groupConfig)
 
-    -- Hide all existing frames first
     for unit, frame in pairs(state.memberFrames) do
         frame:Hide()
         state.memberStates[unit] = nil
     end
 
-    -- Create/show frames for filtered units
     local yOffset = 0
     local visibleCount = 0
 
@@ -270,14 +263,12 @@ local function LayoutMemberFrames(groupId)
             visibleCount = visibleCount + 1
             yOffset = yOffset + frameHeight + spacing
 
-            -- Update the frame data
             if state.memberStates[unit] then
                 Base.UpdateAllWidgets(state.memberStates[unit])
             end
         end
     end
 
-    -- Resize container
     local containerWidth = frameWidth
     local containerHeight = math.max(1, visibleCount * frameHeight + math.max(0, visibleCount - 1) * spacing)
     state.container:SetSize(containerWidth, containerHeight)
@@ -299,7 +290,6 @@ local function BuildCustomGroupFrames(groupId)
         groupStates[groupId] = state
     end
 
-    -- Clear existing frames
     for unit in pairs(state.memberFrames) do
         DestroyMemberFrame(groupId, unit)
     end
@@ -314,7 +304,6 @@ local function BuildCustomGroupFrames(groupId)
             state.container:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
         end
 
-        -- Register with Edit Mode
         if NivUI.EditMode then
             NivUI.EditMode:CreateSelectionFrame(frameType, state.container)
             if NivUI.EditMode:IsActive() then
@@ -354,7 +343,6 @@ local function OnGroupRosterUpdate()
     end
 end
 
--- Public API
 local CustomRaidGroup = {}
 NivUI.UnitFrames.CustomRaidGroup = CustomRaidGroup
 
@@ -388,7 +376,6 @@ function CustomRaidGroup.GetAllStates()
     return groupStates
 end
 
--- Event handling
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -396,7 +383,6 @@ eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 eventFrame:SetScript("OnEvent", function(_self, event)
     if event == "PLAYER_LOGIN" then
-        -- Initialize all enabled custom groups
         local customGroups = NivUI:GetCustomRaidGroups()
         for groupId, groupConfig in pairs(customGroups) do
             if groupConfig.enabled then
@@ -408,7 +394,6 @@ eventFrame:SetScript("OnEvent", function(_self, event)
     end
 end)
 
--- Callback handlers
 NivUI:RegisterCallback("CustomRaidGroupCreated", function(data)
     local groupConfig = NivUI:GetCustomRaidGroup(data.id)
     if groupConfig and groupConfig.enabled then
@@ -428,14 +413,11 @@ NivUI:RegisterCallback("CustomRaidGroupChanged", function(data)
 
     if groupConfig.enabled then
         if state then
-            -- Refresh existing group
             BuildCustomGroupFrames(data.id)
         else
-            -- Enable new group
             CustomRaidGroup.Enable(data.id)
         end
     else
-        -- Disable group
         CustomRaidGroup.Disable(data.id)
     end
 end)

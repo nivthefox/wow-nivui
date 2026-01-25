@@ -30,7 +30,6 @@ local function HideBlizzardToTFrame(state)
 
     Base.HideRegions(totFrame)
 
-    -- Kill named children starting with TargetFrameToT
     local children = { totFrame:GetChildren() }
     for _, child in ipairs(children) do
         local name = child:GetName()

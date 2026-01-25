@@ -65,7 +65,6 @@ spark:SetBlendMode("ADD")
 spark:SetPoint("CENTER", bar:GetStatusBarTexture(), "RIGHT", 0, 0)
 StaggerBar.spark = spark
 
--- Text overlays: left (total), center (dps), right (percent)
 local textLeft = bar:CreateFontString(nil, "OVERLAY")
 textLeft:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
 textLeft:SetPoint("LEFT", bar, "LEFT", 4, 0)
@@ -87,7 +86,7 @@ textRight:SetTextColor(1, 1, 1, 1)
 textRight:SetShadowOffset(0, 0)
 StaggerBar.textRight = textRight
 
-StaggerBar.text = textCenter  -- Legacy alias
+StaggerBar.text = textCenter
 
 local border = CreateFrame("Frame", nil, barContainer, "BackdropTemplate")
 border:SetPoint("TOPLEFT", -1, 1)
@@ -103,7 +102,6 @@ local lastUpdate = 0
 local isBrewmaster = false
 local inCombat = false
 
--- Format numbers: 6423 -> 6.4k, 1234567 -> 1.2m
 local function FormatNumber(num)
     if num >= 1000000 then
         return string.format("%.1fm", num / 1000000)
@@ -193,7 +191,6 @@ local function ShouldShow()
     if not isBrewmaster then return false end
     if visibility == "always" then return true end
 
-    -- Combat mode: show in combat or with active stagger
     if inCombat then return true end
     local stagger = UnitStagger("player")
     if stagger and stagger > 0 then return true end

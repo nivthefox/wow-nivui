@@ -45,11 +45,6 @@ function UnitFrameBase.KillVisual(frame)
     end
 end
 
---- Sets visibility on a protected frame using secure state drivers.
---- Safe to call during combat. Use this instead of Show()/Hide() on containers
---- that have SecureUnitButtonTemplate children.
---- @param frame Frame The frame to show or hide
---- @param visible boolean True to show, false to hide
 function UnitFrameBase.SetSecureVisibility(frame, visible)
     if not frame then return end
     RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
@@ -414,7 +409,6 @@ function UnitFrameBase.UpdateCastbar(state)
         return
     end
 
-    -- Empowered spells include hold-at-max time in their duration
     if isEmpowered and not issecretvalue(endTimeMS) then
         local holdTime = GetUnitEmpowerHoldAtMaxTime(unit)
         if holdTime and not issecretvalue(holdTime) then
@@ -422,7 +416,6 @@ function UnitFrameBase.UpdateCastbar(state)
         end
     end
 
-    -- Empowered spells fill forward like casts, not backward like channels
     local fillBackward = isChanneling and not isEmpowered
 
     if issecretvalue(startTimeMS) then
@@ -457,7 +450,6 @@ function UnitFrameBase.UpdateCastbar(state)
                     widget.timer:SetFormattedText("%.1fs", remaining)
                 end
 
-                -- Update stage progression for empowered spells
                 if isEmpowered and widget.UpdateStage then
                     widget:UpdateStage(elapsed)
                 end
@@ -465,7 +457,6 @@ function UnitFrameBase.UpdateCastbar(state)
         end
     end
 
-    -- Set up stage pips for empowered spells
     if isEmpowered and widget.AddStages then
         local totalDurationMS = endTimeMS - startTimeMS
         widget:AddStages(numStages, unit, totalDurationMS)
@@ -553,7 +544,6 @@ function UnitFrameBase.ApplyAnchors(parent, widgets, style)
             else
                 anchorTarget = widgets[anchor.relativeTo]
                 if not anchorTarget then
-                    -- Anchor target doesn't exist (disabled), hide this widget
                     widget:Hide()
                     widget.anchorMissing = true
                 end
@@ -771,8 +761,6 @@ end
 function UnitFrameBase.CheckVisibility(state)
     if not state.customFrame then return end
 
-    -- If using a visibility driver, the secure state driver handles show/hide
-    -- We just need to update widgets if visible
     if state.effectiveVisibilityDriver then
         if state.customFrame:IsShown() then
             UnitFrameBase.UpdateAllWidgets(state)
@@ -782,7 +770,6 @@ function UnitFrameBase.CheckVisibility(state)
 
     local shouldBeVisible = not state.shouldShow or state.shouldShow()
 
-    -- SecureUnitButtonTemplate frames can't be shown/hidden in combat
     if InCombatLockdown() then
         state.pendingVisibility = shouldBeVisible
         return
@@ -803,7 +790,7 @@ function UnitFrameBase.CheckVisibility(state)
 end
 
 function UnitFrameBase.ApplyPendingVisibility(state)
-    if state.effectiveVisibilityDriver then return end  -- Driver handles it
+    if state.effectiveVisibilityDriver then return end
     if state.pendingVisibility == nil then return end
     if InCombatLockdown() then return end
 
