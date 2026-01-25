@@ -18,6 +18,7 @@ modules/unitframes/WidgetFactories.lua
 modules/unitframes/ConfigTab.lua
 modules/unitframes/Designer.lua
 modules/unitframes/UnitFrameBase.lua
+modules/unitframes/MultiUnitFrameBase.lua
 modules/unitframes/EditModeSettingsDialog.lua
 modules/unitframes/EditModeSupport.lua
 modules/unitframes/PlayerFrame.lua
