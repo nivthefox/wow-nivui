@@ -7,6 +7,7 @@
 
 NivUI.lua
 modules/bars/BarBase.lua
+modules/bars/SegmentedBarBase.lua
 modules/bars/StaggerBar.lua
 modules/bars/ChiBar.lua
 modules/bars/EssenceBar.lua
