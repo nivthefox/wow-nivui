@@ -303,6 +303,7 @@ local function BuildPartyFrames()
         if visibilityOverride and visibilityOverride ~= "" then
             state.hasVisibilityDriver = true
             RegisterStateDriver(state.container, "visibility", visibilityOverride)
+            NivUI.EditMode:RegisterVisibilityDriver("party", state.container, visibilityOverride)
         end
 
         if NivUI.EditMode then
@@ -523,9 +524,11 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
         if data.driver and data.driver ~= "" then
             state.hasVisibilityDriver = true
             RegisterStateDriver(state.container, "visibility", data.driver)
+            NivUI.EditMode:RegisterVisibilityDriver("party", state.container, data.driver)
         else
             state.hasVisibilityDriver = false
             UnregisterStateDriver(state.container, "visibility")
+            NivUI.EditMode:UnregisterVisibilityDriver("party")
             if ShouldShowPartyFrames() then
                 state.container:Show()
             else

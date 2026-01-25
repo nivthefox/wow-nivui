@@ -6,6 +6,8 @@ local selectionFrames = {}
 local forceShownFrames = {}
 local selectedFrame = nil
 local registeredFrames = {}
+local visibilityDrivers = {}
+local suspendedDrivers = {}
 
 -- Nine-slice layout matching Blizzard's EditModeSystemSelectionLayout
 local SelectionLayout = {
@@ -29,6 +31,27 @@ end
 
 function NivUI.EditMode:IsSnapEnabled()
     return EditModeManagerFrame and EditModeManagerFrame:IsSnapEnabled()
+end
+
+function NivUI.EditMode:RegisterVisibilityDriver(frameType, frame, driverString)
+    if not driverString or driverString == "" then
+        visibilityDrivers[frameType] = nil
+        return
+    end
+
+    visibilityDrivers[frameType] = { frame = frame, driver = driverString }
+
+    if editModeActive then
+        UnregisterStateDriver(frame, "visibility")
+        suspendedDrivers[frameType] = visibilityDrivers[frameType]
+        frame:Show()
+        forceShownFrames[frameType] = true
+    end
+end
+
+function NivUI.EditMode:UnregisterVisibilityDriver(frameType)
+    visibilityDrivers[frameType] = nil
+    suspendedDrivers[frameType] = nil
 end
 
 function NivUI.EditMode:SavePosition(frameType, customFrame)
@@ -554,6 +577,11 @@ function NivUI.EditMode:ShowAllSelections()
     -- Resize group frame containers to reflect user settings
     self:UpdateContainerSizes()
 
+    for frameType, driverInfo in pairs(visibilityDrivers) do
+        UnregisterStateDriver(driverInfo.frame, "visibility")
+        suspendedDrivers[frameType] = driverInfo
+    end
+
     for frameType, selection in pairs(selectionFrames) do
         if selection.customFrame then
             if not selection.customFrame:IsShown() then
@@ -586,6 +614,11 @@ function NivUI.EditMode:HideAllSelections()
             forceShownFrames[frameType] = nil
         end
     end
+
+    for _, driverInfo in pairs(suspendedDrivers) do
+        RegisterStateDriver(driverInfo.frame, "visibility", driverInfo.driver)
+    end
+    wipe(suspendedDrivers)
 end
 
 function NivUI.EditMode:HideBlizzardSelections()

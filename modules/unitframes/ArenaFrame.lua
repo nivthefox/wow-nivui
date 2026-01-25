@@ -275,6 +275,7 @@ local function BuildArenaFrames()
         if visibilityOverride and visibilityOverride ~= "" then
             state.hasVisibilityDriver = true
             RegisterStateDriver(state.container, "visibility", visibilityOverride)
+            NivUI.EditMode:RegisterVisibilityDriver("arena", state.container, visibilityOverride)
         end
 
         if NivUI.EditMode then
@@ -478,9 +479,11 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
         if data.driver and data.driver ~= "" then
             state.hasVisibilityDriver = true
             RegisterStateDriver(state.container, "visibility", data.driver)
+            NivUI.EditMode:RegisterVisibilityDriver("arena", state.container, data.driver)
         else
             state.hasVisibilityDriver = false
             UnregisterStateDriver(state.container, "visibility")
+            NivUI.EditMode:UnregisterVisibilityDriver("arena")
             if ShouldShowArenaFrames() then
                 state.container:Show()
             else
