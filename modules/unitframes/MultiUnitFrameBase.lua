@@ -264,6 +264,7 @@ function MultiUnitFrameBase.CreateModule(config)
             Base.UpdateHealthText(memberState)
             Base.UpdatePowerBar(memberState)
             Base.UpdatePowerText(memberState)
+            Base.UpdateStatusText(memberState)
             Base.UpdateCastbar(memberState)
         end)
 

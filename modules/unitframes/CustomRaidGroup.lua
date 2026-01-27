@@ -206,6 +206,7 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
         Base.UpdateHealthText(memberState)
         Base.UpdatePowerBar(memberState)
         Base.UpdatePowerText(memberState)
+        Base.UpdateStatusText(memberState)
         Base.UpdateCastbar(memberState)
     end)
 
