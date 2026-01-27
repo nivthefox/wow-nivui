@@ -252,6 +252,27 @@ NivUI.UnitFrames.WidgetConfigs = {
             entries = {
                 { kind = "checkbox", key = "showCombat", label = "Show Combat" },
                 { kind = "checkbox", key = "showResting", label = "Show Resting" },
+            },
+        },
+    },
+
+    statusText = {
+        {
+            label = "General",
+            entries = {
+                { kind = "checkbox", key = "enabled", label = "Enabled" },
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
+        {
+            label = "Status Types",
+            entries = {
                 { kind = "checkbox", key = "showDead", label = "Show Dead" },
                 { kind = "checkbox", key = "showGhost", label = "Show Ghost" },
                 { kind = "checkbox", key = "showAFK", label = "Show AFK" },

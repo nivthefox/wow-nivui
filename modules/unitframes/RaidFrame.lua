@@ -375,6 +375,8 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
+    frame:RegisterUnitEvent("UNIT_FLAGS", unit)
+    frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
 
     frame:SetScript("OnEvent", function(self, event, _eventUnit)
         if event == "UNIT_MAXHEALTH" then
@@ -394,6 +396,8 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
             Base.UpdateNameText(memberState)
         elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
             Base.UpdateStatusIndicators(memberState)
+        elseif event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
+            Base.UpdateStatusText(memberState)
         elseif event:find("SPELLCAST") then
             Base.UpdateCastbar(memberState)
         end

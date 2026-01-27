@@ -374,6 +374,53 @@ function UnitFrameBase.UpdateStatusIndicators(state)
             widget.combat:Hide()
         end
     end
+
+    if widget.resting then
+        if config.showResting and unit == "player" and IsResting() then
+            widget.resting:SetAlpha(1)
+            widget.resting:Show()
+        else
+            widget.resting:Hide()
+        end
+    end
+end
+
+function UnitFrameBase.UpdateStatusText(state)
+    if not state.customFrame or not state.customFrame.widgets.statusText then return end
+    local widget = state.customFrame.widgets.statusText
+    local config = GetWidgetConfig(state, "statusText")
+    local unit = state.unit
+
+    local text = ""
+    local color = nil
+
+    if config.showOffline and not UnitIsConnected(unit) then
+        text = "OFFLINE"
+        color = config.color and config.color.offline
+    elseif config.showDead and UnitIsDead(unit) and not UnitIsGhost(unit) then
+        text = "DEAD"
+        color = config.color and config.color.dead
+    elseif config.showGhost and UnitIsGhost(unit) then
+        text = "GHOST"
+        color = config.color and config.color.ghost
+    elseif config.showAFK and UnitIsAFK(unit) then
+        text = "AFK"
+        color = config.color and config.color.afk
+    elseif config.showDND and UnitIsDND(unit) then
+        text = "DND"
+        color = config.color and config.color.dnd
+    end
+
+    if text ~= "" then
+        widget.text:SetText(text)
+        if color then
+            widget.text:SetTextColor(color.r, color.g, color.b)
+        end
+        widget:Show()
+    else
+        widget.text:SetText("")
+        widget:Hide()
+    end
 end
 
 function UnitFrameBase.UpdateRaidMarker(state)
@@ -579,6 +626,7 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateNameText(state)
     UnitFrameBase.UpdateLevelText(state)
     UnitFrameBase.UpdateStatusIndicators(state)
+    UnitFrameBase.UpdateStatusText(state)
     UnitFrameBase.UpdateRaidMarker(state)
     UnitFrameBase.UpdateLeaderIcon(state)
     UnitFrameBase.UpdateRoleIcon(state)
@@ -772,6 +820,10 @@ function UnitFrameBase.BuildCustomFrame(state)
         customFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
         customFrame:RegisterEvent("PARTY_LEADER_CHANGED")
         customFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
+        customFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
+        customFrame:RegisterEvent("PLAYER_FLAGS_CHANGED")
+        customFrame:RegisterUnitEvent("UNIT_FLAGS", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_CONNECTION", state.unit)
 
         customFrame:SetScript("OnEvent", function(self, event, eventUnit)
             if event == "UNIT_MAXHEALTH" then
@@ -791,6 +843,10 @@ function UnitFrameBase.BuildCustomFrame(state)
                 UnitFrameBase.UpdateNameText(state)
             elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
                 UnitFrameBase.UpdateStatusIndicators(state)
+            elseif event == "PLAYER_UPDATE_RESTING" then
+                UnitFrameBase.UpdateStatusIndicators(state)
+            elseif event == "PLAYER_FLAGS_CHANGED" or event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
+                UnitFrameBase.UpdateStatusText(state)
             elseif event == "RAID_TARGET_UPDATE" then
                 UnitFrameBase.UpdateRaidMarker(state)
             elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
@@ -802,11 +858,13 @@ function UnitFrameBase.BuildCustomFrame(state)
             elseif event == "PLAYER_ENTERING_WORLD"
                 or event == "ZONE_CHANGED_NEW_AREA"
                 or event == "ENCOUNTER_START"
-                or event == "ENCOUNTER_END"
-                or event == "PLAYER_ALIVE"
+                or event == "ENCOUNTER_END" then
+                UnitFrameBase.CheckVisibility(state)
+            elseif event == "PLAYER_ALIVE"
                 or event == "PLAYER_DEAD"
                 or event == "PLAYER_UNGHOST" then
                 UnitFrameBase.CheckVisibility(state)
+                UnitFrameBase.UpdateStatusText(state)
             end
 
             if state.onEvent then

@@ -300,10 +300,10 @@ function WF.powerText(parent, config, _style, unit)
     return CreateTextWidget(parent, config, text, "powerText", unit)
 end
 
-function WF.statusIndicators(parent, config, _style, unit)
-    unit = unit or "player"
+function WF.statusIndicators(parent, config, _style, _unit, options)
+    options = options or {}
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(config.iconSize * 3, config.iconSize)
+    frame:SetSize(config.iconSize * 2, config.iconSize)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
@@ -313,13 +313,43 @@ function WF.statusIndicators(parent, config, _style, unit)
     frame.combat:SetTexture("Interface\\CharacterFrame\\UI-StateIcon")
     frame.combat:SetTexCoord(0.5, 1, 0, 0.5)
 
-    if UnitAffectingCombat(unit) or not config.showCombat then
-        frame.combat:Show()
-    else
+    frame.resting = frame:CreateTexture(nil, "OVERLAY")
+    frame.resting:SetSize(config.iconSize, config.iconSize)
+    frame.resting:SetPoint("LEFT", frame.combat, "RIGHT", 2, 0)
+    frame.resting:SetTexture("Interface\\CharacterFrame\\UI-StateIcon")
+    frame.resting:SetTexCoord(0, 0.5, 0, 0.5)
+
+    if options.forPreview then
         frame.combat:SetAlpha(0.3)
+        frame.resting:SetAlpha(0.3)
+    else
+        frame.combat:Hide()
+        frame.resting:Hide()
     end
 
     frame.widgetType = "statusIndicators"
+    return frame
+end
+
+function WF.statusText(parent, config, _style, _unit, options)
+    options = options or {}
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(100, 20)
+    if config.strata then frame:SetFrameStrata(config.strata) end
+    if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
+
+    frame.text = frame:CreateFontString(nil, "OVERLAY", config.font or "GameFontNormalLarge")
+    frame.text:SetAllPoints()
+    frame.text:SetText("")
+
+    if options.forPreview then
+        frame.text:SetText("AFK")
+        if config.color and config.color.afk then
+            frame.text:SetTextColor(config.color.afk.r, config.color.afk.g, config.color.afk.b)
+        end
+    end
+
+    frame.widgetType = "statusText"
     return frame
 end
 
