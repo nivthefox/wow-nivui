@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Status text overlay showing AFK, DND, Dead, Ghost, and Offline states on unit frames
 - Range fading: unit frames can now fade when targets are out of range, configurable per frame type in Edit Mode
 
 ## [1.3.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.3.0) - 2026-01-25
