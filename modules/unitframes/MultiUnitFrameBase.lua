@@ -328,6 +328,15 @@ function MultiUnitFrameBase.CreateModule(config)
         end
     end
 
+    local function SetContainerVisibility(shouldShow)
+        if not state.container then return end
+
+        local driver = shouldShow and "show" or "hide"
+        state.fallbackVisibilityDriver = driver
+        RegisterStateDriver(state.container, "visibility", driver)
+        NivUI.EditMode:RegisterVisibilityDriver(config.frameType, state.container, driver)
+    end
+
     local function OnContainerEventTriggered()
         if not state.enabled then return end
 
@@ -336,11 +345,11 @@ function MultiUnitFrameBase.CreateModule(config)
                 LayoutMemberFrames()
                 UpdateAllMemberFrames()
             elseif config.shouldShowContainer and config.shouldShowContainer(state) then
-                Base.SetSecureVisibility(state.container, true)
+                SetContainerVisibility(true)
                 LayoutMemberFrames()
                 UpdateAllMemberFrames()
             else
-                Base.SetSecureVisibility(state.container, false)
+                SetContainerVisibility(false)
             end
         else
             LayoutMemberFrames()
@@ -357,7 +366,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
         if config.memberVisibilityMode == "manual" and not state.hasVisibilityDriver then
             local shouldShow = config.shouldShowContainer and config.shouldShowContainer(state)
-            Base.SetSecureVisibility(state.container, shouldShow)
+            SetContainerVisibility(shouldShow)
         end
     end
 
@@ -372,7 +381,7 @@ function MultiUnitFrameBase.CreateModule(config)
             BuildFrames()
             if config.memberVisibilityMode == "manual" and not state.hasVisibilityDriver then
                 local shouldShow = config.shouldShowContainer and config.shouldShowContainer(state)
-                Base.SetSecureVisibility(state.container, shouldShow)
+                SetContainerVisibility(shouldShow)
             end
         end
     end
@@ -395,7 +404,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
             if config.memberVisibilityMode == "manual" and not state.hasVisibilityDriver then
                 local shouldShow = enabled or (config.shouldShowContainer and config.shouldShowContainer(state))
-                Base.SetSecureVisibility(state.container, shouldShow)
+                SetContainerVisibility(shouldShow)
             end
         end
     end
@@ -470,12 +479,8 @@ function MultiUnitFrameBase.CreateModule(config)
                 NivUI.EditMode:RegisterVisibilityDriver(config.frameType, state.container, data.driver)
             else
                 state.hasVisibilityDriver = false
-                if not NivUI.EditMode:IsActive() then
-                    UnregisterStateDriver(state.container, "visibility")
-                end
-                NivUI.EditMode:UnregisterVisibilityDriver(config.frameType)
                 if config.memberVisibilityMode == "manual" and config.shouldShowContainer then
-                    Base.SetSecureVisibility(state.container, config.shouldShowContainer(state))
+                    SetContainerVisibility(config.shouldShowContainer(state))
                 end
             end
         end

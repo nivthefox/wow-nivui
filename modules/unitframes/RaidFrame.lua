@@ -140,6 +140,16 @@ local function ShouldShowRaidFrames(raidSize)
     return activeSize == raidSize
 end
 
+local function SetRaidContainerVisibility(raidSize, shouldShow)
+    local state = states[raidSize]
+    if not state.container then return end
+
+    local driver = shouldShow and "show" or "hide"
+    state.fallbackVisibilityDriver = driver
+    RegisterStateDriver(state.container, "visibility", driver)
+    NivUI.EditMode:RegisterVisibilityDriver(raidSize, state.container, driver)
+end
+
 local function LayoutGroupMembers(raidSize, groupNum)
     local state = states[raidSize]
     local groupFrame = state.groupFrames[groupNum]
@@ -546,7 +556,7 @@ local function OnGroupRosterUpdate()
                     UnregisterStateDriver(state.container, "visibility")
                     NivUI.EditMode:UnregisterVisibilityDriver(raidSize)
                     state.hasVisibilityDriver = false
-                    Base.SetSecureVisibility(state.container, false)
+                    SetRaidContainerVisibility(raidSize, false)
                 end
             end
 
@@ -554,11 +564,11 @@ local function OnGroupRosterUpdate()
                 LayoutGroupFrames(raidSize)
                 UpdateAllRaidMembers(raidSize)
             elseif state.previewMode or isActive then
-                Base.SetSecureVisibility(state.container, true)
+                SetRaidContainerVisibility(raidSize, true)
                 LayoutGroupFrames(raidSize)
                 UpdateAllRaidMembers(raidSize)
             else
-                Base.SetSecureVisibility(state.container, false)
+                SetRaidContainerVisibility(raidSize, false)
             end
         end
     end
@@ -594,7 +604,7 @@ function RaidFrame.Enable(raidSize)
     HideBlizzardRaidFrames()
 
     if not state.hasVisibilityDriver then
-        Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(raidSize))
+        SetRaidContainerVisibility(raidSize, ShouldShowRaidFrames(raidSize))
     end
 end
 
@@ -613,7 +623,7 @@ function RaidFrame.Refresh(raidSize)
 
     BuildRaidFrames(raidSize)
     if not state.hasVisibilityDriver then
-        Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(raidSize))
+        SetRaidContainerVisibility(raidSize, ShouldShowRaidFrames(raidSize))
     end
 end
 
@@ -627,7 +637,7 @@ function RaidFrame.SetPreviewMode(raidSize, enabled)
         UpdateAllRaidMembers(raidSize)
 
         if not state.hasVisibilityDriver then
-            Base.SetSecureVisibility(state.container, enabled or ShouldShowRaidFrames(raidSize))
+            SetRaidContainerVisibility(raidSize, enabled or ShouldShowRaidFrames(raidSize))
         end
     end
 end
@@ -712,14 +722,8 @@ NivUI:RegisterCallback("VisibilityOverrideChanged", function(data)
             end
         else
             state.visibilityDriverString = nil
-            if state.hasVisibilityDriver then
-                state.hasVisibilityDriver = false
-                if not NivUI.EditMode:IsActive() then
-                    UnregisterStateDriver(state.container, "visibility")
-                end
-                NivUI.EditMode:UnregisterVisibilityDriver(data.frameType)
-            end
-            Base.SetSecureVisibility(state.container, ShouldShowRaidFrames(data.frameType))
+            state.hasVisibilityDriver = false
+            SetRaidContainerVisibility(data.frameType, ShouldShowRaidFrames(data.frameType))
         end
     end
 end)
