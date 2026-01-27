@@ -438,6 +438,19 @@ function NivUI:SetArenaGrowthDirection(value)
     self:TriggerEvent("ArenaSettingsChanged", { setting = "growthDirection", value = value })
 end
 
+function NivUI:IsFadeOutOfRangeEnabled(frameType)
+    if NivUI_DB.unitFrameFadeOutOfRange == nil then
+        return false
+    end
+    return NivUI_DB.unitFrameFadeOutOfRange[frameType] or false
+end
+
+function NivUI:SetFadeOutOfRange(frameType, enabled)
+    NivUI_DB.unitFrameFadeOutOfRange = NivUI_DB.unitFrameFadeOutOfRange or {}
+    NivUI_DB.unitFrameFadeOutOfRange[frameType] = enabled
+    self:TriggerEvent("FadeOutOfRangeChanged", { frameType = frameType, enabled = enabled })
+end
+
 local function GenerateCustomRaidGroupId()
     return "custom_" .. time() .. "_" .. math.random(1000, 9999)
 end

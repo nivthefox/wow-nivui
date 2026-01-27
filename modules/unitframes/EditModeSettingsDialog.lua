@@ -38,6 +38,16 @@ local function CreateVisibilitySetting(frameType)
     }
 end
 
+local function CreateFadeOutOfRangeSetting(frameType)
+    return {
+        key = "fadeOutOfRange",
+        name = "Fade Out of Range",
+        type = SettingType.Checkbox,
+        get = function() return NivUI:IsFadeOutOfRangeEnabled(frameType) end,
+        set = function(value) NivUI:SetFadeOutOfRange(frameType, value) end,
+    }
+end
+
 local FrameSettings = {
     player = {
         CreateVisibilitySetting("player"),
@@ -45,18 +55,22 @@ local FrameSettings = {
 
     target = {
         CreateVisibilitySetting("target"),
+        CreateFadeOutOfRangeSetting("target"),
     },
 
     focus = {
         CreateVisibilitySetting("focus"),
+        CreateFadeOutOfRangeSetting("focus"),
     },
 
     pet = {
         CreateVisibilitySetting("pet"),
+        CreateFadeOutOfRangeSetting("pet"),
     },
 
     targettarget = {
         CreateVisibilitySetting("targettarget"),
+        CreateFadeOutOfRangeSetting("targettarget"),
     },
 
     party = {
@@ -135,6 +149,7 @@ local FrameSettings = {
             set = function(value) NivUI:SetPartyShowWhenSolo(value) end,
         },
         CreateVisibilitySetting("party"),
+        CreateFadeOutOfRangeSetting("party"),
     },
 
     boss = {
@@ -188,6 +203,7 @@ local FrameSettings = {
             set = function(value) NivUI:SetBossSpacing(value) end,
         },
         CreateVisibilitySetting("boss"),
+        CreateFadeOutOfRangeSetting("boss"),
     },
 
     arena = {
@@ -241,6 +257,7 @@ local FrameSettings = {
             set = function(value) NivUI:SetArenaSpacing(value) end,
         },
         CreateVisibilitySetting("arena"),
+        CreateFadeOutOfRangeSetting("arena"),
     },
 }
 
@@ -321,6 +338,7 @@ local function CreateRaidSettings(raidSize)
             set = function(value) NivUI:SetRaidSpacing(raidSize, value) end,
         },
         CreateVisibilitySetting(raidSize),
+        CreateFadeOutOfRangeSetting(raidSize),
     }
 end
 

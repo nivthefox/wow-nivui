@@ -416,6 +416,7 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
         Base.UpdatePowerText(memberState)
         Base.UpdateStatusText(memberState)
         Base.UpdateCastbar(memberState)
+        Base.UpdateRangeAlpha(memberState)
     end)
 
     return frame

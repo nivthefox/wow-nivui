@@ -631,7 +631,27 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateLeaderIcon(state)
     UnitFrameBase.UpdateRoleIcon(state)
     UnitFrameBase.UpdateCastbar(state)
+    UnitFrameBase.UpdateRangeAlpha(state)
     CascadeAnchorVisibility(state)
+end
+
+function UnitFrameBase.UpdateRangeAlpha(state)
+    if not state.customFrame or not state.customFrame:IsShown() then return end
+    if not NivUI:IsFadeOutOfRangeEnabled(state.frameType) then
+        if state.outOfRange then
+            state.outOfRange = nil
+            state.customFrame:SetAlpha(1)
+        end
+        return
+    end
+
+    local inRange, checkedRange = UnitInRange(state.unit)
+    local outOfRange = checkedRange and not inRange
+
+    if state.outOfRange ~= outOfRange then
+        state.outOfRange = outOfRange
+        state.customFrame:SetAlpha(outOfRange and 0.3 or 1)
+    end
 end
 
 function UnitFrameBase.CreateWidgets(parent, style, unit, options)
@@ -892,6 +912,7 @@ function UnitFrameBase.BuildCustomFrame(state)
             UnitFrameBase.UpdatePowerBar(state)
             UnitFrameBase.UpdatePowerText(state)
             UnitFrameBase.UpdateCastbar(state)
+            UnitFrameBase.UpdateRangeAlpha(state)
         end)
 
         if NivUI.EditMode then

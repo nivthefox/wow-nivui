@@ -266,6 +266,7 @@ function MultiUnitFrameBase.CreateModule(config)
             Base.UpdatePowerText(memberState)
             Base.UpdateStatusText(memberState)
             Base.UpdateCastbar(memberState)
+            Base.UpdateRangeAlpha(memberState)
         end)
 
         return frame
