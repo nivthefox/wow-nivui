@@ -638,20 +638,25 @@ end
 function UnitFrameBase.UpdateRangeAlpha(state)
     if not state.customFrame or not state.customFrame:IsShown() then return end
     if not NivUI:IsFadeOutOfRangeEnabled(state.frameType) then
-        if state.outOfRange then
-            state.outOfRange = nil
+        if state.rangeAlphaApplied then
+            state.rangeAlphaApplied = nil
             state.customFrame:SetAlpha(1)
         end
         return
     end
 
-    local inRange, checkedRange = UnitInRange(state.unit)
-    local outOfRange = checkedRange and not inRange
-
-    if state.outOfRange ~= outOfRange then
-        state.outOfRange = outOfRange
-        state.customFrame:SetAlpha(outOfRange and 0.3 or 1)
+    -- Skip for player (always in range of yourself) or non-existent units
+    if UnitIsUnit(state.unit, "player") or not UnitExists(state.unit) then
+        if state.rangeAlphaApplied then
+            state.rangeAlphaApplied = nil
+            state.customFrame:SetAlpha(1)
+        end
+        return
     end
+
+    local inRange = UnitInRange(state.unit)
+    state.customFrame:SetAlphaFromBoolean(inRange, 1, 0.3)
+    state.rangeAlphaApplied = true
 end
 
 function UnitFrameBase.CreateWidgets(parent, style, unit, options)
