@@ -10,14 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Profile system with import/export and optional per-spec auto-switching
-
-### Changed
-
-- Added visual padding between config panel tabs and content for better readability
 - Buff and debuff display on unit frames with duration countdown and stack counts
 - Absorb shield overlay on health bars
 - Status text overlay showing AFK, DND, Dead, Ghost, and Offline states
 - Range fading for party and raid frames when members are out of range
+- 
+### Changed
+
+- Added visual padding between config panel tabs and content for better readability
 
 ### Fixed
 
