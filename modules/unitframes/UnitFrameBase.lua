@@ -647,6 +647,8 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateRoleIcon(state)
     UnitFrameBase.UpdateCastbar(state)
     UnitFrameBase.UpdateRangeAlpha(state)
+    UnitFrameBase.UpdateBuffs(state)
+    UnitFrameBase.UpdateDebuffs(state)
     CascadeAnchorVisibility(state)
 end
 
@@ -672,6 +674,85 @@ function UnitFrameBase.UpdateRangeAlpha(state)
     local inRange = UnitInRange(state.unit)
     state.customFrame:SetAlphaFromBoolean(inRange, 1, 0.3)
     state.rangeAlphaApplied = true
+end
+
+local function UpdateAuraWidget(state, widgetName, filter)
+    local widget = state.widgets and state.widgets[widgetName]
+    if not widget then return end
+    if state.forPreview then return end
+
+    local unit = state.unit
+    if not UnitExists(unit) then
+        for _, icon in ipairs(widget.icons) do
+            icon:Hide()
+        end
+        return
+    end
+
+    local config = widget.config
+    local filterPlayer = config.filterPlayer
+    local showDuration = config.showDuration
+    local showStacks = config.showStacks
+    local highlightDispellable = (widgetName == "debuffs") and config.highlightDispellable
+    local dispellableColor = config.dispellableColor
+
+    local auras = {}
+    local all = C_UnitAuras.GetUnitAuras(unit, filter, nil, Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortOrder.Descending)
+    for _, aura in ipairs(all) do
+        local include = true
+        if filterPlayer and aura.sourceUnit ~= "player" then
+            include = false
+        end
+        if include then
+            aura.applicationsString = C_UnitAuras.GetAuraApplicationDisplayCount(unit, aura.auraInstanceID, 2, 1000)
+            table.insert(auras, aura)
+        end
+        if #auras >= config.maxIcons then break end
+    end
+
+    for i, icon in ipairs(widget.icons) do
+        local aura = auras[i]
+        if aura then
+            icon.texture:SetTexture(aura.icon)
+
+            if showDuration and C_UnitAuras.GetAuraDurationRemaining then
+                local remaining = C_UnitAuras.GetAuraDurationRemaining(unit, aura.auraInstanceID)
+                if remaining and remaining > 0 then
+                    icon.duration:SetFormattedText("%.0f", remaining)
+                else
+                    icon.duration:SetText("")
+                end
+            else
+                icon.duration:SetText("")
+            end
+
+            if showStacks and aura.applicationsString and aura.applicationsString ~= "" then
+                icon.stacks:SetText(aura.applicationsString)
+            else
+                icon.stacks:SetText("")
+            end
+
+            if highlightDispellable and aura.dispelName then
+                icon.border:SetColorTexture(dispellableColor.r, dispellableColor.g, dispellableColor.b, dispellableColor.a or 1)
+                icon.border:Show()
+            else
+                icon.border:Hide()
+            end
+
+            icon.auraInstanceID = aura.auraInstanceID
+            icon:Show()
+        else
+            icon:Hide()
+        end
+    end
+end
+
+function UnitFrameBase.UpdateBuffs(state)
+    UpdateAuraWidget(state, "buffs", "HELPFUL")
+end
+
+function UnitFrameBase.UpdateDebuffs(state)
+    UpdateAuraWidget(state, "debuffs", "HARMFUL")
 end
 
 function UnitFrameBase.CreateWidgets(parent, style, unit, options)
@@ -865,6 +946,7 @@ function UnitFrameBase.BuildCustomFrame(state)
         customFrame:RegisterEvent("PLAYER_FLAGS_CHANGED")
         customFrame:RegisterUnitEvent("UNIT_FLAGS", state.unit)
         customFrame:RegisterUnitEvent("UNIT_CONNECTION", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_AURA", state.unit)
 
         customFrame:SetScript("OnEvent", function(self, event, eventUnit)
             if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
@@ -896,6 +978,9 @@ function UnitFrameBase.BuildCustomFrame(state)
                 UnitFrameBase.UpdateRoleIcon(state)
             elseif event:find("SPELLCAST") then
                 UnitFrameBase.UpdateCastbar(state)
+            elseif event == "UNIT_AURA" then
+                UnitFrameBase.UpdateBuffs(state)
+                UnitFrameBase.UpdateDebuffs(state)
             elseif event == "PLAYER_ENTERING_WORLD"
                 or event == "ZONE_CHANGED_NEW_AREA"
                 or event == "ENCOUNTER_START"

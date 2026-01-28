@@ -614,8 +614,9 @@ function WF.castbar(parent, config, _style, _unit)
     return frame
 end
 
-local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
-    _unit = _unit or "player"
+local function CreateAuraWidget(parent, config, widgetType, unit, options)
+    options = options or {}
+    local forPreview = options.forPreview
     local frame = CreateFrame("Frame", nil, parent)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
@@ -623,7 +624,7 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
     local iconSize = config.iconSize
     local spacing = config.spacing
     local perRow = config.perRow
-    local maxIcons = math.min(config.maxIcons, #testAuras)
+    local maxIcons = config.maxIcons
 
     local totalWidth = (iconSize + spacing) * math.min(maxIcons, perRow) - spacing
     local rows = math.ceil(maxIcons / perRow)
@@ -631,6 +632,9 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
 
     frame:SetSize(totalWidth, totalHeight)
     frame.icons = {}
+    frame.config = config
+    frame.unit = unit
+    frame.filter = (widgetType == "buffs") and "HELPFUL" or "HARMFUL"
 
     for i = 1, maxIcons do
         local icon = CreateFrame("Frame", nil, frame)
@@ -657,18 +661,21 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
 
         icon.texture = icon:CreateTexture(nil, "ARTWORK")
         icon.texture:SetAllPoints()
-        icon.texture:SetTexture(testAuras[i])
 
-        if config.showDuration then
-            icon.duration = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            icon.duration:SetPoint("BOTTOM", 0, -2)
-            icon.duration:SetText(math.random(5, 30) .. "s")
-        end
+        icon.duration = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        icon.duration:SetPoint("BOTTOM", 0, -2)
 
-        if config.showStacks and math.random() > 0.5 then
-            icon.stacks = icon:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            icon.stacks:SetPoint("BOTTOMRIGHT", 0, 0)
-            icon.stacks:SetText(math.random(2, 5))
+        icon.stacks = icon:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        icon.stacks:SetPoint("BOTTOMRIGHT", 0, 0)
+
+        icon.border = icon:CreateTexture(nil, "OVERLAY")
+        icon.border:SetPoint("TOPLEFT", -1, 1)
+        icon.border:SetPoint("BOTTOMRIGHT", 1, -1)
+        icon.border:SetColorTexture(0, 1, 0, 1)
+        icon.border:Hide()
+
+        if not forPreview then
+            icon:Hide()
         end
 
         table.insert(frame.icons, icon)
@@ -678,20 +685,52 @@ local function CreateAuraWidget(parent, config, widgetType, testAuras, _unit)
     return frame
 end
 
-function WF.buffs(parent, config, _style, unit)
-    local testBuffs = {
-        "Interface\\Icons\\Spell_Holy_WordFortitude",
-        "Interface\\Icons\\Spell_Nature_Regeneration",
-        "Interface\\Icons\\Spell_Holy_ArcaneIntellect",
-        "Interface\\Icons\\Ability_Warrior_BattleShout",
-    }
-    return CreateAuraWidget(parent, config, "buffs", testBuffs, unit)
+local TEST_BUFFS = {
+    "Interface\\Icons\\Spell_Holy_WordFortitude",
+    "Interface\\Icons\\Spell_Nature_Regeneration",
+    "Interface\\Icons\\Spell_Holy_ArcaneIntellect",
+    "Interface\\Icons\\Ability_Warrior_BattleShout",
+}
+
+local TEST_DEBUFFS = {
+    "Interface\\Icons\\Spell_Shadow_CurseOfTounAA",
+    "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+}
+
+local function PopulateTestAuras(frame, testAuras)
+    local config = frame.config
+    for i, icon in ipairs(frame.icons) do
+        if i <= #testAuras then
+            icon.texture:SetTexture(testAuras[i])
+            if config.showDuration then
+                icon.duration:SetText(math.random(5, 30) .. "s")
+            else
+                icon.duration:SetText("")
+            end
+            if config.showStacks and math.random() > 0.5 then
+                icon.stacks:SetText(math.random(2, 5))
+            else
+                icon.stacks:SetText("")
+            end
+            icon:Show()
+        else
+            icon:Hide()
+        end
+    end
 end
 
-function WF.debuffs(parent, config, _style, unit)
-    local testDebuffs = {
-        "Interface\\Icons\\Spell_Shadow_CurseOfTounAA",
-        "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
-    }
-    return CreateAuraWidget(parent, config, "debuffs", testDebuffs, unit)
+function WF.buffs(parent, config, _style, unit, options)
+    local frame = CreateAuraWidget(parent, config, "buffs", unit, options)
+    if options and options.forPreview then
+        PopulateTestAuras(frame, TEST_BUFFS)
+    end
+    return frame
+end
+
+function WF.debuffs(parent, config, _style, unit, options)
+    local frame = CreateAuraWidget(parent, config, "debuffs", unit, options)
+    if options and options.forPreview then
+        PopulateTestAuras(frame, TEST_DEBUFFS)
+    end
+    return frame
 end

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Buff and debuff display on unit frames with duration countdown and stack counts
 - Absorb shield overlay on health bars, showing incoming damage absorption from shields like Power Word: Shield
 - Status text overlay showing AFK, DND, Dead, Ghost, and Offline states on unit frames
 - Range fading: unit frames can now fade when targets are out of range, configurable per frame type in Edit Mode

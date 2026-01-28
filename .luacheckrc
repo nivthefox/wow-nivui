@@ -38,6 +38,12 @@ read_globals = {
 	"UnitPowerPercent",
 	"UnitChannelDuration",
 	"UnitCastingDuration",
+	"C_UnitAuras.GetAuraDurationRemaining",
+	"C_UnitAuras.GetAuraApplicationDisplayCount",
+	"Enum.UnitAuraSortRule.Default",
+	"Enum.UnitAuraSortRule.Expiration",
+	"Enum.UnitAuraSortOrder.Ascending",
+	"Enum.UnitAuraSortOrder.Descending",
 
 	-- WoW globals missing from upstream
 	"CompactPartyFrame",
