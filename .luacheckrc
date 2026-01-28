@@ -47,6 +47,7 @@ read_globals = {
 	"Enum.UnitAuraSortOrder.Descending",
 
 	-- WoW globals missing from upstream
+	"ChatFontNormal",
 	"CompactPartyFrame",
 	"GameFontHighlight",
 	"GetSpecialization",

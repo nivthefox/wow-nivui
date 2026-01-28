@@ -1116,6 +1116,182 @@ unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
 unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
 table.insert(sidebarTabs, unitFramesTab)
 
+local function CreateTextAreaDialog(name, title, buttonText, onAccept, readOnly)
+    local dialog = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
+    dialog:SetSize(500, 300)
+    dialog:SetPoint("CENTER")
+    dialog:SetFrameStrata("DIALOG")
+    dialog:SetToplevel(true)
+    dialog:EnableMouse(true)
+    dialog:SetMovable(true)
+    dialog:RegisterForDrag("LeftButton")
+    dialog:SetScript("OnDragStart", dialog.StartMoving)
+    dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
+    dialog:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    })
+    dialog:Hide()
+    table.insert(UISpecialFrames, name)
+
+    local titleText = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    titleText:SetPoint("TOP", 0, -16)
+    titleText:SetText(title)
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, dialog, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 20, -45)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 50)
+
+    local editBox = CreateFrame("EditBox", nil, scrollFrame)
+    editBox:SetMultiLine(true)
+    editBox:SetAutoFocus(false)
+    editBox:SetFontObject(ChatFontNormal)
+    editBox:SetWidth(scrollFrame:GetWidth() - 20)
+    editBox:SetScript("OnEscapePressed", function() dialog:Hide() end)
+    scrollFrame:SetScrollChild(editBox)
+    dialog.EditBox = editBox
+
+    if readOnly then
+        editBox:SetScript("OnChar", function() end)
+        editBox:SetScript("OnTextChanged", function(self)
+            if self.expectedText and self:GetText() ~= self.expectedText then
+                self:SetText(self.expectedText)
+                self:HighlightText()
+            end
+        end)
+    end
+
+    local acceptBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
+    acceptBtn:SetText(buttonText)
+    acceptBtn:SetWidth(100)
+    acceptBtn:SetPoint("BOTTOMRIGHT", dialog, "BOTTOM", -5, 15)
+    acceptBtn:SetScript("OnClick", function()
+        if onAccept then
+            onAccept(dialog, editBox:GetText())
+        end
+        dialog:Hide()
+    end)
+
+    local cancelBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
+    cancelBtn:SetText(CANCEL)
+    cancelBtn:SetWidth(100)
+    cancelBtn:SetPoint("BOTTOMLEFT", dialog, "BOTTOM", 5, 15)
+    cancelBtn:SetScript("OnClick", function() dialog:Hide() end)
+
+    dialog:SetScript("OnShow", function()
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+    end)
+    dialog:SetScript("OnHide", function()
+        PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
+    end)
+
+    return dialog
+end
+
+local exportDialog = CreateTextAreaDialog(
+    "NivUIExportDialog",
+    "Export Profile",
+    CLOSE,
+    nil,
+    true
+)
+
+local importDialog = CreateFrame("Frame", "NivUIImportDialog", UIParent, "BackdropTemplate")
+do
+    local dialog = importDialog
+    dialog:SetSize(500, 340)
+    dialog:SetPoint("CENTER")
+    dialog:SetFrameStrata("DIALOG")
+    dialog:SetToplevel(true)
+    dialog:EnableMouse(true)
+    dialog:SetMovable(true)
+    dialog:RegisterForDrag("LeftButton")
+    dialog:SetScript("OnDragStart", dialog.StartMoving)
+    dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
+    dialog:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    })
+    dialog:Hide()
+    table.insert(UISpecialFrames, "NivUIImportDialog")
+
+    local titleText = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    titleText:SetPoint("TOP", 0, -16)
+    titleText:SetText("Import Profile")
+
+    local nameLabel = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    nameLabel:SetPoint("TOPLEFT", 20, -45)
+    nameLabel:SetText("Profile Name:")
+
+    local nameBox = CreateFrame("EditBox", nil, dialog, "InputBoxTemplate")
+    nameBox:SetSize(200, 20)
+    nameBox:SetPoint("LEFT", nameLabel, "RIGHT", 10, 0)
+    nameBox:SetAutoFocus(false)
+    dialog.NameBox = nameBox
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, dialog, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 20, -75)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 50)
+
+    local editBox = CreateFrame("EditBox", nil, scrollFrame)
+    editBox:SetMultiLine(true)
+    editBox:SetAutoFocus(false)
+    editBox:SetFontObject(ChatFontNormal)
+    editBox:SetWidth(scrollFrame:GetWidth() - 20)
+    editBox:SetScript("OnEscapePressed", function() dialog:Hide() end)
+    scrollFrame:SetScrollChild(editBox)
+    dialog.EditBox = editBox
+
+    local acceptBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
+    acceptBtn:SetText("Import")
+    acceptBtn:SetWidth(100)
+    acceptBtn:SetPoint("BOTTOMRIGHT", dialog, "BOTTOM", -5, 15)
+    acceptBtn:SetScript("OnClick", function()
+        local name = nameBox:GetText()
+        local text = editBox:GetText()
+        if name == "" then
+            print("|cffff0000NivUI:|r Please enter a profile name")
+            return
+        end
+        local payload, err = NivUI.Profiles:DecodeImport(text)
+        if payload then
+            local success, createErr = NivUI.Profiles:CreateFromImport(name, payload)
+            if not success then
+                print("|cffff0000NivUI:|r " .. createErr)
+                return
+            end
+        else
+            print("|cffff0000NivUI:|r " .. err)
+            return
+        end
+        dialog:Hide()
+    end)
+
+    local cancelBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
+    cancelBtn:SetText(CANCEL)
+    cancelBtn:SetWidth(100)
+    cancelBtn:SetPoint("BOTTOMLEFT", dialog, "BOTTOM", 5, 15)
+    cancelBtn:SetScript("OnClick", function() dialog:Hide() end)
+
+    dialog:SetScript("OnShow", function()
+        nameBox:SetText("")
+        editBox:SetText("")
+        nameBox:SetFocus()
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+    end)
+    dialog:SetScript("OnHide", function()
+        PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
+    end)
+end
+
 local function SetupProfilesTab()
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
@@ -1219,7 +1395,11 @@ local function SetupProfilesTab()
     exportProfileBtn:SetPoint("LEFT", buttonRow3, "CENTER", -115, 0)
     exportProfileBtn:SetScript("OnClick", function()
         local str = NivUI.Profiles:ExportCurrentProfile()
-        StaticPopup_Show("NIVUI_EXPORT_STRING", nil, nil, str)
+        exportDialog.EditBox.expectedText = str
+        exportDialog.EditBox:SetText(str)
+        exportDialog.EditBox:HighlightText()
+        exportDialog:Show()
+        exportDialog.EditBox:SetFocus()
     end)
 
     local importProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
@@ -1227,7 +1407,7 @@ local function SetupProfilesTab()
     importProfileBtn:SetWidth(110)
     importProfileBtn:SetPoint("LEFT", exportProfileBtn, "RIGHT", 5, 0)
     importProfileBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_IMPORT_PROFILE")
+        importDialog:Show()
     end)
 
     container:SetScript("OnShow", function()
@@ -1323,106 +1503,6 @@ StaticPopupDialogs["NIVUI_DELETE_PROFILE"] = {
         if err then
             print("|cffff0000NivUI:|r " .. err)
         end
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
-StaticPopupDialogs["NIVUI_EXPORT_STRING"] = {
-    text = "Copy this string to share your profile:",
-    button1 = CLOSE,
-    hasEditBox = true,
-    editBoxWidth = 350,
-    OnShow = function(self, data)
-        self.EditBox:SetText(data)
-        self.EditBox:HighlightText()
-        self.EditBox:SetFocus()
-    end,
-    EditBoxOnEscapePressed = function(self)
-        self:GetParent():Hide()
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
-StaticPopupDialogs["NIVUI_IMPORT_PROFILE"] = {
-    text = "Paste the profile string here:",
-    button1 = ACCEPT,
-    button2 = CANCEL,
-    hasEditBox = true,
-    editBoxWidth = 350,
-    OnAccept = function(self)
-        local str = self.EditBox:GetText()
-        local success, err = NivUI.Profiles:Import(str, "overwrite")
-        if success == true then
-            print("|cff00ff00NivUI:|r Profile imported successfully")
-        elseif type(success) == "table" then
-            StaticPopup_Show("NIVUI_IMPORT_AS_NEW", nil, nil, success)
-        elseif err then
-            print("|cffff0000NivUI:|r " .. err)
-        end
-    end,
-    OnShow = function(self)
-        self.EditBox:SetText("")
-        self.EditBox:SetFocus()
-    end,
-    EditBoxOnEnterPressed = function(self)
-        local parent = self:GetParent()
-        local str = parent.EditBox:GetText()
-        local success, err = NivUI.Profiles:Import(str, "overwrite")
-        if success == true then
-            print("|cff00ff00NivUI:|r Profile imported successfully")
-        elseif type(success) == "table" then
-            StaticPopup_Show("NIVUI_IMPORT_AS_NEW", nil, nil, success)
-        elseif err then
-            print("|cffff0000NivUI:|r " .. err)
-        end
-        parent:Hide()
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
-StaticPopupDialogs["NIVUI_IMPORT_AS_NEW"] = {
-    text = "Enter a name for the imported profile:",
-    button1 = ACCEPT,
-    button2 = CANCEL,
-    hasEditBox = true,
-    editBoxWidth = 200,
-    OnAccept = function(self, data)
-        local name = self.EditBox:GetText()
-        local success, err = NivUI.Profiles:CreateProfile(name)
-        if success then
-            NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(data)
-            NivUI.Profiles:SwitchProfile(name)
-            print("|cff00ff00NivUI:|r Profile imported as '" .. name .. "'")
-        elseif err then
-            print("|cffff0000NivUI:|r " .. err)
-        end
-    end,
-    OnShow = function(self)
-        self.EditBox:SetText("")
-        self.EditBox:SetFocus()
-    end,
-    EditBoxOnEnterPressed = function(self)
-        local parent = self:GetParent()
-        local data = parent.data
-        local name = parent.EditBox:GetText()
-        local success, err = NivUI.Profiles:CreateProfile(name)
-        if success then
-            NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(data)
-            NivUI.Profiles:SwitchProfile(name)
-            print("|cff00ff00NivUI:|r Profile imported as '" .. name .. "'")
-        elseif err then
-            print("|cffff0000NivUI:|r " .. err)
-        end
-        parent:Hide()
     end,
     timeout = 0,
     whileDead = true,

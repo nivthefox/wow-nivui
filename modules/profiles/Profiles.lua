@@ -247,66 +247,44 @@ function NivUI.Profiles:ExportStyle(styleName)
     return EncodeCompact(snapshot)
 end
 
---- Imports a profile or style from an encoded string.
+--- Decodes an import string and returns the payload for creating a new profile.
 --- @param str string The import string
---- @param mode string "overwrite" to replace current, "new" to create new
---- @return boolean|table success or data for UI to handle
+--- @return table|nil payload The profile data to create
 --- @return string|nil errorMessage
-function NivUI.Profiles:Import(str, mode)
+function NivUI.Profiles:DecodeImport(str)
     if not str or str == "" then
-        return false, "Empty import string"
+        return nil, "Empty import string"
     end
 
     local data = DecodeCompact(str)
     if not data then
-        return false, "Invalid import format"
+        return nil, "Invalid import format"
     end
 
     if data.addon ~= "NivUI" then
-        return false, "Not a NivUI export"
+        return nil, "Not a NivUI export"
     end
 
-    if data.kind == "profile" then
-        return self:ImportProfile(data.payload, mode)
-    elseif data.kind == "style" then
-        return self:ImportStyle(data.styleName, data.payload, mode)
-    else
-        return false, "Unknown export kind"
+    if data.kind ~= "profile" then
+        return nil, "Not a profile export"
     end
+
+    return data.payload
 end
 
---- Imports a profile payload.
+--- Creates a new profile from imported data.
+--- @param name string The name for the new profile
 --- @param payload table The profile data
---- @param mode string "overwrite" or "new"
---- @return boolean|table success or payload for UI
-function NivUI.Profiles:ImportProfile(payload, mode)
-    if mode == "overwrite" then
-        for k in pairs(NivUI_DB) do
-            NivUI_DB[k] = nil
-        end
-        for k, v in pairs(payload) do
-            NivUI_DB[k] = NivUI.DeepCopy(v)
-        end
-        NivUI:InitializeDB()
-        NivUI:ApplySettings()
-        print("|cff00ff00NivUI:|r Imported settings into current profile")
-        return true
-    else
-        return payload
+--- @return boolean success
+--- @return string|nil errorMessage
+function NivUI.Profiles:CreateFromImport(name, payload)
+    local success, err = self:CreateProfile(name)
+    if not success then
+        return false, err
     end
+
+    NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(payload)
+    self:SwitchProfile(name)
+    return true
 end
 
---- Imports a style payload.
---- @param styleName string The style name
---- @param payload table The style data
---- @param mode string "overwrite" or "new"
---- @return boolean|string|table success, styleName, or payload for UI
-function NivUI.Profiles:ImportStyle(styleName, payload, mode)
-    if mode == "overwrite" and NivUI:StyleExists(styleName) then
-        NivUI:SaveStyle(styleName, payload)
-        print("|cff00ff00NivUI:|r Replaced style '" .. styleName .. "'")
-        return true
-    else
-        return styleName, payload
-    end
-end
