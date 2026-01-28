@@ -1064,7 +1064,7 @@ local function SetupClassBarsTabWithSubtabs()
     end
 
     staggerResult = BuildClassBarConfig(container, staggerBarConfig)
-    staggerResult.container:SetPoint("TOPLEFT", 0, -32)
+    staggerResult.container:SetPoint("TOPLEFT", 0, -40)
     staggerResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
     table.insert(subTabContainers, staggerResult.container)
 
@@ -1074,7 +1074,7 @@ local function SetupClassBarsTabWithSubtabs()
     table.insert(subTabs, staggerTab)
 
     chiResult = BuildClassBarConfig(container, chiBarConfig)
-    chiResult.container:SetPoint("TOPLEFT", 0, -32)
+    chiResult.container:SetPoint("TOPLEFT", 0, -40)
     chiResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
     table.insert(subTabContainers, chiResult.container)
 
@@ -1084,7 +1084,7 @@ local function SetupClassBarsTabWithSubtabs()
     table.insert(subTabs, chiTab)
 
     essenceResult = BuildClassBarConfig(container, essenceBarConfig)
-    essenceResult.container:SetPoint("TOPLEFT", 0, -32)
+    essenceResult.container:SetPoint("TOPLEFT", 0, -40)
     essenceResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
     table.insert(subTabContainers, essenceResult.container)
 
