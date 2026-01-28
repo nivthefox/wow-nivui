@@ -368,6 +368,7 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     state.memberStates[unit] = memberState
 
     frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+    frame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
     frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
     frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
     frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
@@ -389,7 +390,7 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
 
     frame:SetScript("OnEvent", function(self, event, _eventUnit)
-        if event == "UNIT_MAXHEALTH" then
+        if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
             Base.UpdateHealthBar(memberState)
             Base.UpdateHealthText(memberState)
         elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then

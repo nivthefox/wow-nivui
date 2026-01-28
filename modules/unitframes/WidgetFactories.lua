@@ -64,6 +64,23 @@ function WF.healthBar(parent, config, _style, unit)
         frame:SetValue(71000)
     end
 
+    if config.showAbsorb then
+        local absorbBar = CreateFrame("StatusBar", nil, frame)
+        absorbBar:SetAllPoints(frame)
+        absorbBar:SetFrameLevel((config.frameLevel or 2) + 1)
+        absorbBar:SetStatusBarTexture(texturePath)
+        absorbBar:SetOrientation(config.orientation or "HORIZONTAL")
+        absorbBar:SetReverseFill(true)
+
+        local ac = config.absorbColor or { r = 0.8, g = 0.8, b = 0.2, a = 0.5 }
+        absorbBar:SetStatusBarColor(ac.r, ac.g, ac.b, ac.a or 0.5)
+
+        absorbBar:SetMinMaxValues(0, maxHealth or 100000)
+        absorbBar:SetValue(0)
+
+        frame.absorbBar = absorbBar
+    end
+
     frame.widgetType = "healthBar"
     return frame
 end

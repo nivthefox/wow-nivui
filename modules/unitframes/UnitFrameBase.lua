@@ -173,6 +173,21 @@ function UnitFrameBase.UpdateHealthBar(state)
 
     widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
     widget:SetStatusBarColor(r, g, b, a)
+
+    if widget.absorbBar then
+        if config.showAbsorb and UnitGetTotalAbsorbs then
+            local absorb = UnitGetTotalAbsorbs(unit)
+            if absorb then
+                widget.absorbBar:SetMinMaxValues(0, maxHealth)
+                widget.absorbBar:SetValue(absorb)
+                widget.absorbBar:Show()
+            else
+                widget.absorbBar:Hide()
+            end
+        else
+            widget.absorbBar:Hide()
+        end
+    end
 end
 
 local function ShouldShowPowerBar(unit, visibility)
@@ -812,6 +827,7 @@ function UnitFrameBase.BuildCustomFrame(state)
         end
 
         customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", state.unit)
+        customFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", state.unit)
         customFrame:RegisterUnitEvent("UNIT_MAXPOWER", state.unit)
         customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", state.unit)
         customFrame:RegisterUnitEvent("UNIT_MODEL_CHANGED", state.unit)
@@ -851,7 +867,7 @@ function UnitFrameBase.BuildCustomFrame(state)
         customFrame:RegisterUnitEvent("UNIT_CONNECTION", state.unit)
 
         customFrame:SetScript("OnEvent", function(self, event, eventUnit)
-            if event == "UNIT_MAXHEALTH" then
+            if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
                 UnitFrameBase.UpdateHealthBar(state)
                 UnitFrameBase.UpdateHealthText(state)
             elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
