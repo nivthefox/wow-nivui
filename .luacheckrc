@@ -51,6 +51,7 @@ read_globals = {
 	"CompactPartyFrame",
 	"GameFontHighlight",
 	"GetSpecialization",
+	"GetSpecializationInfo",
 	"PetFrame",
 
 	-- Third Party AddOns / Libs

@@ -288,3 +288,190 @@ function NivUI.Profiles:CreateFromImport(name, payload)
     return true
 end
 
+---------------------------------------------------------------------
+-- Spec-Based Profile Auto-Switch
+--
+-- Stored in NivUI.ProfileDB.charMeta[charKey]:
+--   specAutoSwitch  (boolean)
+--   specProfileMap  (table: specID -> profileName)
+--
+-- Combat-safe: defers switch to PLAYER_REGEN_ENABLED if in combat.
+---------------------------------------------------------------------
+
+--- Returns the per-character metadata table, creating it if needed.
+--- @return table charMeta
+local function GetCharMeta()
+    NivUI.ProfileDB = NivUI.ProfileDB or {}
+    NivUI.ProfileDB.charMeta = NivUI.ProfileDB.charMeta or {}
+
+    local charKey = NivUI.Profiles:GetCharKey()
+    local char = NivUI.ProfileDB.charMeta[charKey]
+    if type(char) ~= "table" then
+        char = {}
+        NivUI.ProfileDB.charMeta[charKey] = char
+    end
+
+    if char.specAutoSwitch == nil then
+        char.specAutoSwitch = false
+    end
+    if type(char.specProfileMap) ~= "table" then
+        char.specProfileMap = {}
+    end
+
+    return char
+end
+
+--- Returns whether spec-based auto-switch is enabled.
+--- @return boolean
+function NivUI.Profiles:IsSpecAutoSwitchEnabled()
+    local char = GetCharMeta()
+    return char.specAutoSwitch == true
+end
+
+--- Enables or disables spec-based auto-switch.
+--- @param enabled boolean
+function NivUI.Profiles:SetSpecAutoSwitchEnabled(enabled)
+    local char = GetCharMeta()
+    char.specAutoSwitch = (enabled == true)
+    if char.specAutoSwitch then
+        self:ApplySpecProfileIfEnabled("TOGGLE_ON")
+    end
+end
+
+--- Returns the profile mapped to a specific spec ID.
+--- @param specID number
+--- @return string|nil profileName
+function NivUI.Profiles:GetSpecProfile(specID)
+    if type(specID) ~= "number" then
+        return nil
+    end
+    local char = GetCharMeta()
+    local name = char.specProfileMap[specID]
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+    return name
+end
+
+--- Maps a spec ID to a profile name.
+--- @param specID number
+--- @param profileName string|nil Pass nil or empty to clear the mapping
+function NivUI.Profiles:SetSpecProfile(specID, profileName)
+    if type(specID) ~= "number" then
+        return
+    end
+    local char = GetCharMeta()
+
+    if type(profileName) ~= "string" or profileName == "" or profileName == "None" then
+        char.specProfileMap[specID] = nil
+    else
+        char.specProfileMap[specID] = profileName
+    end
+
+    if char.specAutoSwitch then
+        local cur = self:GetPlayerSpecID()
+        if cur == specID then
+            self:ApplySpecProfileIfEnabled("MAP_CHANGED")
+        end
+    end
+end
+
+--- Returns the current player's spec ID.
+--- @return number|nil specID
+function NivUI.Profiles:GetPlayerSpecID()
+    if type(GetSpecialization) ~= "function" then
+        return nil
+    end
+    local idx = GetSpecialization()
+    if not idx then
+        return nil
+    end
+    local specID = select(1, GetSpecializationInfo(idx))
+    if type(specID) ~= "number" then
+        return nil
+    end
+    return specID
+end
+
+-- Combat-safe deferral
+local pendingSpecSwitch = nil
+local specDeferFrame = nil
+
+local function RunAfterCombat(fn)
+    if type(fn) ~= "function" then
+        return
+    end
+    if InCombatLockdown() then
+        pendingSpecSwitch = fn
+        if not specDeferFrame then
+            specDeferFrame = CreateFrame("Frame")
+            specDeferFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+            specDeferFrame:SetScript("OnEvent", function()
+                if pendingSpecSwitch then
+                    local pending = pendingSpecSwitch
+                    pendingSpecSwitch = nil
+                    pending()
+                end
+            end)
+        end
+        return
+    end
+    fn()
+end
+
+--- Switches to the profile mapped to the current spec if auto-switch is enabled.
+--- Combat-safe: defers the switch until combat ends.
+--- @param _reason string Optional reason for logging (unused, for debugging)
+function NivUI.Profiles:ApplySpecProfileIfEnabled(_reason)
+    if not self:IsSpecAutoSwitchEnabled() then
+        return
+    end
+
+    local specID = self:GetPlayerSpecID()
+    if type(specID) ~= "number" then
+        return
+    end
+
+    local profileName = self:GetSpecProfile(specID)
+    if not profileName then
+        return
+    end
+
+    if not self:ProfileExists(profileName) then
+        return
+    end
+
+    if self:GetCurrentProfileName() == profileName then
+        return
+    end
+
+    RunAfterCombat(function()
+        if not self:IsSpecAutoSwitchEnabled() then
+            return
+        end
+        local cur = self:GetPlayerSpecID()
+        if cur ~= specID then
+            return
+        end
+        local mapped = self:GetSpecProfile(specID)
+        if mapped ~= profileName then
+            return
+        end
+        if self:GetCurrentProfileName() == profileName then
+            return
+        end
+        self:SwitchProfile(profileName)
+    end)
+end
+
+-- Event frame for spec changes
+local specEventFrame = CreateFrame("Frame")
+specEventFrame:RegisterEvent("PLAYER_LOGIN")
+specEventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+specEventFrame:SetScript("OnEvent", function(_, event, arg1)
+    if event == "PLAYER_SPECIALIZATION_CHANGED" and arg1 and arg1 ~= "player" then
+        return
+    end
+    NivUI.Profiles:ApplySpecProfileIfEnabled(event)
+end)
+

@@ -1378,6 +1378,96 @@ local function SetupProfilesTab()
         importDialog:Show()
     end)
 
+    -- Spec-based profile switching section
+    local specHeader = Components.GetHeader(content, "Specialization Profiles")
+    AddFrame(specHeader, SECTION_SPACING)
+
+    local specDropdowns = {}
+
+    local function GetSpecMeta()
+        local n = type(GetNumSpecializations) == "function" and GetNumSpecializations() or 0
+        local out = {}
+        for i = 1, n do
+            local specID, specName, _, specIcon = GetSpecializationInfo(i)
+            if type(specID) == "number" and type(specName) == "string" then
+                out[#out + 1] = { id = specID, name = specName, icon = specIcon }
+            end
+        end
+        return out
+    end
+
+    local function UpdateSpecDropdowns()
+        local enabled = NivUI.Profiles:IsSpecAutoSwitchEnabled()
+        for _, row in ipairs(specDropdowns) do
+            if enabled then
+                row:Show()
+            else
+                row:Hide()
+            end
+            local specID = row.specID
+            local cur = NivUI.Profiles:GetSpecProfile(specID)
+            if cur and not NivUI.Profiles:ProfileExists(cur) then
+                NivUI.Profiles:SetSpecProfile(specID, nil)
+            end
+            row:SetValue()
+        end
+    end
+
+    local specAutoSwitch = Components.GetCheckbox(
+        content,
+        "Auto-switch profile by specialization",
+        function(checked)
+            NivUI.Profiles:SetSpecAutoSwitchEnabled(checked)
+            UpdateSpecDropdowns()
+        end
+    )
+    AddFrame(specAutoSwitch, 0)
+
+    table.insert(onShowHandlers, function()
+        specAutoSwitch:SetValue(NivUI.Profiles:IsSpecAutoSwitchEnabled())
+    end)
+
+    local specs = GetSpecMeta()
+    for _, spec in ipairs(specs) do
+        local specDropdown = Components.GetBasicDropdown(
+            content,
+            spec.name .. ":",
+            function()
+                local items = { { value = "None", name = "None" } }
+                local profiles = NivUI.Profiles:GetAllProfiles()
+                for _, name in ipairs(profiles) do
+                    table.insert(items, { value = name, name = name })
+                end
+                return items
+            end,
+            function(value)
+                local cur = NivUI.Profiles:GetSpecProfile(spec.id)
+                if value == "None" then
+                    return cur == nil
+                end
+                return cur == value
+            end,
+            function(value)
+                if value == "None" then
+                    NivUI.Profiles:SetSpecProfile(spec.id, nil)
+                else
+                    NivUI.Profiles:SetSpecProfile(spec.id, value)
+                end
+            end
+        )
+        specDropdown.specID = spec.id
+        AddFrame(specDropdown, 0)
+        table.insert(specDropdowns, specDropdown)
+
+        table.insert(onShowHandlers, function()
+            specDropdown:SetValue()
+        end)
+    end
+
+    table.insert(onShowHandlers, function()
+        UpdateSpecDropdowns()
+    end)
+
     container:SetScript("OnShow", function()
         for _, onShow in ipairs(onShowHandlers) do
             onShow()
