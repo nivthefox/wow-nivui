@@ -205,7 +205,7 @@ function NivUI:ApplySettings(settingName)
 end
 
 function NivUI:GetSetting(key)
-    local db = NivUI_DB.staggerBar or {}
+    local db = NivUI.current and NivUI.current.staggerBar or {}
     if db[key] ~= nil then
         return db[key]
     end
@@ -213,7 +213,7 @@ function NivUI:GetSetting(key)
 end
 
 function NivUI:GetColors()
-    local db = NivUI_DB.staggerBar or {}
+    local db = NivUI.current and NivUI.current.staggerBar or {}
     if db.colors then
         return db.colors
     end
@@ -230,45 +230,43 @@ function NivUI.DeepCopy(src)
 end
 
 function NivUI:InitializeDB()
-    NivUI_DB.version = NivUI_DB.version or 1
-
-    if not NivUI_DB.staggerBar then
-        NivUI_DB.staggerBar = {}
+    if not NivUI.current.staggerBar then
+        NivUI.current.staggerBar = {}
     end
     for k, v in pairs(self.staggerBarDefaults) do
-        if NivUI_DB.staggerBar[k] == nil then
-            NivUI_DB.staggerBar[k] = NivUI.DeepCopy(v)
+        if NivUI.current.staggerBar[k] == nil then
+            NivUI.current.staggerBar[k] = NivUI.DeepCopy(v)
         end
     end
 
-    if not NivUI_DB.chiBar then
-        NivUI_DB.chiBar = {}
+    if not NivUI.current.chiBar then
+        NivUI.current.chiBar = {}
     end
     for k, v in pairs(self.chiBarDefaults) do
-        if NivUI_DB.chiBar[k] == nil then
-            NivUI_DB.chiBar[k] = NivUI.DeepCopy(v)
+        if NivUI.current.chiBar[k] == nil then
+            NivUI.current.chiBar[k] = NivUI.DeepCopy(v)
         end
     end
 
-    if not NivUI_DB.essenceBar then
-        NivUI_DB.essenceBar = {}
+    if not NivUI.current.essenceBar then
+        NivUI.current.essenceBar = {}
     end
     for k, v in pairs(self.essenceBarDefaults) do
-        if NivUI_DB.essenceBar[k] == nil then
-            NivUI_DB.essenceBar[k] = NivUI.DeepCopy(v)
+        if NivUI.current.essenceBar[k] == nil then
+            NivUI.current.essenceBar[k] = NivUI.DeepCopy(v)
         end
     end
 
-    if not NivUI_DB.classBarEnabled then
-        NivUI_DB.classBarEnabled = {}
+    if not NivUI.current.classBarEnabled then
+        NivUI.current.classBarEnabled = {}
     end
 
-    if not NivUI_DB.unitFrameStyles then
-        NivUI_DB.unitFrameStyles = {}
+    if not NivUI.current.unitFrameStyles then
+        NivUI.current.unitFrameStyles = {}
     end
 
-    if not NivUI_DB.unitFrameAssignments then
-        NivUI_DB.unitFrameAssignments = {
+    if not NivUI.current.unitFrameAssignments then
+        NivUI.current.unitFrameAssignments = {
             player = "Default",
             target = "Default",
             focus = "Default",
@@ -296,18 +294,18 @@ function NivUI:TriggerEvent(event, data)
 end
 
 function NivUI:IsClassBarEnabled(barType)
-    if not NivUI_DB.classBarEnabled then
+    if not NivUI.current.classBarEnabled then
         return false
     end
-    return NivUI_DB.classBarEnabled[barType] == true
+    return NivUI.current.classBarEnabled[barType] == true
 end
 
 function NivUI:SetClassBarEnabled(barType, enabled)
-    if not NivUI_DB.classBarEnabled then
-        NivUI_DB.classBarEnabled = {}
+    if not NivUI.current.classBarEnabled then
+        NivUI.current.classBarEnabled = {}
     end
 
-    NivUI_DB.classBarEnabled[barType] = enabled
+    NivUI.current.classBarEnabled[barType] = enabled
 
     self:TriggerEvent("ClassBarEnabledChanged", { barType = barType, enabled = enabled })
 end
@@ -347,19 +345,17 @@ initFrame:SetScript("OnEvent", function(self, _, addon)
 
     NivUI:MigrateToProfiles()
 
-    NivUI.ProfileDB = NivUI_DB
-
-    if not NivUI.ProfileDB.profiles then
-        NivUI.ProfileDB.profiles = { ["Default"] = {} }
+    if not NivUI_DB.profiles then
+        NivUI_DB.profiles = { ["Default"] = {} }
     end
-    if not NivUI.ProfileDB.profiles[NivUI_CurrentProfile] then
+    if not NivUI_DB.profiles[NivUI_CurrentProfile] then
         NivUI_CurrentProfile = "Default"
     end
-    if not NivUI.ProfileDB.profiles["Default"] then
-        NivUI.ProfileDB.profiles["Default"] = {}
+    if not NivUI_DB.profiles["Default"] then
+        NivUI_DB.profiles["Default"] = {}
     end
 
-    NivUI_DB = NivUI.ProfileDB.profiles[NivUI_CurrentProfile]
+    NivUI.current = NivUI_DB.profiles[NivUI_CurrentProfile]
 
     self:UnregisterEvent("ADDON_LOADED")
 end)

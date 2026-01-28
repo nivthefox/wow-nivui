@@ -13,7 +13,7 @@ local isBrewmaster = false
 local inCombat = false
 
 local function GetSetting(key)
-    local db = NivUI_DB and NivUI_DB.staggerBar
+    local db = NivUI_DB and NivUI.current.staggerBar
     if db and db[key] ~= nil then
         return db[key]
     end
@@ -21,7 +21,7 @@ local function GetSetting(key)
 end
 
 local function GetColors()
-    local db = NivUI_DB and NivUI_DB.staggerBar
+    local db = NivUI_DB and NivUI.current.staggerBar
     if db and db.colors then
         return db.colors
     end
@@ -163,7 +163,7 @@ local function OnUpdate(self, elapsed)
 end
 
 local function LoadPosition(frame)
-    local db = NivUI_DB.staggerBar
+    local db = NivUI.current.staggerBar
     local defaults = NivUI.staggerBarDefaults
 
     frame:ClearAllPoints()
@@ -222,7 +222,7 @@ local function ApplyBorder(frame)
 end
 
 local function ApplyFontSettings(frame)
-    local db = NivUI_DB.staggerBar
+    local db = NivUI.current.staggerBar
     local defaults = NivUI.staggerBarDefaults
 
     local fontName = db.font or defaults.font
@@ -276,7 +276,7 @@ local function EnableDragging(frame)
 
     frame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        local db = NivUI_DB.staggerBar
+        local db = NivUI.current.staggerBar
         local point, _, _, x, y = self:GetPoint()
         db.point = point
         db.x = x
@@ -318,7 +318,7 @@ local function CreateStaggerBarUI()
 
     resizeHandle:SetScript("OnMouseUp", function(self, _button)
         frame:StopMovingOrSizing()
-        local db = NivUI_DB.staggerBar
+        local db = NivUI.current.staggerBar
         db.width = frame:GetWidth()
         db.height = frame:GetHeight()
         if NivUI.OnBarMoved then NivUI.OnBarMoved() end

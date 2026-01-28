@@ -17,8 +17,8 @@ end
 --- @return table
 function NivUI.Profiles:GetAllProfiles()
     local names = {}
-    if NivUI.ProfileDB and NivUI.ProfileDB.profiles then
-        for name in pairs(NivUI.ProfileDB.profiles) do
+    if NivUI_DB and NivUI_DB.profiles then
+        for name in pairs(NivUI_DB.profiles) do
             table.insert(names, name)
         end
         table.sort(names)
@@ -30,9 +30,9 @@ end
 --- @param name string
 --- @return boolean
 function NivUI.Profiles:ProfileExists(name)
-    return NivUI.ProfileDB
-        and NivUI.ProfileDB.profiles
-        and NivUI.ProfileDB.profiles[name] ~= nil
+    return NivUI_DB
+        and NivUI_DB.profiles
+        and NivUI_DB.profiles[name] ~= nil
 end
 
 --- Creates a new profile with the given name.
@@ -51,10 +51,10 @@ function NivUI.Profiles:CreateProfile(name, copyFrom)
 
     local source = {}
     if copyFrom and self:ProfileExists(copyFrom) then
-        source = NivUI.DeepCopy(NivUI.ProfileDB.profiles[copyFrom])
+        source = NivUI.DeepCopy(NivUI_DB.profiles[copyFrom])
     end
 
-    NivUI.ProfileDB.profiles[name] = source
+    NivUI_DB.profiles[name] = source
     print("|cff00ff00NivUI:|r Created profile '" .. name .. "'")
     return true
 end
@@ -69,7 +69,7 @@ function NivUI.Profiles:SwitchProfile(name)
     end
 
     NivUI_CurrentProfile = name
-    NivUI_DB = NivUI.ProfileDB.profiles[name]
+    NivUI.current = NivUI_DB.profiles[name]
 
     NivUI:InitializeDB()
     NivUI:ApplySettings()
@@ -94,7 +94,7 @@ function NivUI.Profiles:DeleteProfile(name)
     end
 
     local count = 0
-    for _ in pairs(NivUI.ProfileDB.profiles) do
+    for _ in pairs(NivUI_DB.profiles) do
         count = count + 1
     end
     if count <= 1 then
@@ -105,7 +105,7 @@ function NivUI.Profiles:DeleteProfile(name)
         self:SwitchProfile("Default")
     end
 
-    NivUI.ProfileDB.profiles[name] = nil
+    NivUI_DB.profiles[name] = nil
     print("|cff00ff00NivUI:|r Deleted profile '" .. name .. "'")
     return true
 end
@@ -120,10 +120,10 @@ function NivUI.Profiles:ResetProfile(name)
         return false, "Profile does not exist"
     end
 
-    NivUI.ProfileDB.profiles[name] = {}
+    NivUI_DB.profiles[name] = {}
 
     if name == NivUI_CurrentProfile then
-        NivUI_DB = NivUI.ProfileDB.profiles[name]
+        NivUI.current = NivUI_DB.profiles[name]
         NivUI:InitializeDB()
         NivUI:ApplySettings()
     end
@@ -146,7 +146,7 @@ function NivUI.Profiles:CopyProfile(fromName, toName)
         return false, "Destination profile already exists"
     end
 
-    NivUI.ProfileDB.profiles[toName] = NivUI.DeepCopy(NivUI.ProfileDB.profiles[fromName])
+    NivUI_DB.profiles[toName] = NivUI.DeepCopy(NivUI_DB.profiles[fromName])
     print("|cff00ff00NivUI:|r Copied '" .. fromName .. "' to '" .. toName .. "'")
     return true
 end
@@ -220,7 +220,7 @@ function NivUI.Profiles:ExportCurrentProfile()
         version = 1,
         kind = "profile",
         profile = NivUI_CurrentProfile,
-        payload = NivUI.DeepCopy(NivUI_DB),
+        payload = NivUI.DeepCopy(NivUI.current),
     }
 
     return EncodeCompact(snapshot)
@@ -283,7 +283,7 @@ function NivUI.Profiles:CreateFromImport(name, payload)
         return false, err
     end
 
-    NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(payload)
+    NivUI_DB.profiles[name] = NivUI.DeepCopy(payload)
     print("|cff00ff00NivUI:|r Imported profile '" .. name .. "'")
     return true
 end
@@ -291,7 +291,7 @@ end
 ---------------------------------------------------------------------
 -- Spec-Based Profile Auto-Switch
 --
--- Stored in NivUI.ProfileDB.charMeta[charKey]:
+-- Stored in NivUI_DB.charMeta[charKey]:
 --   specAutoSwitch  (boolean)
 --   specProfileMap  (table: specID -> profileName)
 --
@@ -301,14 +301,14 @@ end
 --- Returns the per-character metadata table, creating it if needed.
 --- @return table charMeta
 local function GetCharMeta()
-    NivUI.ProfileDB = NivUI.ProfileDB or {}
-    NivUI.ProfileDB.charMeta = NivUI.ProfileDB.charMeta or {}
+    NivUI_DB = NivUI_DB or {}
+    NivUI_DB.charMeta = NivUI_DB.charMeta or {}
 
     local charKey = NivUI.Profiles:GetCharKey()
-    local char = NivUI.ProfileDB.charMeta[charKey]
+    local char = NivUI_DB.charMeta[charKey]
     if type(char) ~= "table" then
         char = {}
-        NivUI.ProfileDB.charMeta[charKey] = char
+        NivUI_DB.charMeta[charKey] = char
     end
 
     if char.specAutoSwitch == nil then

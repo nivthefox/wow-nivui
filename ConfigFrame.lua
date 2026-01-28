@@ -1577,7 +1577,7 @@ ConfigFrame:SetScript("OnShow", function()
 end)
 
 NivUI.OnBarMoved = function()
-    local staggerDb = NivUI_DB.staggerBar
+    local staggerDb = NivUI.current.staggerBar
     local staggerDefaults = NivUI.staggerBarDefaults
     if staggerResult and staggerResult.widthSlider then
         staggerResult.widthSlider:SetValue(staggerDb.width or staggerDefaults.width)
@@ -1586,7 +1586,7 @@ NivUI.OnBarMoved = function()
         staggerResult.heightSlider:SetValue(staggerDb.height or staggerDefaults.height)
     end
 
-    local chiDb = NivUI_DB.chiBar or {}
+    local chiDb = NivUI.current.chiBar or {}
     local chiDefaults = NivUI.chiBarDefaults
     if chiResult and chiResult.widthSlider then
         chiResult.widthSlider:SetValue(chiDb.width or chiDefaults.width)
@@ -1595,7 +1595,7 @@ NivUI.OnBarMoved = function()
         chiResult.heightSlider:SetValue(chiDb.height or chiDefaults.height)
     end
 
-    local essenceDb = NivUI_DB.essenceBar or {}
+    local essenceDb = NivUI.current.essenceBar or {}
     local essenceDefaults = NivUI.essenceBarDefaults
     if essenceResult and essenceResult.widthSlider then
         essenceResult.widthSlider:SetValue(essenceDb.width or essenceDefaults.width)

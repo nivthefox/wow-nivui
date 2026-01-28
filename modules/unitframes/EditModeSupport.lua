@@ -54,10 +54,10 @@ function NivUI.EditMode:UnregisterVisibilityDriver(frameType)
 end
 
 function NivUI.EditMode:SavePosition(frameType, customFrame)
-    NivUI_DB.unitFramePositions = NivUI_DB.unitFramePositions or {}
+    NivUI.current.unitFramePositions = NivUI.current.unitFramePositions or {}
 
     local point, relativeTo, relativePoint, offsetX, offsetY = customFrame:GetPoint(1)
-    NivUI_DB.unitFramePositions[frameType] = {
+    NivUI.current.unitFramePositions[frameType] = {
         point = point,
         relativeTo = relativeTo and relativeTo:GetName() or "UIParent",
         relativePoint = relativePoint,
@@ -67,7 +67,7 @@ function NivUI.EditMode:SavePosition(frameType, customFrame)
 end
 
 function NivUI.EditMode:ApplyPosition(frameType, customFrame)
-    local pos = NivUI_DB.unitFramePositions and NivUI_DB.unitFramePositions[frameType]
+    local pos = NivUI.current.unitFramePositions and NivUI.current.unitFramePositions[frameType]
     if not pos then return false end
 
     customFrame:ClearAllPoints()
