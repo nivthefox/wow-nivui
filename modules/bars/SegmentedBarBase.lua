@@ -17,7 +17,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     local inCombat = false
 
     local function GetSetting(key)
-        local db = NivUI_DB and NivUI_DB[dbKey]
+        local db = NivUI.current and NivUI.current[dbKey]
         if db and db[key] ~= nil then
             return db[key]
         end
@@ -119,7 +119,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     end
 
     local function LoadPosition(frame)
-        local db = NivUI_DB[dbKey] or {}
+        local db = NivUI.current[dbKey] or {}
         local defaults = NivUI[defaultsKey]
 
         frame:ClearAllPoints()
@@ -181,7 +181,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
 
         frame:SetScript("OnDragStop", function(self)
             self:StopMovingOrSizing()
-            local db = NivUI_DB[dbKey]
+            local db = NivUI.current[dbKey]
             local point, _, _, x, y = self:GetPoint()
             db.point = point
             db.x = x
@@ -225,7 +225,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
 
         resizeHandle:SetScript("OnMouseUp", function(self, _button)
             frame:StopMovingOrSizing()
-            local db = NivUI_DB[dbKey]
+            local db = NivUI.current[dbKey]
             db.width = frame:GetWidth()
             db.height = frame:GetHeight()
             frame:RebuildSegments()

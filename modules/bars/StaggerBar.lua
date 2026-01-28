@@ -13,7 +13,7 @@ local isBrewmaster = false
 local inCombat = false
 
 local function GetSetting(key)
-    local db = NivUI_DB and NivUI.current.staggerBar
+    local db = NivUI.current and NivUI.current.staggerBar
     if db and db[key] ~= nil then
         return db[key]
     end
@@ -21,7 +21,7 @@ local function GetSetting(key)
 end
 
 local function GetColors()
-    local db = NivUI_DB and NivUI.current.staggerBar
+    local db = NivUI.current and NivUI.current.staggerBar
     if db and db.colors then
         return db.colors
     end
