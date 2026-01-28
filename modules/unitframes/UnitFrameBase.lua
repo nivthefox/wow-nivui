@@ -688,7 +688,8 @@ function UnitFrameBase.UpdateRangeAlpha(state)
 end
 
 local function UpdateAuraWidget(state, widgetName, filter)
-    local widget = state.widgets and state.widgets[widgetName]
+    if not state.customFrame or not state.customFrame.widgets then return end
+    local widget = state.customFrame.widgets[widgetName]
     if not widget then return end
     if state.forPreview then return end
 
