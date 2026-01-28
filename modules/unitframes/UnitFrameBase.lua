@@ -671,15 +671,18 @@ function UnitFrameBase.UpdateRangeAlpha(state)
         return
     end
 
-    local inRange, checkedRange = UnitInRange(state.unit)
-    if not checkedRange then
-        -- Can't check range for this unit type, assume in range
+    -- UnitInRange only works for party/raid members. For other units (target, focus,
+    -- boss, etc.) we can't reliably check range, so skip fading entirely.
+    -- UnitInParty/UnitInRaid are group membership checks (not secret values).
+    if not UnitInParty(state.unit) and not UnitInRaid(state.unit) then
         if state.rangeAlphaApplied then
             state.rangeAlphaApplied = nil
             state.customFrame:SetAlpha(1)
         end
         return
     end
+
+    local inRange = UnitInRange(state.unit)
     state.customFrame:SetAlphaFromBoolean(inRange, 1, 0.3)
     state.rangeAlphaApplied = true
 end
