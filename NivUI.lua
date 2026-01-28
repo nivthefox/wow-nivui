@@ -312,6 +312,58 @@ function NivUI:SetClassBarEnabled(barType, enabled)
     self:TriggerEvent("ClassBarEnabledChanged", { barType = barType, enabled = enabled })
 end
 
+--- Migrates old flat NivUI_DB structure to the new profiles structure.
+--- Called once on ADDON_LOADED if migration is needed.
+--- @return boolean migrated True if migration occurred
+function NivUI:MigrateToProfiles()
+    if NivUI_DB.version and NivUI_DB.version >= 2 then
+        return false
+    end
+    if NivUI_DB.profiles then
+        return false
+    end
+
+    local oldSettings = NivUI.DeepCopy(NivUI_DB)
+
+    for k in pairs(NivUI_DB) do
+        NivUI_DB[k] = nil
+    end
+
+    NivUI_DB.version = 2
+    NivUI_DB.profiles = { ["Default"] = oldSettings }
+    NivUI_DB.profiles["Default"].version = nil
+
+    print("|cff00ff00NivUI:|r Migrated settings to profile system")
+    return true
+end
+
+local initFrame = CreateFrame("Frame")
+initFrame:RegisterEvent("ADDON_LOADED")
+initFrame:SetScript("OnEvent", function(self, _, addon)
+    if addon ~= "NivUI" then return end
+
+    NivUI_DB = NivUI_DB or {}
+    NivUI_CurrentProfile = NivUI_CurrentProfile or "Default"
+
+    NivUI:MigrateToProfiles()
+
+    NivUI.ProfileDB = NivUI_DB
+
+    if not NivUI.ProfileDB.profiles then
+        NivUI.ProfileDB.profiles = { ["Default"] = {} }
+    end
+    if not NivUI.ProfileDB.profiles[NivUI_CurrentProfile] then
+        NivUI_CurrentProfile = "Default"
+    end
+    if not NivUI.ProfileDB.profiles["Default"] then
+        NivUI.ProfileDB.profiles["Default"] = {}
+    end
+
+    NivUI_DB = NivUI.ProfileDB.profiles[NivUI_CurrentProfile]
+
+    self:UnregisterEvent("ADDON_LOADED")
+end)
+
 SLASH_NIVUI1 = "/nivui"
 SlashCmdList["NIVUI"] = function(msg)
     if not msg or msg == "" then

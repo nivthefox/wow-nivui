@@ -1116,6 +1116,360 @@ unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
 unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
 table.insert(sidebarTabs, unitFramesTab)
 
+local function SetupProfilesTab()
+    local container = CreateFrame("Frame", nil, ContentArea)
+    container:SetAllPoints()
+    container:Hide()
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -28, 0)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(FRAME_WIDTH - SIDEBAR_WIDTH - 60, 600)
+    scrollFrame:SetScrollChild(content)
+
+    local allFrames = {}
+    local onShowHandlers = {}
+
+    local function AddFrame(frame, spacing)
+        spacing = spacing or 0
+        if #allFrames == 0 then
+            frame:SetPoint("TOP", content, "TOP", 0, 0)
+        else
+            frame:SetPoint("TOP", allFrames[#allFrames], "BOTTOM", 0, -spacing)
+        end
+        table.insert(allFrames, frame)
+    end
+
+    local profileHeader = Components.GetHeader(content, "Profile Management")
+    AddFrame(profileHeader, 0)
+
+    local profileDropdown = Components.GetBasicDropdown(
+        content,
+        "Current Profile:",
+        function()
+            local items = {}
+            local profiles = NivUI.Profiles:GetAllProfiles()
+            for _, name in ipairs(profiles) do
+                table.insert(items, { value = name, name = name })
+            end
+            return items
+        end,
+        function(value)
+            return NivUI.Profiles:GetCurrentProfileName() == value
+        end,
+        function(value)
+            NivUI.Profiles:SwitchProfile(value)
+        end
+    )
+    AddFrame(profileDropdown, 0)
+
+    table.insert(onShowHandlers, function()
+        profileDropdown:SetValue()
+    end)
+
+    local buttonRow1 = CreateFrame("Frame", nil, content)
+    buttonRow1:SetHeight(ROW_HEIGHT)
+    buttonRow1:SetPoint("LEFT", 20, 0)
+    buttonRow1:SetPoint("RIGHT", -20, 0)
+    AddFrame(buttonRow1, SECTION_SPACING)
+
+    local newProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
+    newProfileBtn:SetText("New Profile")
+    newProfileBtn:SetWidth(110)
+    newProfileBtn:SetPoint("LEFT", buttonRow1, "CENTER", -170, 0)
+    newProfileBtn:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_NEW_PROFILE")
+    end)
+
+    local copyProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
+    copyProfileBtn:SetText("Copy Current")
+    copyProfileBtn:SetWidth(110)
+    copyProfileBtn:SetPoint("LEFT", newProfileBtn, "RIGHT", 5, 0)
+    copyProfileBtn:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_COPY_PROFILE")
+    end)
+
+    local deleteProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
+    deleteProfileBtn:SetText("Delete Profile")
+    deleteProfileBtn:SetWidth(110)
+    deleteProfileBtn:SetPoint("LEFT", copyProfileBtn, "RIGHT", 5, 0)
+    deleteProfileBtn:SetScript("OnClick", function()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        if current == "Default" then
+            print("|cffff0000NivUI:|r Cannot delete the Default profile")
+            return
+        end
+        StaticPopup_Show("NIVUI_DELETE_PROFILE", current)
+    end)
+
+    local buttonRow2 = CreateFrame("Frame", nil, content)
+    buttonRow2:SetHeight(ROW_HEIGHT)
+    buttonRow2:SetPoint("LEFT", 20, 0)
+    buttonRow2:SetPoint("RIGHT", -20, 0)
+    AddFrame(buttonRow2, 0)
+
+    local resetProfileBtn = CreateFrame("Button", nil, buttonRow2, "UIPanelDynamicResizeButtonTemplate")
+    resetProfileBtn:SetText("Reset to Defaults")
+    resetProfileBtn:SetWidth(130)
+    resetProfileBtn:SetPoint("LEFT", buttonRow2, "CENTER", -170, 0)
+    resetProfileBtn:SetScript("OnClick", function()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        StaticPopup_Show("NIVUI_RESET_PROFILE", current)
+    end)
+
+    local exportHeader = Components.GetHeader(content, "Import / Export")
+    AddFrame(exportHeader, SECTION_SPACING)
+
+    local buttonRow3 = CreateFrame("Frame", nil, content)
+    buttonRow3:SetHeight(ROW_HEIGHT)
+    buttonRow3:SetPoint("LEFT", 20, 0)
+    buttonRow3:SetPoint("RIGHT", -20, 0)
+    AddFrame(buttonRow3, 0)
+
+    local exportProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
+    exportProfileBtn:SetText("Export Profile")
+    exportProfileBtn:SetWidth(110)
+    exportProfileBtn:SetPoint("LEFT", buttonRow3, "CENTER", -115, 0)
+    exportProfileBtn:SetScript("OnClick", function()
+        local str = NivUI.Profiles:ExportCurrentProfile()
+        StaticPopup_Show("NIVUI_EXPORT_STRING", nil, nil, str)
+    end)
+
+    local importProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
+    importProfileBtn:SetText("Import Profile")
+    importProfileBtn:SetWidth(110)
+    importProfileBtn:SetPoint("LEFT", exportProfileBtn, "RIGHT", 5, 0)
+    importProfileBtn:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_IMPORT_PROFILE")
+    end)
+
+    container:SetScript("OnShow", function()
+        for _, onShow in ipairs(onShowHandlers) do
+            onShow()
+        end
+    end)
+
+    return container
+end
+
+StaticPopupDialogs["NIVUI_NEW_PROFILE"] = {
+    text = "Enter a name for the new profile:",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    hasEditBox = true,
+    editBoxWidth = 200,
+    OnAccept = function(self)
+        local name = self.editBox:GetText()
+        local success, err = NivUI.Profiles:CreateProfile(name)
+        if success then
+            NivUI.Profiles:SwitchProfile(name)
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local name = parent.editBox:GetText()
+        local success, err = NivUI.Profiles:CreateProfile(name)
+        if success then
+            NivUI.Profiles:SwitchProfile(name)
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_COPY_PROFILE"] = {
+    text = "Enter a name for the copy:",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    hasEditBox = true,
+    editBoxWidth = 200,
+    OnAccept = function(self)
+        local name = self.editBox:GetText()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        local success, err = NivUI.Profiles:CopyProfile(current, name)
+        if success then
+            NivUI.Profiles:SwitchProfile(name)
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local name = parent.editBox:GetText()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        local success, err = NivUI.Profiles:CopyProfile(current, name)
+        if success then
+            NivUI.Profiles:SwitchProfile(name)
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_DELETE_PROFILE"] = {
+    text = "Are you sure you want to delete the profile '%s'?",
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        local _, err = NivUI.Profiles:DeleteProfile(current)
+        if err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_RESET_PROFILE"] = {
+    text = "Are you sure you want to reset the profile '%s' to defaults?",
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        local _, err = NivUI.Profiles:ResetProfile(current)
+        if err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_EXPORT_STRING"] = {
+    text = "Copy this string to share your profile:",
+    button1 = CLOSE,
+    hasEditBox = true,
+    editBoxWidth = 350,
+    OnShow = function(self, data)
+        self.editBox:SetText(data)
+        self.editBox:HighlightText()
+        self.editBox:SetFocus()
+    end,
+    EditBoxOnEscapePressed = function(self)
+        self:GetParent():Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_IMPORT_PROFILE"] = {
+    text = "Paste the profile string here:",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    hasEditBox = true,
+    editBoxWidth = 350,
+    OnAccept = function(self)
+        local str = self.editBox:GetText()
+        local success, err = NivUI.Profiles:Import(str, "overwrite")
+        if success == true then
+            print("|cff00ff00NivUI:|r Profile imported successfully")
+        elseif type(success) == "table" then
+            StaticPopup_Show("NIVUI_IMPORT_AS_NEW", nil, nil, success)
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local str = parent.editBox:GetText()
+        local success, err = NivUI.Profiles:Import(str, "overwrite")
+        if success == true then
+            print("|cff00ff00NivUI:|r Profile imported successfully")
+        elseif type(success) == "table" then
+            StaticPopup_Show("NIVUI_IMPORT_AS_NEW", nil, nil, success)
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_IMPORT_AS_NEW"] = {
+    text = "Enter a name for the imported profile:",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    hasEditBox = true,
+    editBoxWidth = 200,
+    OnAccept = function(self, data)
+        local name = self.editBox:GetText()
+        local success, err = NivUI.Profiles:CreateProfile(name)
+        if success then
+            NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(data)
+            NivUI.Profiles:SwitchProfile(name)
+            print("|cff00ff00NivUI:|r Profile imported as '" .. name .. "'")
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local data = parent.data
+        local name = parent.editBox:GetText()
+        local success, err = NivUI.Profiles:CreateProfile(name)
+        if success then
+            NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(data)
+            NivUI.Profiles:SwitchProfile(name)
+            print("|cff00ff00NivUI:|r Profile imported as '" .. name .. "'")
+        elseif err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+local profilesContainer = SetupProfilesTab()
+table.insert(sidebarContainers, profilesContainer)
+
+local profilesTab = Components.GetSidebarTab(Sidebar, "Profiles")
+profilesTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
+profilesTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
+table.insert(sidebarTabs, profilesTab)
+
 ConfigFrame:SetScript("OnShow", function()
     SelectSidebarTab(currentSidebarTab)
 end)

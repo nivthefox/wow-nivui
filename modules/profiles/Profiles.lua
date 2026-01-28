@@ -1,0 +1,257 @@
+NivUI.Profiles = {}
+
+--- Returns the character key for per-character profile selection.
+--- Format: "CharacterName-RealmName"
+--- @return string
+function NivUI.Profiles:GetCharKey()
+    return UnitName("player") .. "-" .. GetRealmName()
+end
+
+--- Returns the name of the currently active profile.
+--- @return string
+function NivUI.Profiles:GetCurrentProfileName()
+    return NivUI_CurrentProfile or "Default"
+end
+
+--- Returns a sorted list of all profile names.
+--- @return table
+function NivUI.Profiles:GetAllProfiles()
+    local names = {}
+    if NivUI.ProfileDB and NivUI.ProfileDB.profiles then
+        for name in pairs(NivUI.ProfileDB.profiles) do
+            table.insert(names, name)
+        end
+        table.sort(names)
+    end
+    return names
+end
+
+--- Checks if a profile with the given name exists.
+--- @param name string
+--- @return boolean
+function NivUI.Profiles:ProfileExists(name)
+    return NivUI.ProfileDB
+        and NivUI.ProfileDB.profiles
+        and NivUI.ProfileDB.profiles[name] ~= nil
+end
+
+--- Creates a new profile with the given name.
+--- @param name string The name for the new profile
+--- @param copyFrom string|nil Optional profile name to copy settings from
+--- @return boolean success
+--- @return string|nil errorMessage
+function NivUI.Profiles:CreateProfile(name, copyFrom)
+    if not name or name == "" then
+        return false, "Profile name cannot be empty"
+    end
+
+    if self:ProfileExists(name) then
+        return false, "Profile '" .. name .. "' already exists"
+    end
+
+    local source = {}
+    if copyFrom and self:ProfileExists(copyFrom) then
+        source = NivUI.DeepCopy(NivUI.ProfileDB.profiles[copyFrom])
+    end
+
+    NivUI.ProfileDB.profiles[name] = source
+    print("|cff00ff00NivUI:|r Created profile '" .. name .. "'")
+    return true
+end
+
+--- Switches to the specified profile.
+--- @param name string The profile name to switch to
+--- @return boolean success
+function NivUI.Profiles:SwitchProfile(name)
+    if not self:ProfileExists(name) then
+        print("|cffff0000NivUI:|r Profile '" .. name .. "' does not exist")
+        return false
+    end
+
+    NivUI_CurrentProfile = name
+    NivUI_DB = NivUI.ProfileDB.profiles[name]
+
+    NivUI:InitializeDB()
+    NivUI:ApplySettings()
+
+    NivUI:TriggerEvent("ProfileSwitched", { profileName = name })
+
+    print("|cff00ff00NivUI:|r Switched to profile '" .. name .. "'")
+    return true
+end
+
+--- Deletes the specified profile.
+--- @param name string The profile name to delete
+--- @return boolean success
+--- @return string|nil errorMessage
+function NivUI.Profiles:DeleteProfile(name)
+    if name == "Default" then
+        return false, "Cannot delete the Default profile"
+    end
+
+    if not self:ProfileExists(name) then
+        return false, "Profile '" .. name .. "' does not exist"
+    end
+
+    local count = 0
+    for _ in pairs(NivUI.ProfileDB.profiles) do
+        count = count + 1
+    end
+    if count <= 1 then
+        return false, "Cannot delete the last profile"
+    end
+
+    if NivUI_CurrentProfile == name then
+        self:SwitchProfile("Default")
+    end
+
+    NivUI.ProfileDB.profiles[name] = nil
+    print("|cff00ff00NivUI:|r Deleted profile '" .. name .. "'")
+    return true
+end
+
+--- Resets the specified profile to defaults.
+--- @param name string|nil The profile name to reset (defaults to current)
+--- @return boolean success
+--- @return string|nil errorMessage
+function NivUI.Profiles:ResetProfile(name)
+    name = name or NivUI_CurrentProfile
+    if not self:ProfileExists(name) then
+        return false, "Profile does not exist"
+    end
+
+    NivUI.ProfileDB.profiles[name] = {}
+
+    if name == NivUI_CurrentProfile then
+        NivUI_DB = NivUI.ProfileDB.profiles[name]
+        NivUI:InitializeDB()
+        NivUI:ApplySettings()
+    end
+
+    print("|cff00ff00NivUI:|r Reset profile '" .. name .. "' to defaults")
+    return true
+end
+
+--- Copies a profile to a new name.
+--- @param fromName string The source profile name
+--- @param toName string The destination profile name
+--- @return boolean success
+--- @return string|nil errorMessage
+function NivUI.Profiles:CopyProfile(fromName, toName)
+    if not self:ProfileExists(fromName) then
+        return false, "Source profile does not exist"
+    end
+
+    if self:ProfileExists(toName) then
+        return false, "Destination profile already exists"
+    end
+
+    NivUI.ProfileDB.profiles[toName] = NivUI.DeepCopy(NivUI.ProfileDB.profiles[fromName])
+    print("|cff00ff00NivUI:|r Copied '" .. fromName .. "' to '" .. toName .. "'")
+    return true
+end
+
+--- Exports the current profile as a JSON string.
+--- @return string
+function NivUI.Profiles:ExportCurrentProfile()
+    local snapshot = {
+        addon = "NivUI",
+        version = 1,
+        kind = "profile",
+        profile = NivUI_CurrentProfile,
+        timestamp = time(),
+        payload = NivUI.DeepCopy(NivUI_DB),
+    }
+
+    local json = C_EncodingUtil.SerializeJSON(snapshot)
+    return json:gsub("|", "||")
+end
+
+--- Exports a unit frame style as a JSON string.
+--- @param styleName string The style name to export
+--- @return string|nil exportString
+--- @return string|nil errorMessage
+function NivUI.Profiles:ExportStyle(styleName)
+    local style = NivUI:GetStyle(styleName)
+    if not style then
+        return nil, "Style does not exist"
+    end
+
+    local snapshot = {
+        addon = "NivUI",
+        version = 1,
+        kind = "style",
+        styleName = styleName,
+        timestamp = time(),
+        payload = NivUI.DeepCopy(style),
+    }
+
+    local json = C_EncodingUtil.SerializeJSON(snapshot)
+    return json:gsub("|", "||")
+end
+
+--- Imports a profile or style from a JSON string.
+--- @param str string The import string
+--- @param mode string "overwrite" to replace current, "new" to create new
+--- @return boolean|table success or data for UI to handle
+--- @return string|nil errorMessage
+function NivUI.Profiles:Import(str, mode)
+    if not str or str == "" then
+        return false, "Empty import string"
+    end
+
+    str = str:gsub("||", "|")
+
+    local ok, data = pcall(C_EncodingUtil.DeserializeJSON, str)
+    if not ok or type(data) ~= "table" then
+        return false, "Invalid import format"
+    end
+
+    if data.addon ~= "NivUI" then
+        return false, "Not a NivUI export"
+    end
+
+    if data.kind == "profile" then
+        return self:ImportProfile(data.payload, mode)
+    elseif data.kind == "style" then
+        return self:ImportStyle(data.styleName, data.payload, mode)
+    else
+        return false, "Unknown export kind"
+    end
+end
+
+--- Imports a profile payload.
+--- @param payload table The profile data
+--- @param mode string "overwrite" or "new"
+--- @return boolean|table success or payload for UI
+function NivUI.Profiles:ImportProfile(payload, mode)
+    if mode == "overwrite" then
+        for k in pairs(NivUI_DB) do
+            NivUI_DB[k] = nil
+        end
+        for k, v in pairs(payload) do
+            NivUI_DB[k] = NivUI.DeepCopy(v)
+        end
+        NivUI:InitializeDB()
+        NivUI:ApplySettings()
+        print("|cff00ff00NivUI:|r Imported settings into current profile")
+        return true
+    else
+        return payload
+    end
+end
+
+--- Imports a style payload.
+--- @param styleName string The style name
+--- @param payload table The style data
+--- @param mode string "overwrite" or "new"
+--- @return boolean|string|table success, styleName, or payload for UI
+function NivUI.Profiles:ImportStyle(styleName, payload, mode)
+    if mode == "overwrite" and NivUI:StyleExists(styleName) then
+        NivUI:SaveStyle(styleName, payload)
+        print("|cff00ff00NivUI:|r Replaced style '" .. styleName .. "'")
+        return true
+    else
+        return styleName, payload
+    end
+end

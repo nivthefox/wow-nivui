@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Profile system: save multiple configurations and switch between them per-character
+- Import/export profiles to share your UI setup with others
 - Buff and debuff display on unit frames with duration countdown and stack counts
 - Absorb shield overlay on health bars, showing incoming damage absorption from shields like Power Word: Shield
 - Status text overlay showing AFK, DND, Dead, Ghost, and Offline states on unit frames

@@ -30,6 +30,7 @@ ignore = {
 globals = {
 	"NivUI",
 	"NivUI_DB",
+	"NivUI_CurrentProfile",
 }
 read_globals = {
 	-- WoW 12.0 Midnight APIs (not yet in upstream luacheckrc)
