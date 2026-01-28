@@ -9,12 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Profile system: save multiple configurations and switch between them per-character
-- Import/export profiles to share your UI setup with others
+- Profile system with import/export and optional per-spec auto-switching
 - Buff and debuff display on unit frames with duration countdown and stack counts
-- Absorb shield overlay on health bars, showing incoming damage absorption from shields like Power Word: Shield
-- Status text overlay showing AFK, DND, Dead, Ghost, and Offline states on unit frames
-- Range fading: unit frames can now fade when targets are out of range, configurable per frame type in Edit Mode
+- Absorb shield overlay on health bars
+- Status text overlay showing AFK, DND, Dead, Ghost, and Offline states
+- Range fading for party and raid frames when members are out of range
 
 ### Fixed
 
