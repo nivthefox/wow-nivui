@@ -1204,21 +1204,6 @@ local function SetupProfilesTab()
         StaticPopup_Show("NIVUI_DELETE_PROFILE", current)
     end)
 
-    local buttonRow2 = CreateFrame("Frame", nil, content)
-    buttonRow2:SetHeight(ROW_HEIGHT)
-    buttonRow2:SetPoint("LEFT", 20, 0)
-    buttonRow2:SetPoint("RIGHT", -20, 0)
-    AddFrame(buttonRow2, 0)
-
-    local resetProfileBtn = CreateFrame("Button", nil, buttonRow2, "UIPanelDynamicResizeButtonTemplate")
-    resetProfileBtn:SetText("Reset to Defaults")
-    resetProfileBtn:SetWidth(130)
-    resetProfileBtn:SetPoint("LEFT", buttonRow2, "CENTER", -170, 0)
-    resetProfileBtn:SetScript("OnClick", function()
-        local current = NivUI.Profiles:GetCurrentProfileName()
-        StaticPopup_Show("NIVUI_RESET_PROFILE", current)
-    end)
-
     local exportHeader = Components.GetHeader(content, "Import / Export")
     AddFrame(exportHeader, SECTION_SPACING)
 
@@ -1261,7 +1246,7 @@ StaticPopupDialogs["NIVUI_NEW_PROFILE"] = {
     hasEditBox = true,
     editBoxWidth = 200,
     OnAccept = function(self)
-        local name = self.editBox:GetText()
+        local name = self.EditBox:GetText()
         local success, err = NivUI.Profiles:CreateProfile(name)
         if success then
             NivUI.Profiles:SwitchProfile(name)
@@ -1270,12 +1255,12 @@ StaticPopupDialogs["NIVUI_NEW_PROFILE"] = {
         end
     end,
     OnShow = function(self)
-        self.editBox:SetText("")
-        self.editBox:SetFocus()
+        self.EditBox:SetText("")
+        self.EditBox:SetFocus()
     end,
     EditBoxOnEnterPressed = function(self)
         local parent = self:GetParent()
-        local name = parent.editBox:GetText()
+        local name = parent.EditBox:GetText()
         local success, err = NivUI.Profiles:CreateProfile(name)
         if success then
             NivUI.Profiles:SwitchProfile(name)
@@ -1297,7 +1282,7 @@ StaticPopupDialogs["NIVUI_COPY_PROFILE"] = {
     hasEditBox = true,
     editBoxWidth = 200,
     OnAccept = function(self)
-        local name = self.editBox:GetText()
+        local name = self.EditBox:GetText()
         local current = NivUI.Profiles:GetCurrentProfileName()
         local success, err = NivUI.Profiles:CopyProfile(current, name)
         if success then
@@ -1307,12 +1292,12 @@ StaticPopupDialogs["NIVUI_COPY_PROFILE"] = {
         end
     end,
     OnShow = function(self)
-        self.editBox:SetText("")
-        self.editBox:SetFocus()
+        self.EditBox:SetText("")
+        self.EditBox:SetFocus()
     end,
     EditBoxOnEnterPressed = function(self)
         local parent = self:GetParent()
-        local name = parent.editBox:GetText()
+        local name = parent.EditBox:GetText()
         local current = NivUI.Profiles:GetCurrentProfileName()
         local success, err = NivUI.Profiles:CopyProfile(current, name)
         if success then
@@ -1345,32 +1330,15 @@ StaticPopupDialogs["NIVUI_DELETE_PROFILE"] = {
     preferredIndex = 3,
 }
 
-StaticPopupDialogs["NIVUI_RESET_PROFILE"] = {
-    text = "Are you sure you want to reset the profile '%s' to defaults?",
-    button1 = YES,
-    button2 = NO,
-    OnAccept = function()
-        local current = NivUI.Profiles:GetCurrentProfileName()
-        local _, err = NivUI.Profiles:ResetProfile(current)
-        if err then
-            print("|cffff0000NivUI:|r " .. err)
-        end
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
 StaticPopupDialogs["NIVUI_EXPORT_STRING"] = {
     text = "Copy this string to share your profile:",
     button1 = CLOSE,
     hasEditBox = true,
     editBoxWidth = 350,
     OnShow = function(self, data)
-        self.editBox:SetText(data)
-        self.editBox:HighlightText()
-        self.editBox:SetFocus()
+        self.EditBox:SetText(data)
+        self.EditBox:HighlightText()
+        self.EditBox:SetFocus()
     end,
     EditBoxOnEscapePressed = function(self)
         self:GetParent():Hide()
@@ -1388,7 +1356,7 @@ StaticPopupDialogs["NIVUI_IMPORT_PROFILE"] = {
     hasEditBox = true,
     editBoxWidth = 350,
     OnAccept = function(self)
-        local str = self.editBox:GetText()
+        local str = self.EditBox:GetText()
         local success, err = NivUI.Profiles:Import(str, "overwrite")
         if success == true then
             print("|cff00ff00NivUI:|r Profile imported successfully")
@@ -1399,12 +1367,12 @@ StaticPopupDialogs["NIVUI_IMPORT_PROFILE"] = {
         end
     end,
     OnShow = function(self)
-        self.editBox:SetText("")
-        self.editBox:SetFocus()
+        self.EditBox:SetText("")
+        self.EditBox:SetFocus()
     end,
     EditBoxOnEnterPressed = function(self)
         local parent = self:GetParent()
-        local str = parent.editBox:GetText()
+        local str = parent.EditBox:GetText()
         local success, err = NivUI.Profiles:Import(str, "overwrite")
         if success == true then
             print("|cff00ff00NivUI:|r Profile imported successfully")
@@ -1428,7 +1396,7 @@ StaticPopupDialogs["NIVUI_IMPORT_AS_NEW"] = {
     hasEditBox = true,
     editBoxWidth = 200,
     OnAccept = function(self, data)
-        local name = self.editBox:GetText()
+        local name = self.EditBox:GetText()
         local success, err = NivUI.Profiles:CreateProfile(name)
         if success then
             NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(data)
@@ -1439,13 +1407,13 @@ StaticPopupDialogs["NIVUI_IMPORT_AS_NEW"] = {
         end
     end,
     OnShow = function(self)
-        self.editBox:SetText("")
-        self.editBox:SetFocus()
+        self.EditBox:SetText("")
+        self.EditBox:SetFocus()
     end,
     EditBoxOnEnterPressed = function(self)
         local parent = self:GetParent()
         local data = parent.data
-        local name = parent.editBox:GetText()
+        local name = parent.EditBox:GetText()
         local success, err = NivUI.Profiles:CreateProfile(name)
         if success then
             NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(data)
