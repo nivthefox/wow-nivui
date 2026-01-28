@@ -1407,6 +1407,17 @@ local function SetupProfilesTab()
     )
     AddFrame(specAutoSwitch, 0)
 
+    local exportHeader = Components.GetHeader(content, "Import / Export")
+
+    local function RepositionExportHeader()
+        exportHeader:ClearAllPoints()
+        local anchor = specAutoSwitch
+        if #specDropdowns > 0 then
+            anchor = specDropdowns[#specDropdowns]
+        end
+        exportHeader:SetPoint("TOP", anchor, "BOTTOM", 0, -SECTION_SPACING)
+    end
+
     local function EnsureSpecDropdowns()
         if specDropdownsCreated then
             return
@@ -1414,7 +1425,7 @@ local function SetupProfilesTab()
         specDropdownsCreated = true
 
         local specs = GetSpecMeta()
-        for _, spec in ipairs(specs) do
+        for i, spec in ipairs(specs) do
             local specDropdown = Components.GetBasicDropdown(
                 content,
                 spec.name .. ":",
@@ -1436,9 +1447,13 @@ local function SetupProfilesTab()
                 end
             )
             specDropdown.specID = spec.id
-            AddFrame(specDropdown, 0)
             table.insert(specDropdowns, specDropdown)
+
+            local anchor = (i == 1) and specAutoSwitch or specDropdowns[i - 1]
+            specDropdown:SetPoint("TOP", anchor, "BOTTOM", 0, 0)
         end
+
+        RepositionExportHeader()
     end
 
     table.insert(onShowHandlers, function()
@@ -1447,14 +1462,13 @@ local function SetupProfilesTab()
         UpdateSpecDropdowns()
     end)
 
-    local exportHeader = Components.GetHeader(content, "Import / Export")
-    AddFrame(exportHeader, SECTION_SPACING)
+    exportHeader:SetPoint("TOP", specAutoSwitch, "BOTTOM", 0, -SECTION_SPACING)
 
     local buttonRow3 = CreateFrame("Frame", nil, content)
     buttonRow3:SetHeight(ROW_HEIGHT)
     buttonRow3:SetPoint("LEFT", 20, 0)
     buttonRow3:SetPoint("RIGHT", -20, 0)
-    AddFrame(buttonRow3, 0)
+    buttonRow3:SetPoint("TOP", exportHeader, "BOTTOM", 0, 0)
 
     local exportProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
     exportProfileBtn:SetText("Export Profile")
