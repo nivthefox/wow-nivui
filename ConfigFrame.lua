@@ -1436,7 +1436,7 @@ local function SetupProfilesTab()
                 content,
                 spec.name .. ":",
                 function()
-                    local items = { { value = "None", name = "None" } }
+                    local items = {}
                     local profiles = NivUI.Profiles:GetAllProfiles()
                     for _, name in ipairs(profiles) do
                         table.insert(items, { value = name, name = name })
@@ -1444,18 +1444,12 @@ local function SetupProfilesTab()
                     return items
                 end,
                 function(value)
-                    local cur = NivUI.Profiles:GetSpecProfile(spec.id)
-                    if value == "None" then
-                        return cur == nil
-                    end
-                    return cur == value
+                    local mapped = NivUI.Profiles:GetSpecProfile(spec.id)
+                    local effective = mapped or NivUI.Profiles:GetCurrentProfileName()
+                    return effective == value
                 end,
                 function(value)
-                    if value == "None" then
-                        NivUI.Profiles:SetSpecProfile(spec.id, nil)
-                    else
-                        NivUI.Profiles:SetSpecProfile(spec.id, value)
-                    end
+                    NivUI.Profiles:SetSpecProfile(spec.id, value)
                 end
             )
             specDropdown.specID = spec.id

@@ -362,7 +362,7 @@ function NivUI.Profiles:SetSpecProfile(specID, profileName)
     end
     local char = GetCharMeta()
 
-    if type(profileName) ~= "string" or profileName == "" or profileName == "None" then
+    if type(profileName) ~= "string" or profileName == "" then
         char.specProfileMap[specID] = nil
     else
         char.specProfileMap[specID] = profileName
