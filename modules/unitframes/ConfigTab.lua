@@ -333,7 +333,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     frame.tabHolder = tabHolder
 
     local contentArea = CreateFrame("Frame", nil, frame)
-    contentArea:SetPoint("TOPLEFT", 0, -40)
+    contentArea:SetPoint("TOPLEFT", 0, -42)
     contentArea:SetPoint("BOTTOMRIGHT", 0, 0)
     frame.contentArea = contentArea
 
@@ -1431,7 +1431,7 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         addButton:ClearAllPoints()
         addButton:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
 
-        local contentOffset = -(numRows * TAB_HEIGHT) - 8
+        local contentOffset = -(numRows * TAB_HEIGHT) - 10
         for _, tabData in ipairs(allTabs) do
             tabData.container:ClearAllPoints()
             tabData.container:SetPoint("TOPLEFT", 0, contentOffset)
