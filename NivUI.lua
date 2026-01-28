@@ -1,6 +1,7 @@
 NivUI = NivUI or {}
 
 NivUI_DB = NivUI_DB or {}
+NivUI.current = NivUI.current or {}
 
 NivUI.UPDATE_INTERVAL = 0.1
 
