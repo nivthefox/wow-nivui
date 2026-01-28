@@ -1361,36 +1361,6 @@ local function SetupProfilesTab()
         StaticPopup_Show("NIVUI_DELETE_PROFILE", current)
     end)
 
-    local exportHeader = Components.GetHeader(content, "Import / Export")
-    AddFrame(exportHeader, SECTION_SPACING)
-
-    local buttonRow3 = CreateFrame("Frame", nil, content)
-    buttonRow3:SetHeight(ROW_HEIGHT)
-    buttonRow3:SetPoint("LEFT", 20, 0)
-    buttonRow3:SetPoint("RIGHT", -20, 0)
-    AddFrame(buttonRow3, 0)
-
-    local exportProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
-    exportProfileBtn:SetText("Export Profile")
-    exportProfileBtn:SetWidth(110)
-    exportProfileBtn:SetPoint("LEFT", buttonRow3, "CENTER", -115, 0)
-    exportProfileBtn:SetScript("OnClick", function()
-        local str = NivUI.Profiles:ExportCurrentProfile()
-        exportDialog.EditBox.expectedText = str
-        exportDialog.EditBox:SetText(str)
-        exportDialog.EditBox:HighlightText()
-        exportDialog:Show()
-        exportDialog.EditBox:SetFocus()
-    end)
-
-    local importProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
-    importProfileBtn:SetText("Import Profile")
-    importProfileBtn:SetWidth(110)
-    importProfileBtn:SetPoint("LEFT", exportProfileBtn, "RIGHT", 5, 0)
-    importProfileBtn:SetScript("OnClick", function()
-        importDialog:Show()
-    end)
-
     -- Spec-based profile switching section
     local specHeader = Components.GetHeader(content, "Specialization Profiles")
     AddFrame(specHeader, SECTION_SPACING)
@@ -1429,7 +1399,7 @@ local function SetupProfilesTab()
 
     local specAutoSwitch = Components.GetCheckbox(
         content,
-        "Auto-switch profile by specialization",
+        "Auto-switch by spec",
         function(checked)
             NivUI.Profiles:SetSpecAutoSwitchEnabled(checked)
             UpdateSpecDropdowns()
@@ -1475,6 +1445,36 @@ local function SetupProfilesTab()
         specAutoSwitch:SetValue(NivUI.Profiles:IsSpecAutoSwitchEnabled())
         EnsureSpecDropdowns()
         UpdateSpecDropdowns()
+    end)
+
+    local exportHeader = Components.GetHeader(content, "Import / Export")
+    AddFrame(exportHeader, SECTION_SPACING)
+
+    local buttonRow3 = CreateFrame("Frame", nil, content)
+    buttonRow3:SetHeight(ROW_HEIGHT)
+    buttonRow3:SetPoint("LEFT", 20, 0)
+    buttonRow3:SetPoint("RIGHT", -20, 0)
+    AddFrame(buttonRow3, 0)
+
+    local exportProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
+    exportProfileBtn:SetText("Export Profile")
+    exportProfileBtn:SetWidth(110)
+    exportProfileBtn:SetPoint("LEFT", buttonRow3, "CENTER", -115, 0)
+    exportProfileBtn:SetScript("OnClick", function()
+        local str = NivUI.Profiles:ExportCurrentProfile()
+        exportDialog.EditBox.expectedText = str
+        exportDialog.EditBox:SetText(str)
+        exportDialog.EditBox:HighlightText()
+        exportDialog:Show()
+        exportDialog.EditBox:SetFocus()
+    end)
+
+    local importProfileBtn = CreateFrame("Button", nil, buttonRow3, "UIPanelDynamicResizeButtonTemplate")
+    importProfileBtn:SetText("Import Profile")
+    importProfileBtn:SetWidth(110)
+    importProfileBtn:SetPoint("LEFT", exportProfileBtn, "RIGHT", 5, 0)
+    importProfileBtn:SetScript("OnClick", function()
+        importDialog:Show()
     end)
 
     container:SetScript("OnShow", function()
