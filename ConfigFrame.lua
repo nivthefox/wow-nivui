@@ -1482,9 +1482,7 @@ StaticPopupDialogs["NIVUI_NEW_PROFILE"] = {
     OnAccept = function(self)
         local name = self.EditBox:GetText()
         local success, err = NivUI.Profiles:CreateProfile(name)
-        if success then
-            NivUI.Profiles:SwitchProfile(name)
-        elseif err then
+        if not success and err then
             print("|cffff0000NivUI:|r " .. err)
         end
     end,
@@ -1496,9 +1494,7 @@ StaticPopupDialogs["NIVUI_NEW_PROFILE"] = {
         local parent = self:GetParent()
         local name = parent.EditBox:GetText()
         local success, err = NivUI.Profiles:CreateProfile(name)
-        if success then
-            NivUI.Profiles:SwitchProfile(name)
-        elseif err then
+        if not success and err then
             print("|cffff0000NivUI:|r " .. err)
         end
         parent:Hide()
@@ -1519,9 +1515,7 @@ StaticPopupDialogs["NIVUI_COPY_PROFILE"] = {
         local name = self.EditBox:GetText()
         local current = NivUI.Profiles:GetCurrentProfileName()
         local success, err = NivUI.Profiles:CopyProfile(current, name)
-        if success then
-            NivUI.Profiles:SwitchProfile(name)
-        elseif err then
+        if not success and err then
             print("|cffff0000NivUI:|r " .. err)
         end
     end,
@@ -1534,9 +1528,7 @@ StaticPopupDialogs["NIVUI_COPY_PROFILE"] = {
         local name = parent.EditBox:GetText()
         local current = NivUI.Profiles:GetCurrentProfileName()
         local success, err = NivUI.Profiles:CopyProfile(current, name)
-        if success then
-            NivUI.Profiles:SwitchProfile(name)
-        elseif err then
+        if not success and err then
             print("|cffff0000NivUI:|r " .. err)
         end
         parent:Hide()
