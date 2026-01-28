@@ -151,7 +151,68 @@ function NivUI.Profiles:CopyProfile(fromName, toName)
     return true
 end
 
---- Exports the current profile as a JSON string.
+--- Encodes a table as a compact string using CBOR + optional compression + base64.
+--- Format: "NIVUI:" + base64(compress?(cbor(table)))
+--- @param tbl table The table to encode
+--- @return string|nil encoded
+local function EncodeCompact(tbl)
+    local E = C_EncodingUtil
+
+    local ok, bin = pcall(E.SerializeCBOR, tbl)
+    if not ok or not bin then
+        return nil
+    end
+
+    local payload = bin
+    if E.CompressString and Enum.CompressionMethod and Enum.CompressionMethod.Deflate then
+        local compressOk, compressed = pcall(E.CompressString, bin, Enum.CompressionMethod.Deflate)
+        if compressOk and compressed and #compressed < #bin then
+            payload = compressed
+        end
+    end
+
+    local encodeOk, b64 = pcall(E.EncodeBase64, payload)
+    if not encodeOk or not b64 then
+        return nil
+    end
+
+    return "NIVUI:" .. b64
+end
+
+--- Decodes a compact string back to a table.
+--- Handles "NIVUI:" prefix format (CBOR + optional compression + base64).
+--- @param str string The encoded string
+--- @return table|nil decoded
+local function DecodeCompact(str)
+    if not str:match("^NIVUI:") then
+        return nil
+    end
+
+    local b64 = str:sub(7)
+    local E = C_EncodingUtil
+
+    local decodeOk, raw = pcall(E.DecodeBase64, b64)
+    if not decodeOk or not raw then
+        return nil
+    end
+
+    local payload = raw
+    if E.DecompressString and Enum.CompressionMethod and Enum.CompressionMethod.Deflate then
+        local decompressOk, decompressed = pcall(E.DecompressString, raw, Enum.CompressionMethod.Deflate)
+        if decompressOk and decompressed then
+            payload = decompressed
+        end
+    end
+
+    local cborOk, tbl = pcall(E.DeserializeCBOR, payload)
+    if not cborOk or type(tbl) ~= "table" then
+        return nil
+    end
+
+    return tbl
+end
+
+--- Exports the current profile as a compact encoded string.
 --- @return string
 function NivUI.Profiles:ExportCurrentProfile()
     local snapshot = {
@@ -159,15 +220,13 @@ function NivUI.Profiles:ExportCurrentProfile()
         version = 1,
         kind = "profile",
         profile = NivUI_CurrentProfile,
-        timestamp = time(),
         payload = NivUI.DeepCopy(NivUI_DB),
     }
 
-    local json = C_EncodingUtil.SerializeJSON(snapshot)
-    return json:gsub("|", "||")
+    return EncodeCompact(snapshot)
 end
 
---- Exports a unit frame style as a JSON string.
+--- Exports a unit frame style as a compact encoded string.
 --- @param styleName string The style name to export
 --- @return string|nil exportString
 --- @return string|nil errorMessage
@@ -182,15 +241,13 @@ function NivUI.Profiles:ExportStyle(styleName)
         version = 1,
         kind = "style",
         styleName = styleName,
-        timestamp = time(),
         payload = NivUI.DeepCopy(style),
     }
 
-    local json = C_EncodingUtil.SerializeJSON(snapshot)
-    return json:gsub("|", "||")
+    return EncodeCompact(snapshot)
 end
 
---- Imports a profile or style from a JSON string.
+--- Imports a profile or style from an encoded string.
 --- @param str string The import string
 --- @param mode string "overwrite" to replace current, "new" to create new
 --- @return boolean|table success or data for UI to handle
@@ -200,10 +257,8 @@ function NivUI.Profiles:Import(str, mode)
         return false, "Empty import string"
     end
 
-    str = str:gsub("||", "|")
-
-    local ok, data = pcall(C_EncodingUtil.DeserializeJSON, str)
-    if not ok or type(data) ~= "table" then
+    local data = DecodeCompact(str)
+    if not data then
         return false, "Invalid import format"
     end
 
