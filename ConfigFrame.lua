@@ -1320,25 +1320,38 @@ local function SetupProfilesTab()
     AddFrame(buttonRow1, SECTION_SPACING)
 
     local newProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
-    newProfileBtn:SetText("New Profile")
-    newProfileBtn:SetWidth(110)
+    newProfileBtn:SetText("New")
+    newProfileBtn:SetWidth(80)
     newProfileBtn:SetPoint("LEFT", buttonRow1, "CENTER", -170, 0)
     newProfileBtn:SetScript("OnClick", function()
         StaticPopup_Show("NIVUI_NEW_PROFILE")
     end)
 
     local copyProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
-    copyProfileBtn:SetText("Copy Current")
-    copyProfileBtn:SetWidth(110)
+    copyProfileBtn:SetText("Copy")
+    copyProfileBtn:SetWidth(80)
     copyProfileBtn:SetPoint("LEFT", newProfileBtn, "RIGHT", 5, 0)
     copyProfileBtn:SetScript("OnClick", function()
         StaticPopup_Show("NIVUI_COPY_PROFILE")
     end)
 
+    local renameProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
+    renameProfileBtn:SetText("Rename")
+    renameProfileBtn:SetWidth(80)
+    renameProfileBtn:SetPoint("LEFT", copyProfileBtn, "RIGHT", 5, 0)
+    renameProfileBtn:SetScript("OnClick", function()
+        local current = NivUI.Profiles:GetCurrentProfileName()
+        if current == "Default" then
+            print("|cffff0000NivUI:|r Cannot rename the Default profile")
+            return
+        end
+        StaticPopup_Show("NIVUI_RENAME_PROFILE", current)
+    end)
+
     local deleteProfileBtn = CreateFrame("Button", nil, buttonRow1, "UIPanelDynamicResizeButtonTemplate")
-    deleteProfileBtn:SetText("Delete Profile")
-    deleteProfileBtn:SetWidth(110)
-    deleteProfileBtn:SetPoint("LEFT", copyProfileBtn, "RIGHT", 5, 0)
+    deleteProfileBtn:SetText("Delete")
+    deleteProfileBtn:SetWidth(80)
+    deleteProfileBtn:SetPoint("LEFT", renameProfileBtn, "RIGHT", 5, 0)
     deleteProfileBtn:SetScript("OnClick", function()
         local current = NivUI.Profiles:GetCurrentProfileName()
         if current == "Default" then
@@ -1528,6 +1541,39 @@ StaticPopupDialogs["NIVUI_COPY_PROFILE"] = {
         local name = parent.EditBox:GetText()
         local current = NivUI.Profiles:GetCurrentProfileName()
         local success, err = NivUI.Profiles:CopyProfile(current, name)
+        if not success and err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+        parent:Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["NIVUI_RENAME_PROFILE"] = {
+    text = "Enter a new name for profile '%s':",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    hasEditBox = true,
+    editBoxWidth = 200,
+    OnAccept = function(self, data)
+        local newName = self.EditBox:GetText()
+        local success, err = NivUI.Profiles:RenameProfile(data, newName)
+        if not success and err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
+    end,
+    OnShow = function(self, data)
+        self.EditBox:SetText(data)
+        self.EditBox:HighlightText()
+        self.EditBox:SetFocus()
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local newName = parent.EditBox:GetText()
+        local success, err = NivUI.Profiles:RenameProfile(parent.data, newName)
         if not success and err then
             print("|cffff0000NivUI:|r " .. err)
         end

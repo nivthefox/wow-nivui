@@ -151,6 +151,54 @@ function NivUI.Profiles:CopyProfile(fromName, toName)
     return true
 end
 
+--- Renames a profile.
+--- @param oldName string The current profile name
+--- @param newName string The new profile name
+--- @return boolean success
+--- @return string|nil errorMessage
+function NivUI.Profiles:RenameProfile(oldName, newName)
+    if oldName == "Default" then
+        return false, "Cannot rename the Default profile"
+    end
+
+    if not newName or newName == "" then
+        return false, "New name cannot be empty"
+    end
+
+    if not self:ProfileExists(oldName) then
+        return false, "Profile '" .. oldName .. "' does not exist"
+    end
+
+    if self:ProfileExists(newName) then
+        return false, "Profile '" .. newName .. "' already exists"
+    end
+
+    NivUI_DB.profiles[newName] = NivUI_DB.profiles[oldName]
+    NivUI_DB.profiles[oldName] = nil
+
+    if NivUI_CurrentProfile == oldName then
+        NivUI_CurrentProfile = newName
+        NivUI.current = NivUI_DB.profiles[newName]
+    end
+
+    -- Update any spec mappings that reference the old name
+    if NivUI_DB.charMeta then
+        for _, charData in pairs(NivUI_DB.charMeta) do
+            if charData.specProfileMap then
+                for specID, profileName in pairs(charData.specProfileMap) do
+                    if profileName == oldName then
+                        charData.specProfileMap[specID] = newName
+                    end
+                end
+            end
+        end
+    end
+
+    NivUI:TriggerEvent("ProfileRenamed", { oldName = oldName, newName = newName })
+    print("|cff00ff00NivUI:|r Renamed profile '" .. oldName .. "' to '" .. newName .. "'")
+    return true
+end
+
 --- Encodes a table as a compact string using CBOR + optional compression + base64.
 --- Format: "NIVUI:" + base64(compress?(cbor(table)))
 --- @param tbl table The table to encode
