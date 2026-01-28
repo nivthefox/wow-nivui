@@ -709,14 +709,13 @@ local function UpdateAuraWidget(state, widgetName, filter)
     local dispellableColor = config.dispellableColor
 
     local auras = {}
-    local all = C_UnitAuras.GetUnitAuras(unit, filter, nil, Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortOrder.Descending)
+    local all = C_UnitAuras.GetUnitAuras(unit, filter) or {}
     for _, aura in ipairs(all) do
         local include = true
         if filterPlayer and aura.sourceUnit ~= "player" then
             include = false
         end
         if include then
-            aura.applicationsString = C_UnitAuras.GetAuraApplicationDisplayCount(unit, aura.auraInstanceID, 2, 1000)
             table.insert(auras, aura)
         end
         if #auras >= config.maxIcons then break end
@@ -727,9 +726,9 @@ local function UpdateAuraWidget(state, widgetName, filter)
         if aura then
             icon.texture:SetTexture(aura.icon)
 
-            if showDuration and C_UnitAuras.GetAuraDurationRemaining then
-                local remaining = C_UnitAuras.GetAuraDurationRemaining(unit, aura.auraInstanceID)
-                if remaining and remaining > 0 then
+            if showDuration and aura.expirationTime and aura.expirationTime > 0 then
+                local remaining = aura.expirationTime - GetTime()
+                if remaining > 0 then
                     icon.duration:SetFormattedText("%.0f", remaining)
                 else
                     icon.duration:SetText("")
@@ -738,8 +737,8 @@ local function UpdateAuraWidget(state, widgetName, filter)
                 icon.duration:SetText("")
             end
 
-            if showStacks and aura.applicationsString and aura.applicationsString ~= "" then
-                icon.stacks:SetText(aura.applicationsString)
+            if showStacks and aura.applications and aura.applications > 1 then
+                icon.stacks:SetText(aura.applications)
             else
                 icon.stacks:SetText("")
             end
