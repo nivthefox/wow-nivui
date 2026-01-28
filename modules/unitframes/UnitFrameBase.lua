@@ -671,7 +671,15 @@ function UnitFrameBase.UpdateRangeAlpha(state)
         return
     end
 
-    local inRange = UnitInRange(state.unit)
+    local inRange, checkedRange = UnitInRange(state.unit)
+    if not checkedRange then
+        -- Can't check range for this unit type, assume in range
+        if state.rangeAlphaApplied then
+            state.rangeAlphaApplied = nil
+            state.customFrame:SetAlpha(1)
+        end
+        return
+    end
     state.customFrame:SetAlphaFromBoolean(inRange, 1, 0.3)
     state.rangeAlphaApplied = true
 end
