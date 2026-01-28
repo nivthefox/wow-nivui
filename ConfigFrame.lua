@@ -1383,11 +1383,7 @@ local function SetupProfilesTab()
     local function UpdateSpecDropdowns()
         local enabled = NivUI.Profiles:IsSpecAutoSwitchEnabled()
         for _, row in ipairs(specDropdowns) do
-            if enabled then
-                row:Show()
-            else
-                row:Hide()
-            end
+            row.DropDown:SetEnabled(enabled)
             local specID = row.specID
             local cur = NivUI.Profiles:GetSpecProfile(specID)
             if cur and not NivUI.Profiles:ProfileExists(cur) then
