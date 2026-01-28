@@ -284,7 +284,7 @@ function NivUI.Profiles:CreateFromImport(name, payload)
     end
 
     NivUI.ProfileDB.profiles[name] = NivUI.DeepCopy(payload)
-    self:SwitchProfile(name)
+    print("|cff00ff00NivUI:|r Imported profile '" .. name .. "'")
     return true
 end
 
