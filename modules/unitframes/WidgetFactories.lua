@@ -636,6 +636,12 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
     frame.unit = unit
     frame.filter = (widgetType == "buffs") and "HELPFUL" or "HARMFUL"
 
+    -- Determine icon anchor based on growth direction
+    -- Growth LEFT: icons anchor from RIGHT edge, grow leftward
+    -- Growth RIGHT: icons anchor from LEFT edge, grow rightward
+    local iconAnchor = (config.growth == "LEFT") and "TOPRIGHT" or "TOPLEFT"
+    local frameAnchor = iconAnchor
+
     for i = 1, maxIcons do
         local icon = CreateFrame("Frame", nil, frame)
         icon:SetSize(iconSize, iconSize)
@@ -643,21 +649,16 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
         local row = math.floor((i - 1) / perRow)
         local col = (i - 1) % perRow
 
-        local xOffset = 0
-        local yOffset
-        if config.growth == "RIGHT" then
-            xOffset = col * (iconSize + spacing)
-        elseif config.growth == "LEFT" then
+        local xOffset, yOffset
+        if config.growth == "LEFT" then
             xOffset = -col * (iconSize + spacing)
-        end
-
-        if config.growth == "UP" then
-            yOffset = row * (iconSize + spacing)
         else
-            yOffset = -row * (iconSize + spacing)
+            xOffset = col * (iconSize + spacing)
         end
 
-        icon:SetPoint("TOPLEFT", frame, "TOPLEFT", xOffset, yOffset)
+        yOffset = -row * (iconSize + spacing)
+
+        icon:SetPoint(iconAnchor, frame, frameAnchor, xOffset, yOffset)
 
         icon.texture = icon:CreateTexture(nil, "ARTWORK")
         icon.texture:SetAllPoints()
