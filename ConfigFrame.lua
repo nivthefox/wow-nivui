@@ -1410,11 +1410,13 @@ local function SetupProfilesTab()
     local exportHeader = Components.GetHeader(content, "Import / Export")
 
     local function RepositionExportHeader()
-        exportHeader:ClearAllPoints()
         local anchor = specAutoSwitch
         if #specDropdowns > 0 then
             anchor = specDropdowns[#specDropdowns]
         end
+        exportHeader:ClearAllPoints()
+        exportHeader:SetPoint("LEFT", 10, 0)
+        exportHeader:SetPoint("RIGHT", -10, 0)
         exportHeader:SetPoint("TOP", anchor, "BOTTOM", 0, -SECTION_SPACING)
     end
 
