@@ -1361,7 +1361,6 @@ local function SetupProfilesTab()
         StaticPopup_Show("NIVUI_DELETE_PROFILE", current)
     end)
 
-    -- Spec-based profile switching section
     local specHeader = Components.GetHeader(content, "Specialization Profiles")
     AddFrame(specHeader, SECTION_SPACING)
 

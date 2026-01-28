@@ -316,6 +316,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
                         seg.bar:Show()
                         seg.active = true
                     elseif isFilling and partialPower > 0 then
+                        -- UnitPartialPower returns 0-1000, so divide to get 0-1 percent
                         local fillPercent = partialPower / 1000
                         local fillWidth = seg.segmentWidth * fillPercent
                         if fillWidth < 1 then

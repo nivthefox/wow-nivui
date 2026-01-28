@@ -170,7 +170,7 @@ function NivUI:GetTexturePath(nameOrPath)
     for _, item in ipairs(BUILTIN_TEXTURES) do
         if item.name == nameOrPath then return item.path end
     end
-    return nameOrPath  -- Assume it's a raw path
+    return nameOrPath
 end
 
 function NivUI:GetFontPath(nameOrPath)
@@ -182,11 +182,8 @@ function NivUI:GetFontPath(nameOrPath)
     for _, item in ipairs(BUILTIN_FONTS) do
         if item.name == nameOrPath then return item.path end
     end
-    return nameOrPath  -- Assume it's a raw path
+    return nameOrPath
 end
-
-NivUI.barTextures = nil  -- Legacy
-NivUI.fonts = nil  -- Legacy
 
 NivUI.applyCallbacks = NivUI.applyCallbacks or {}
 
@@ -285,6 +282,16 @@ function NivUI:RegisterCallback(event, callback)
         self.eventCallbacks[event] = {}
     end
     table.insert(self.eventCallbacks[event], callback)
+end
+
+function NivUI:UnregisterCallback(event, callback)
+    if not self.eventCallbacks[event] then return end
+    for i, cb in ipairs(self.eventCallbacks[event]) do
+        if cb == callback then
+            table.remove(self.eventCallbacks[event], i)
+            return
+        end
+    end
 end
 
 function NivUI:TriggerEvent(event, data)

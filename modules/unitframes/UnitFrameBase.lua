@@ -20,6 +20,8 @@ local function GetWidgetConfig(state, widgetName)
     return config
 end
 
+--- Hides all regions attached to a frame by setting alpha to 0 and hiding them.
+--- @param frame Frame|nil The frame whose regions should be hidden
 function UnitFrameBase.HideRegions(frame)
     if not frame then return end
     local regions = { frame:GetRegions() }
@@ -31,6 +33,9 @@ function UnitFrameBase.HideRegions(frame)
     end
 end
 
+--- Kills a frame's visual elements and input handling without destroying it.
+--- Unregisters events, disables mouse, hides the frame, and hooks OnShow to keep it hidden.
+--- @param frame Frame|nil The frame to kill visually
 function UnitFrameBase.KillVisual(frame)
     if not frame then return end
     if frame.UnregisterAllEvents then frame:UnregisterAllEvents() end
@@ -51,6 +56,10 @@ function UnitFrameBase.KillVisual(frame)
     end
 end
 
+--- Creates a function that hides a Blizzard unit frame with configurable options.
+--- @param blizzardFrame Frame The Blizzard frame to hide
+--- @param options table|nil Options: childPrefix, hasAuras, extraKills, containerKey, contentKey
+--- @return function hideFunction A function that takes state and hides the Blizzard frame
 function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
     options = options or {}
     local childPrefix = options.childPrefix
@@ -134,11 +143,17 @@ function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
     return HideBlizzardFrame
 end
 
+--- Sets secure visibility for a frame using a state driver.
+--- @param frame Frame|nil The frame to control visibility for
+--- @param visible boolean Whether the frame should be visible
 function UnitFrameBase.SetSecureVisibility(frame, visible)
     if not frame then return end
     RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
 end
 
+--- Updates the health bar widget for a unit frame.
+--- Handles health values, absorb overlay, and color modes (class, reaction, custom).
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateHealthBar(state)
     if not state.customFrame or not state.customFrame.widgets.healthBar then return end
     local widget = state.customFrame.widgets.healthBar
@@ -234,6 +249,9 @@ local function CascadeAnchorVisibility(state)
     end
 end
 
+--- Updates the power bar widget for a unit frame.
+--- Handles power values, visibility rules, and color modes (power, class, custom).
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdatePowerBar(state)
     if not state.customFrame or not state.customFrame.widgets.powerBar then return end
     local widget = state.customFrame.widgets.powerBar
@@ -265,6 +283,9 @@ function UnitFrameBase.UpdatePowerBar(state)
     widget:SetStatusBarColor(r, g, b, a)
 end
 
+--- Updates the health text widget for a unit frame.
+--- Supports formats: percent, current_percent, current, current_max, deficit.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateHealthText(state)
     if not state.customFrame or not state.customFrame.widgets.healthText then return end
     local widget = state.customFrame.widgets.healthText
@@ -311,6 +332,9 @@ function UnitFrameBase.UpdateHealthText(state)
     end
 end
 
+--- Updates the power text widget for a unit frame.
+--- Supports formats: percent, current_percent, current, current_max.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdatePowerText(state)
     if not state.customFrame or not state.customFrame.widgets.powerText then return end
     local widget = state.customFrame.widgets.powerText
@@ -347,6 +371,9 @@ function UnitFrameBase.UpdatePowerText(state)
     end
 end
 
+--- Updates the portrait widget for a unit frame.
+--- Supports modes: 3D (model), 2D (texture), class (class icon).
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdatePortrait(state)
     if not state.customFrame or not state.customFrame.widgets.portrait then return end
     local widget = state.customFrame.widgets.portrait
@@ -375,6 +402,8 @@ function UnitFrameBase.UpdatePortrait(state)
     end
 end
 
+--- Updates the status indicator icons (combat, resting) for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateStatusIndicators(state)
     if not state.customFrame or not state.customFrame.widgets.statusIndicators then return end
     local widget = state.customFrame.widgets.statusIndicators
@@ -400,6 +429,8 @@ function UnitFrameBase.UpdateStatusIndicators(state)
     end
 end
 
+--- Updates the status text widget (offline, dead, ghost, AFK, DND) for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateStatusText(state)
     if not state.customFrame or not state.customFrame.widgets.statusText then return end
     local widget = state.customFrame.widgets.statusText
@@ -438,6 +469,8 @@ function UnitFrameBase.UpdateStatusText(state)
     end
 end
 
+--- Updates the raid marker icon for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateRaidMarker(state)
     if not state.customFrame or not state.customFrame.widgets.raidMarker then return end
     local widget = state.customFrame.widgets.raidMarker
@@ -453,6 +486,8 @@ function UnitFrameBase.UpdateRaidMarker(state)
     end
 end
 
+--- Updates the leader/assistant icon for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateLeaderIcon(state)
     if not state.customFrame or not state.customFrame.widgets.leaderIcon then return end
     local widget = state.customFrame.widgets.leaderIcon
@@ -474,6 +509,8 @@ function UnitFrameBase.UpdateLeaderIcon(state)
     end
 end
 
+--- Updates the role icon (tank, healer, DPS) for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateRoleIcon(state)
     if not state.customFrame or not state.customFrame.widgets.roleIcon then return end
     local widget = state.customFrame.widgets.roleIcon
@@ -493,6 +530,9 @@ function UnitFrameBase.UpdateRoleIcon(state)
     widget:Hide()
 end
 
+--- Updates the name text widget for a unit frame.
+--- Supports truncation and class coloring.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateNameText(state)
     if not state.customFrame or not state.customFrame.widgets.nameText then return end
     local widget = state.customFrame.widgets.nameText
@@ -511,6 +551,9 @@ function UnitFrameBase.UpdateNameText(state)
     end
 end
 
+--- Updates the level text widget for a unit frame.
+--- Supports difficulty coloring.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateLevelText(state)
     if not state.customFrame or not state.customFrame.widgets.levelText then return end
     local widget = state.customFrame.widgets.levelText
@@ -530,6 +573,9 @@ function UnitFrameBase.UpdateLevelText(state)
     end
 end
 
+--- Updates the castbar widget for a unit frame.
+--- Handles casting, channeling, and empowered casts with stage markers.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateCastbar(state)
     if not state.customFrame or not state.customFrame.widgets.castbar then return end
     local widget = state.customFrame.widgets.castbar
@@ -632,6 +678,9 @@ function UnitFrameBase.UpdateCastbar(state)
     widget:Show()
 end
 
+--- Updates all widgets on a unit frame.
+--- Calls individual update functions for each widget type and cascades anchor visibility.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateHealthBar(state)
     UnitFrameBase.UpdateHealthText(state)
@@ -652,6 +701,9 @@ function UnitFrameBase.UpdateAllWidgets(state)
     CascadeAnchorVisibility(state)
 end
 
+--- Updates the range-based alpha fading for a unit frame.
+--- Fades out-of-range party/raid members to 30% alpha when enabled.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateRangeAlpha(state)
     if not state.customFrame or not state.customFrame:IsShown() then return end
     if not NivUI:IsFadeOutOfRangeEnabled(state.frameType) then
@@ -662,7 +714,6 @@ function UnitFrameBase.UpdateRangeAlpha(state)
         return
     end
 
-    -- Skip for player (always in range of yourself) or non-existent units
     if UnitIsUnit(state.unit, "player") or not UnitExists(state.unit) then
         if state.rangeAlphaApplied then
             state.rangeAlphaApplied = nil
@@ -758,14 +809,24 @@ local function UpdateAuraWidget(state, widgetName, filter)
     end
 end
 
+--- Updates the buffs widget for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateBuffs(state)
     UpdateAuraWidget(state, "buffs", "HELPFUL")
 end
 
+--- Updates the debuffs widget for a unit frame.
+--- @param state table The unit frame state table
 function UnitFrameBase.UpdateDebuffs(state)
     UpdateAuraWidget(state, "debuffs", "HARMFUL")
 end
 
+--- Creates all enabled widgets for a unit frame based on its style configuration.
+--- @param parent Frame The parent frame to attach widgets to
+--- @param style table The style configuration table
+--- @param unit string The unit ID (e.g., "player", "target")
+--- @param options table|nil Optional settings: forPreview strips strata/frameLevel
+--- @return table widgets A table mapping widget type names to widget frames
 function UnitFrameBase.CreateWidgets(parent, style, unit, options)
     options = options or {}
     local WF = NivUI.WidgetFactories
@@ -800,6 +861,11 @@ function UnitFrameBase.CreateWidgets(parent, style, unit, options)
     return widgets
 end
 
+--- Applies anchor positions to all widgets based on style configuration.
+--- Widgets anchored to missing/disabled widgets will be hidden.
+--- @param parent Frame The parent frame
+--- @param widgets table The widget table from CreateWidgets
+--- @param style table The style configuration table
 function UnitFrameBase.ApplyAnchors(parent, widgets, style)
     for widgetType, widget in pairs(widgets) do
         local config = style[widgetType]
@@ -843,6 +909,9 @@ local function ClearFrameWidgets(frame)
     end
 end
 
+--- Builds or rebuilds the custom unit frame for a module.
+--- Creates the secure frame, widgets, registers events, and sets up update scripts.
+--- @param state table The unit frame state table
 function UnitFrameBase.BuildCustomFrame(state)
     local style = NivUI:GetStyleWithDefaults(state.styleName)
     if not style then
@@ -1043,6 +1112,9 @@ function UnitFrameBase.BuildCustomFrame(state)
     UnitFrameBase.CheckVisibility(state)
 end
 
+--- Checks and updates frame visibility based on visibility driver or shouldShow callback.
+--- Queues visibility changes during combat lockdown.
+--- @param state table The unit frame state table
 function UnitFrameBase.CheckVisibility(state)
     if not state.customFrame then return end
 
@@ -1074,6 +1146,9 @@ function UnitFrameBase.CheckVisibility(state)
     end
 end
 
+--- Applies any pending visibility changes that were queued during combat.
+--- Should be called on PLAYER_REGEN_ENABLED.
+--- @param state table The unit frame state table
 function UnitFrameBase.ApplyPendingVisibility(state)
     if state.effectiveVisibilityDriver then return end
     if state.pendingVisibility == nil then return end
@@ -1094,6 +1169,8 @@ function UnitFrameBase.ApplyPendingVisibility(state)
     end
 end
 
+--- Destroys a custom unit frame, cleaning up events and scripts.
+--- @param state table The unit frame state table
 function UnitFrameBase.DestroyCustomFrame(state)
     if state.customFrame then
         state.customFrame:UnregisterAllEvents()
@@ -1107,6 +1184,10 @@ function UnitFrameBase.DestroyCustomFrame(state)
     state.castbarTicking = false
 end
 
+--- Creates a new unit frame module with the given configuration.
+--- Returns a module table with Enable, Disable, Refresh, and GetState functions.
+--- @param config table Module configuration with unit, frameType, anchorFrame, etc.
+--- @return table module The created module with Enable/Disable/Refresh/GetState functions
 function UnitFrameBase.CreateModule(config)
     local state = {
         unit = config.unit,

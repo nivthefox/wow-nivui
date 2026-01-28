@@ -46,7 +46,7 @@ function NivUI.Profiles:CreateProfile(name, copyFrom)
     end
 
     if self:ProfileExists(name) then
-        return false, "Profile '" .. name .. "' already exists"
+        return false, string.format("Profile '%s' already exists", name)
     end
 
     local source = {}
@@ -55,7 +55,7 @@ function NivUI.Profiles:CreateProfile(name, copyFrom)
     end
 
     NivUI_DB.profiles[name] = source
-    print("|cff00ff00NivUI:|r Created profile '" .. name .. "'")
+    print(string.format("|cff00ff00NivUI:|r Created profile '%s'", name))
     return true
 end
 
@@ -64,7 +64,7 @@ end
 --- @return boolean success
 function NivUI.Profiles:SwitchProfile(name)
     if not self:ProfileExists(name) then
-        print("|cffff0000NivUI:|r Profile '" .. name .. "' does not exist")
+        print(string.format("|cffff0000NivUI:|r Profile '%s' does not exist", name))
         return false
     end
 
@@ -76,7 +76,7 @@ function NivUI.Profiles:SwitchProfile(name)
 
     NivUI:TriggerEvent("ProfileSwitched", { profileName = name })
 
-    print("|cff00ff00NivUI:|r Switched to profile '" .. name .. "'")
+    print(string.format("|cff00ff00NivUI:|r Switched to profile '%s'", name))
     return true
 end
 
@@ -90,7 +90,7 @@ function NivUI.Profiles:DeleteProfile(name)
     end
 
     if not self:ProfileExists(name) then
-        return false, "Profile '" .. name .. "' does not exist"
+        return false, string.format("Profile '%s' does not exist", name)
     end
 
     local count = 0
@@ -106,7 +106,7 @@ function NivUI.Profiles:DeleteProfile(name)
     end
 
     NivUI_DB.profiles[name] = nil
-    print("|cff00ff00NivUI:|r Deleted profile '" .. name .. "'")
+    print(string.format("|cff00ff00NivUI:|r Deleted profile '%s'", name))
     return true
 end
 
@@ -128,7 +128,7 @@ function NivUI.Profiles:ResetProfile(name)
         NivUI:ApplySettings()
     end
 
-    print("|cff00ff00NivUI:|r Reset profile '" .. name .. "' to defaults")
+    print(string.format("|cff00ff00NivUI:|r Reset profile '%s' to defaults", name))
     return true
 end
 
@@ -147,7 +147,7 @@ function NivUI.Profiles:CopyProfile(fromName, toName)
     end
 
     NivUI_DB.profiles[toName] = NivUI.DeepCopy(NivUI_DB.profiles[fromName])
-    print("|cff00ff00NivUI:|r Copied '" .. fromName .. "' to '" .. toName .. "'")
+    print(string.format("|cff00ff00NivUI:|r Copied '%s' to '%s'", fromName, toName))
     return true
 end
 
@@ -166,11 +166,11 @@ function NivUI.Profiles:RenameProfile(oldName, newName)
     end
 
     if not self:ProfileExists(oldName) then
-        return false, "Profile '" .. oldName .. "' does not exist"
+        return false, string.format("Profile '%s' does not exist", oldName)
     end
 
     if self:ProfileExists(newName) then
-        return false, "Profile '" .. newName .. "' already exists"
+        return false, string.format("Profile '%s' already exists", newName)
     end
 
     NivUI_DB.profiles[newName] = NivUI_DB.profiles[oldName]
@@ -195,7 +195,7 @@ function NivUI.Profiles:RenameProfile(oldName, newName)
     end
 
     NivUI:TriggerEvent("ProfileRenamed", { oldName = oldName, newName = newName })
-    print("|cff00ff00NivUI:|r Renamed profile '" .. oldName .. "' to '" .. newName .. "'")
+    print(string.format("|cff00ff00NivUI:|r Renamed profile '%s' to '%s'", oldName, newName))
     return true
 end
 
@@ -332,7 +332,7 @@ function NivUI.Profiles:CreateFromImport(name, payload)
     end
 
     NivUI_DB.profiles[name] = NivUI.DeepCopy(payload)
-    print("|cff00ff00NivUI:|r Imported profile '" .. name .. "'")
+    print(string.format("|cff00ff00NivUI:|r Imported profile '%s'", name))
     return true
 end
 
@@ -522,4 +522,3 @@ specEventFrame:SetScript("OnEvent", function(_, event, arg1)
     end
     NivUI.Profiles:ApplySpecProfileIfEnabled(event)
 end)
-

@@ -38,8 +38,8 @@ local function FormatNumber(num)
     end
 end
 
-local STAGGER_TICK_RATE = 0.5
-local STAGGER_DECAY_PER_SECOND = 0.10
+local STAGGER_TICK_RATE = 0.5          -- Seconds between stagger damage ticks
+local STAGGER_DECAY_PER_SECOND = 0.10  -- 10% of stagger pool drains per second
 
 local function GetStaggerTickDamage()
     local stagger = UnitStagger("player") or 0

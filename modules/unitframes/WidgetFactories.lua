@@ -455,7 +455,6 @@ function WF.roleIcon(parent, config, _style, unit, options)
 end
 
 function WF.castbar(parent, config, _style, _unit)
-    _unit = _unit or "player"
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
     if config.strata then frame:SetFrameStrata(config.strata) end
