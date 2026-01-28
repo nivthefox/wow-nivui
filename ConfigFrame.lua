@@ -1116,35 +1116,34 @@ unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
 unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
 table.insert(sidebarTabs, unitFramesTab)
 
-local function CreateTextAreaDialog(name, title, buttonText, onAccept, readOnly)
-    local dialog = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
+local function CreateTextAreaDialog(name, title, readOnly)
+    local dialog = CreateFrame("Frame", name, UIParent, "ButtonFrameTemplate")
     dialog:SetSize(500, 300)
     dialog:SetPoint("CENTER")
     dialog:SetFrameStrata("DIALOG")
     dialog:SetToplevel(true)
-    dialog:EnableMouse(true)
+    dialog:Hide()
+
+    ButtonFrameTemplate_HidePortrait(dialog)
+    ButtonFrameTemplate_HideButtonBar(dialog)
+    dialog.Inset:Hide()
+    dialog:SetTitle(title)
+
     dialog:SetMovable(true)
+    dialog:SetClampedToScreen(true)
+    dialog:EnableMouse(true)
     dialog:RegisterForDrag("LeftButton")
     dialog:SetScript("OnDragStart", dialog.StartMoving)
-    dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
-    dialog:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true,
-        tileSize = 32,
-        edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    })
-    dialog:Hide()
+    dialog:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        self:SetUserPlaced(false)
+    end)
+
     table.insert(UISpecialFrames, name)
 
-    local titleText = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    titleText:SetPoint("TOP", 0, -16)
-    titleText:SetText(title)
-
     local scrollFrame = CreateFrame("ScrollFrame", nil, dialog, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 20, -45)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 50)
+    scrollFrame:SetPoint("TOPLEFT", 12, -30)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -32, 50)
 
     local editBox = CreateFrame("EditBox", nil, scrollFrame)
     editBox:SetMultiLine(true)
@@ -1165,70 +1164,39 @@ local function CreateTextAreaDialog(name, title, buttonText, onAccept, readOnly)
         end)
     end
 
-    local acceptBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
-    acceptBtn:SetText(buttonText)
-    acceptBtn:SetWidth(100)
-    acceptBtn:SetPoint("BOTTOMRIGHT", dialog, "BOTTOM", -5, 15)
-    acceptBtn:SetScript("OnClick", function()
-        if onAccept then
-            onAccept(dialog, editBox:GetText())
-        end
-        dialog:Hide()
-    end)
-
-    local cancelBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
-    cancelBtn:SetText(CANCEL)
-    cancelBtn:SetWidth(100)
-    cancelBtn:SetPoint("BOTTOMLEFT", dialog, "BOTTOM", 5, 15)
-    cancelBtn:SetScript("OnClick", function() dialog:Hide() end)
-
-    dialog:SetScript("OnShow", function()
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
-    end)
-    dialog:SetScript("OnHide", function()
-        PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
-    end)
-
     return dialog
 end
 
-local exportDialog = CreateTextAreaDialog(
-    "NivUIExportDialog",
-    "Export Profile",
-    CLOSE,
-    nil,
-    true
-)
+local exportDialog = CreateTextAreaDialog("NivUIExportDialog", "Export Profile", true)
 
-local importDialog = CreateFrame("Frame", "NivUIImportDialog", UIParent, "BackdropTemplate")
+local importDialog = CreateFrame("Frame", "NivUIImportDialog", UIParent, "ButtonFrameTemplate")
 do
     local dialog = importDialog
     dialog:SetSize(500, 340)
     dialog:SetPoint("CENTER")
     dialog:SetFrameStrata("DIALOG")
     dialog:SetToplevel(true)
-    dialog:EnableMouse(true)
+    dialog:Hide()
+
+    ButtonFrameTemplate_HidePortrait(dialog)
+    ButtonFrameTemplate_HideButtonBar(dialog)
+    dialog.Inset:Hide()
+    dialog:SetTitle("Import Profile")
+
     dialog:SetMovable(true)
+    dialog:SetClampedToScreen(true)
+    dialog:EnableMouse(true)
     dialog:RegisterForDrag("LeftButton")
     dialog:SetScript("OnDragStart", dialog.StartMoving)
-    dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
-    dialog:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true,
-        tileSize = 32,
-        edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
-    })
-    dialog:Hide()
+    dialog:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        self:SetUserPlaced(false)
+    end)
+
     table.insert(UISpecialFrames, "NivUIImportDialog")
 
-    local titleText = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    titleText:SetPoint("TOP", 0, -16)
-    titleText:SetText("Import Profile")
-
     local nameLabel = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    nameLabel:SetPoint("TOPLEFT", 20, -45)
+    nameLabel:SetPoint("TOPLEFT", 12, -30)
     nameLabel:SetText("Profile Name:")
 
     local nameBox = CreateFrame("EditBox", nil, dialog, "InputBoxTemplate")
@@ -1238,8 +1206,8 @@ do
     dialog.NameBox = nameBox
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, dialog, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 20, -75)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 50)
+    scrollFrame:SetPoint("TOPLEFT", 12, -55)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -32, 50)
 
     local editBox = CreateFrame("EditBox", nil, scrollFrame)
     editBox:SetMultiLine(true)
@@ -1253,7 +1221,7 @@ do
     local acceptBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
     acceptBtn:SetText("Import")
     acceptBtn:SetWidth(100)
-    acceptBtn:SetPoint("BOTTOMRIGHT", dialog, "BOTTOM", -5, 15)
+    acceptBtn:SetPoint("BOTTOMRIGHT", dialog, "BOTTOM", -5, 12)
     acceptBtn:SetScript("OnClick", function()
         local name = nameBox:GetText()
         local text = editBox:GetText()
@@ -1278,7 +1246,7 @@ do
     local cancelBtn = CreateFrame("Button", nil, dialog, "UIPanelDynamicResizeButtonTemplate")
     cancelBtn:SetText(CANCEL)
     cancelBtn:SetWidth(100)
-    cancelBtn:SetPoint("BOTTOMLEFT", dialog, "BOTTOM", 5, 15)
+    cancelBtn:SetPoint("BOTTOMLEFT", dialog, "BOTTOM", 5, 12)
     cancelBtn:SetScript("OnClick", function() dialog:Hide() end)
 
     dialog:SetScript("OnShow", function()
