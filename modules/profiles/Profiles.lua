@@ -62,10 +62,10 @@ end
 --- Switches to the specified profile.
 --- @param name string The profile name to switch to
 --- @return boolean success
+--- @return string|nil errorMessage
 function NivUI.Profiles:SwitchProfile(name)
     if not self:ProfileExists(name) then
-        print(string.format("|cffff0000NivUI:|r Profile '%s' does not exist", name))
-        return false
+        return false, string.format("Profile '%s' does not exist", name)
     end
 
     NivUI_CurrentProfile = name
@@ -508,7 +508,10 @@ function NivUI.Profiles:ApplySpecProfileIfEnabled(_reason)
         if self:GetCurrentProfileName() == profileName then
             return
         end
-        self:SwitchProfile(profileName)
+        local success, err = self:SwitchProfile(profileName)
+        if not success and err then
+            print("|cffff0000NivUI:|r " .. err)
+        end
     end)
 end
 

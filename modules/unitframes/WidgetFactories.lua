@@ -56,7 +56,7 @@ function WF.healthBar(parent, config, _style, unit)
 
     local health = UnitHealth(unit)
     local maxHealth = UnitHealthMax(unit)
-    if issecretvalue(maxHealth) or (maxHealth and maxHealth > 0) then
+    if maxHealth and (issecretvalue(maxHealth) or maxHealth > 0) then
         frame:SetMinMaxValues(0, maxHealth)
         frame:SetValue(health)
     else
@@ -116,7 +116,7 @@ function WF.powerBar(parent, config, _style, unit)
     local powerType = UnitPowerType(unit)
     local power = UnitPower(unit, powerType)
     local maxPower = UnitPowerMax(unit, powerType)
-    if issecretvalue(maxPower) or (maxPower and maxPower > 0) then
+    if maxPower and (issecretvalue(maxPower) or maxPower > 0) then
         frame:SetMinMaxValues(0, maxPower)
         frame:SetValue(power)
     else
@@ -249,13 +249,7 @@ function WF.healthText(parent, config, _style, unit)
     local maxHealth = UnitHealthMax(unit)
     local text = ""
 
-    local pct = nil
-    if UnitHealthPercent then
-        local ok, result = pcall(UnitHealthPercent, unit)
-        if ok and result then
-            pct = result
-        end
-    end
+    local pct = UnitHealthPercent and UnitHealthPercent(unit) or nil
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local healthStr = health ~= nil and abbrev(health) or "71000"
@@ -292,13 +286,7 @@ function WF.powerText(parent, config, _style, unit)
     local maxPower = UnitPowerMax(unit, powerType)
     local text = ""
 
-    local pct = nil
-    if UnitPowerPercent then
-        local ok, result = pcall(UnitPowerPercent, unit, powerType)
-        if ok and result then
-            pct = result
-        end
-    end
+    local pct = UnitPowerPercent and UnitPowerPercent(unit, powerType) or nil
 
     local abbrev = AbbreviateLargeNumbers or AbbreviateNumbers or tostring
     local powerStr = power ~= nil and abbrev(power) or "80"

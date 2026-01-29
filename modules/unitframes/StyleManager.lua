@@ -591,6 +591,19 @@ function NivUI:SetFadeOutOfRange(frameType, enabled)
     self:TriggerEvent("FadeOutOfRangeChanged", { frameType = frameType, enabled = enabled })
 end
 
+--- Returns the alpha value for out-of-range units.
+--- @return number alpha The alpha value (0-1) for out-of-range units
+function NivUI:GetOutOfRangeAlpha()
+    return NivUI.current.outOfRangeAlpha or 0.3
+end
+
+--- Sets the alpha value for out-of-range units.
+--- @param alpha number The alpha value (0-1)
+function NivUI:SetOutOfRangeAlpha(alpha)
+    NivUI.current.outOfRangeAlpha = alpha
+    self:TriggerEvent("OutOfRangeAlphaChanged", { alpha = alpha })
+end
+
 local function GenerateCustomRaidGroupId()
     return "custom_" .. time() .. "_" .. math.random(1000, 9999)
 end

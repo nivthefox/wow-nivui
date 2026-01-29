@@ -24,42 +24,26 @@ function NivUI.SegmentedBarBase.CreateModule(config)
         return NivUI[defaultsKey][key]
     end
 
-    local function SafeGetPower()
-        local ok, power = pcall(UnitPower, "player", powerType)
-        if not ok then
-            return nil
-        end
-        return power
+    local function GetPower()
+        return UnitPower("player", powerType)
     end
 
-    local function SafeGetMaxPower()
-        local ok, maxPower = pcall(UnitPowerMax, "player", powerType)
-        if not ok then
-            return nil
-        end
-        return maxPower
+    local function GetMaxPower()
+        return UnitPowerMax("player", powerType)
     end
 
-    local function SafeGetPartialPower()
+    local function GetPartialPower()
         if not supportsPartialFill then
             return 0
         end
-        local ok, partial = pcall(UnitPartialPower, "player", powerType)
-        if not ok then
-            return 0
-        end
-        return partial or 0
+        return UnitPartialPower("player", powerType) or 0
     end
 
-    local function SafeIsActive(index, power)
+    local function IsActive(index, power)
         if power == nil then
             return false
         end
-        local ok, result = pcall(function() return index <= power end)
-        if not ok then
-            return false
-        end
-        return result
+        return index <= power
     end
 
     local UpdateVisibility
@@ -253,7 +237,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
             end
             wipe(self.segments)
 
-            local maxPower = SafeGetMaxPower() or 5
+            local maxPower = GetMaxPower() or 5
             local width = self:GetWidth()
             local height = self:GetHeight()
             local spacing = GetSetting("spacing")
@@ -290,8 +274,8 @@ function NivUI.SegmentedBarBase.CreateModule(config)
 
         if supportsPartialFill then
             function frame:UpdateSegments()
-                local power = SafeGetPower()
-                local maxPower = SafeGetMaxPower()
+                local power = GetPower()
+                local maxPower = GetMaxPower()
 
                 if power == nil or maxPower == nil then
                     for _, seg in ipairs(self.segments) do
@@ -304,11 +288,11 @@ function NivUI.SegmentedBarBase.CreateModule(config)
                     self:RebuildSegments()
                 end
 
-                local partialPower = SafeGetPartialPower()
+                local partialPower = GetPartialPower()
                 local fillingIndex = power + 1
 
                 for i, seg in ipairs(self.segments) do
-                    local isFull = SafeIsActive(i, power)
+                    local isFull = IsActive(i, power)
                     local isFilling = (i == fillingIndex) and (fillingIndex <= maxPower)
 
                     if isFull then
@@ -333,8 +317,8 @@ function NivUI.SegmentedBarBase.CreateModule(config)
             end
         else
             function frame:UpdateSegments()
-                local power = SafeGetPower()
-                local maxPower = SafeGetMaxPower()
+                local power = GetPower()
+                local maxPower = GetMaxPower()
 
                 if power == nil or maxPower == nil then
                     for _, seg in ipairs(self.segments) do
@@ -348,7 +332,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
                 end
 
                 for i, seg in ipairs(self.segments) do
-                    local shouldBeActive = SafeIsActive(i, power)
+                    local shouldBeActive = IsActive(i, power)
                     if shouldBeActive ~= seg.active then
                         seg.active = shouldBeActive
                         if shouldBeActive then

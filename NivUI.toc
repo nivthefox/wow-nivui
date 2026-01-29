@@ -33,4 +33,6 @@ modules/unitframes/BossFrame.lua
 modules/unitframes/ArenaFrame.lua
 modules/unitframes/RaidFrame.lua
 modules/unitframes/CustomRaidGroup.lua
+config/Bars.lua
+config/Profiles.lua
 ConfigFrame.lua

@@ -20,6 +20,17 @@ local function GetWidgetConfig(state, widgetName)
     return config
 end
 
+local CASTBAR_EVENTS = {
+    UNIT_SPELLCAST_START = true,
+    UNIT_SPELLCAST_STOP = true,
+    UNIT_SPELLCAST_FAILED = true,
+    UNIT_SPELLCAST_INTERRUPTED = true,
+    UNIT_SPELLCAST_SUCCEEDED = true,
+    UNIT_SPELLCAST_CHANNEL_START = true,
+    UNIT_SPELLCAST_CHANNEL_STOP = true,
+    UNIT_SPELLCAST_CHANNEL_UPDATE = true,
+}
+
 --- Hides all regions attached to a frame by setting alpha to 0 and hiding them.
 --- @param frame Frame|nil The frame whose regions should be hidden
 function UnitFrameBase.HideRegions(frame)
@@ -702,7 +713,7 @@ function UnitFrameBase.UpdateAllWidgets(state)
 end
 
 --- Updates the range-based alpha fading for a unit frame.
---- Fades out-of-range party/raid members to 30% alpha when enabled.
+--- Fades out-of-range party/raid members to the configured alpha when enabled.
 --- @param state table The unit frame state table
 function UnitFrameBase.UpdateRangeAlpha(state)
     if not state.customFrame or not state.customFrame:IsShown() then return end
@@ -734,7 +745,8 @@ function UnitFrameBase.UpdateRangeAlpha(state)
     end
 
     local inRange = UnitInRange(state.unit)
-    state.customFrame:SetAlphaFromBoolean(inRange, 1, 0.3)
+    local outOfRangeAlpha = NivUI:GetOutOfRangeAlpha()
+    state.customFrame:SetAlphaFromBoolean(inRange, 1, outOfRangeAlpha)
     state.rangeAlphaApplied = true
 end
 
@@ -759,7 +771,9 @@ local function UpdateAuraWidget(state, widgetName, filter)
     local highlightDispellable = (widgetName == "debuffs") and config.highlightDispellable
     local dispellableColor = config.dispellableColor
 
-    local auras = {}
+    state.auraCache = state.auraCache or {}
+    wipe(state.auraCache)
+    local auras = state.auraCache
     local all = C_UnitAuras.GetUnitAuras(unit, filter) or {}
     for _, aura in ipairs(all) do
         local include = true
@@ -1056,7 +1070,7 @@ function UnitFrameBase.BuildCustomFrame(state)
                 UnitFrameBase.UpdateLeaderIcon(state)
             elseif event == "PLAYER_ROLES_ASSIGNED" then
                 UnitFrameBase.UpdateRoleIcon(state)
-            elseif event:find("SPELLCAST") then
+            elseif CASTBAR_EVENTS[event] then
                 UnitFrameBase.UpdateCastbar(state)
             elseif event == "UNIT_AURA" then
                 UnitFrameBase.UpdateBuffs(state)
