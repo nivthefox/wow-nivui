@@ -760,6 +760,28 @@ local function SafeNumber(v)
     return tonumber(s)
 end
 
+--- Check if a secret string represents true (secret-safe via string.byte).
+--- @param s string The string to check (may be secret)
+--- @return boolean True if the string represents "true" or "1"
+local function SecretStringIsTrue(s)
+    if s == nil then return false end
+    local ok1, b1 = pcall(string.byte, s, 1)
+    if not ok1 or b1 == nil then return false end
+    -- "1" (ASCII 49)
+    if b1 == 49 then return true end
+    -- "true" / "True" (t=116/84, r=114/82, u=117/85, e=101/69)
+    if b1 ~= 116 and b1 ~= 84 then return false end
+    local ok2, b2 = pcall(string.byte, s, 2)
+    local ok3, b3 = pcall(string.byte, s, 3)
+    local ok4, b4 = pcall(string.byte, s, 4)
+    if not ok2 or not ok3 or not ok4 then return false end
+    if b2 == nil or b3 == nil or b4 == nil then return false end
+    local is_r = (b2 == 114) or (b2 == 82)
+    local is_u = (b3 == 117) or (b3 == 85)
+    local is_e = (b4 == 101) or (b4 == 69)
+    return is_r and is_u and is_e
+end
+
 --- Check if an aura has an expiration time (secret-safe).
 --- @param unit string The unit ID
 --- @param auraInstanceID number The aura instance ID
@@ -772,7 +794,7 @@ local function AuraHasExpiration(unit, auraInstanceID)
     if not ok then return true end
     local okStr, str = pcall(tostring, result)
     if not okStr then return true end
-    return str == "true" or str == "1"
+    return SecretStringIsTrue(str)
 end
 
 --- Set cooldown from aura duration object (secret-safe).
