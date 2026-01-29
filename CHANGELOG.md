@@ -5,7 +5,7 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.4.0) - 2026-01-28
 
 ### Added
 
@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Absorb shield overlay on health bars
 - Status text overlay showing AFK, DND, Dead, Ghost, and Offline states
 - Range fading for party and raid frames when members are out of range
-- 
+
 ### Changed
 
 - Added visual padding between config panel tabs and content for better readability
