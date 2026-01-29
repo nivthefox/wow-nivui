@@ -750,6 +750,55 @@ function UnitFrameBase.UpdateRangeAlpha(state)
     state.rangeAlphaApplied = true
 end
 
+--- Safely extract a number from a potentially secret value.
+--- @param v any The value to extract a number from
+--- @return number|nil The extracted number, or nil if extraction failed
+local function SafeNumber(v)
+    if v == nil then return nil end
+    local ok, s = pcall(tostring, v)
+    if not ok then return nil end
+    return tonumber(s)
+end
+
+--- Check if an aura has an expiration time (secret-safe).
+--- @param unit string The unit ID
+--- @param auraInstanceID number The aura instance ID
+--- @return boolean True if the aura has an expiration time
+local function AuraHasExpiration(unit, auraInstanceID)
+    if not C_UnitAuras or not C_UnitAuras.DoesAuraHaveExpirationTime then
+        return true
+    end
+    local ok, result = pcall(C_UnitAuras.DoesAuraHaveExpirationTime, unit, auraInstanceID)
+    if not ok then return true end
+    local okStr, str = pcall(tostring, result)
+    if not okStr then return true end
+    return str == "true" or str == "1"
+end
+
+--- Set cooldown from aura duration object (secret-safe).
+--- @param icon Frame The icon frame with a cooldown child
+--- @param unit string The unit ID
+--- @param auraInstanceID number The aura instance ID
+--- @return boolean True if cooldown was successfully set
+local function SetCooldownFromAura(icon, unit, auraInstanceID)
+    if not icon.cooldown then return false end
+    if not C_UnitAuras or not C_UnitAuras.GetAuraDuration then
+        pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
+        return false
+    end
+    local ok, durationObj = pcall(C_UnitAuras.GetAuraDuration, unit, auraInstanceID)
+    if not ok or not durationObj then
+        pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
+        return false
+    end
+    if icon.cooldown.SetCooldownFromDurationObject then
+        local setOk = pcall(icon.cooldown.SetCooldownFromDurationObject, icon.cooldown, durationObj)
+        return setOk
+    end
+    pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
+    return false
+end
+
 local function UpdateAuraWidget(state, widgetName, filter)
     if not state.customFrame or not state.customFrame.widgets then return end
     local widget = state.customFrame.widgets[widgetName]
@@ -791,19 +840,20 @@ local function UpdateAuraWidget(state, widgetName, filter)
         if aura then
             icon.texture:SetTexture(aura.icon)
 
-            if showDuration and aura.expirationTime and aura.expirationTime > 0 then
-                local remaining = aura.expirationTime - GetTime()
-                if remaining > 0 then
-                    icon.duration:SetFormattedText("%.0f", remaining)
+            if icon.cooldown then
+                local auraInstanceID = aura.auraInstanceID
+                if showDuration and auraInstanceID and AuraHasExpiration(unit, auraInstanceID) then
+                    SetCooldownFromAura(icon, unit, auraInstanceID)
+                    icon.cooldown:SetHideCountdownNumbers(false)
                 else
-                    icon.duration:SetText("")
+                    pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
+                    icon.cooldown:SetHideCountdownNumbers(true)
                 end
-            else
-                icon.duration:SetText("")
             end
 
-            if showStacks and aura.applications and aura.applications > 1 then
-                icon.stacks:SetText(aura.applications)
+            local nApps = SafeNumber(aura.applications)
+            if showStacks and nApps and nApps > 1 then
+                icon.stacks:SetText(nApps)
             else
                 icon.stacks:SetText("")
             end
@@ -818,6 +868,9 @@ local function UpdateAuraWidget(state, widgetName, filter)
             icon.auraInstanceID = aura.auraInstanceID
             icon:Show()
         else
+            if icon.cooldown then
+                pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
+            end
             icon:Hide()
         end
     end

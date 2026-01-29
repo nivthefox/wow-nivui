@@ -41,6 +41,8 @@ read_globals = {
 	"UnitCastingDuration",
 	"C_UnitAuras.GetAuraDurationRemaining",
 	"C_UnitAuras.GetAuraApplicationDisplayCount",
+	"C_UnitAuras.DoesAuraHaveExpirationTime",
+	"C_UnitAuras.GetAuraDuration",
 	"Enum.UnitAuraSortRule.Default",
 	"Enum.UnitAuraSortRule.Expiration",
 	"Enum.UnitAuraSortOrder.Ascending",

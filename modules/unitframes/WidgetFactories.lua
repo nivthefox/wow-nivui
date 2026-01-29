@@ -641,8 +641,10 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
         icon.texture = icon:CreateTexture(nil, "ARTWORK")
         icon.texture:SetAllPoints()
 
-        icon.duration = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        icon.duration:SetPoint("BOTTOM", 0, -2)
+        icon.cooldown = CreateFrame("Cooldown", nil, icon, "CooldownFrameTemplate")
+        icon.cooldown:SetAllPoints()
+        icon.cooldown:SetDrawEdge(false)
+        icon.cooldown:SetHideCountdownNumbers(not config.showDuration)
 
         icon.stacks = icon:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         icon.stacks:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -681,10 +683,11 @@ local function PopulateTestAuras(frame, testAuras)
     for i, icon in ipairs(frame.icons) do
         if i <= #testAuras then
             icon.texture:SetTexture(testAuras[i])
-            if config.showDuration then
-                icon.duration:SetText(math.random(5, 30) .. "s")
-            else
-                icon.duration:SetText("")
+            if config.showDuration and icon.cooldown then
+                local fakeDuration = math.random(10, 60)
+                icon.cooldown:SetCooldown(GetTime(), fakeDuration)
+            elseif icon.cooldown then
+                icon.cooldown:SetCooldown(0, 0)
             end
             if config.showStacks and math.random() > 0.5 then
                 icon.stacks:SetText(math.random(2, 5))
