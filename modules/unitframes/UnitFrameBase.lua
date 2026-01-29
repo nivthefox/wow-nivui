@@ -725,7 +725,11 @@ function UnitFrameBase.UpdateRangeAlpha(state)
         return
     end
 
-    if UnitIsUnit(state.unit, "player") or not UnitExists(state.unit) then
+    local unit = state.unit
+    local isPartyUnit = unit:match("^party%d+$")
+    local isRaidUnit = unit:match("^raid%d+$")
+
+    if not isPartyUnit and not isRaidUnit then
         if state.rangeAlphaApplied then
             state.rangeAlphaApplied = nil
             state.customFrame:SetAlpha(1)
@@ -733,18 +737,7 @@ function UnitFrameBase.UpdateRangeAlpha(state)
         return
     end
 
-    -- UnitInRange only works for party/raid members. For other units (target, focus,
-    -- boss, etc.) we can't reliably check range, so skip fading entirely.
-    -- UnitInParty/UnitInRaid are group membership checks (not secret values).
-    if not UnitInParty(state.unit) and not UnitInRaid(state.unit) then
-        if state.rangeAlphaApplied then
-            state.rangeAlphaApplied = nil
-            state.customFrame:SetAlpha(1)
-        end
-        return
-    end
-
-    local inRange = UnitInRange(state.unit)
+    local inRange = UnitInRange(unit)
     local outOfRangeAlpha = NivUI:GetOutOfRangeAlpha()
     state.customFrame:SetAlphaFromBoolean(inRange, 1, outOfRangeAlpha)
     state.rangeAlphaApplied = true
