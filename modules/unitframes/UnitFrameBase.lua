@@ -154,11 +154,30 @@ function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
     return HideBlizzardFrame
 end
 
+--- Pending visibility changes to apply when combat ends.
+--- @type table<Frame, boolean>
+local pendingVisibility = {}
+
+--- Helper frame for deferring secure calls until combat ends.
+local combatDeferFrame = CreateFrame("Frame")
+combatDeferFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+combatDeferFrame:SetScript("OnEvent", function()
+    for frame, visible in pairs(pendingVisibility) do
+        RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
+    end
+    wipe(pendingVisibility)
+end)
+
 --- Sets secure visibility for a frame using a state driver.
+--- Defers the call if currently in combat.
 --- @param frame Frame|nil The frame to control visibility for
 --- @param visible boolean Whether the frame should be visible
 function UnitFrameBase.SetSecureVisibility(frame, visible)
     if not frame then return end
+    if InCombatLockdown() then
+        pendingVisibility[frame] = visible
+        return
+    end
     RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
 end
 
