@@ -21,43 +21,6 @@ local function GetDisplayUnit()
     return "target"
 end
 
-local function OpenTargetMenu()
-    local which
-    if UnitIsUnit("target", "player") then
-        which = "SELF"
-    elseif UnitIsUnit("target", "vehicle") then
-        which = "VEHICLE"
-    elseif UnitIsUnit("target", "pet") then
-        which = "PET"
-    elseif UnitIsOtherPlayersBattlePet("target") then
-        which = "OTHERBATTLEPET"
-    elseif UnitIsOtherPlayersPet("target") then
-        which = "OTHERPET"
-    elseif UnitIsPlayer("target") then
-        if UnitInRaid("target") then
-            which = "RAID_PLAYER"
-        elseif UnitInParty("target") then
-            which = "PARTY"
-        else
-            if UnitCanCooperate("player", "target") then
-                which = "PLAYER"
-            else
-                which = "ENEMY_PLAYER"
-            end
-        end
-    else
-        which = "TARGET"
-    end
-
-    if which then
-        local contextData = {
-            fromTargetFrame = true,
-            unit = "target",
-        }
-        UnitPopup_OpenMenu(which, contextData)
-    end
-end
-
 NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     unit = "target",
     frameType = "target",
@@ -74,9 +37,6 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
         frame:RegisterEvent("PLAYER_SOFT_FRIEND_CHANGED")
 
         RegisterAttributeDriver(frame, "unit", "[@target,exists] target; [@softenemy,exists] softenemy; [@softfriend,exists] softfriend; target")
-
-        frame:SetAttribute("type2", "menu")
-        frame:SetAttribute("menu-function", OpenTargetMenu)
     end,
 
     preUpdate = function(state, _elapsed)
