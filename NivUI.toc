@@ -18,6 +18,7 @@ modules/bars/HolyPowerBar.lua
 modules/bars/SoulShardsBar.lua
 modules/bars/ArcaneChargesBar.lua
 modules/bars/RuneBar.lua
+modules/bars/IgnorePainBar.lua
 modules/unitframes/Defaults.lua
 modules/unitframes/StyleManager.lua
 modules/unitframes/WidgetConfigs.lua
