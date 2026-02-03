@@ -5,6 +5,12 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2](https://github.com/nivthefox/wow-nivui/releases/tag/v1.4.2) - 2026-02-02
+
+### Fixed
+
+- Raid markers on party, raid, and boss frames now update immediately when assigned or removed
+
 ## [1.4.1](https://github.com/nivthefox/wow-nivui/releases/tag/v1.4.1) - 2026-01-29
 
 ### Fixed
