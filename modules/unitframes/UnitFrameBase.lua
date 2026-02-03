@@ -123,6 +123,7 @@ function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
             if not state.aurasHooked and blizzardFrame.UpdateAuras then
                 state.aurasHooked = true
                 hooksecurefunc(blizzardFrame, "UpdateAuras", function(f)
+                    if f ~= blizzardFrame then return end
                     if f.auraPools and f.auraPools.ReleaseAll then
                         f.auraPools:ReleaseAll()
                     end
