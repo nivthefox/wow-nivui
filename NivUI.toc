@@ -13,6 +13,11 @@ modules/bars/SegmentedBarBase.lua
 modules/bars/StaggerBar.lua
 modules/bars/ChiBar.lua
 modules/bars/EssenceBar.lua
+modules/bars/ComboPointsBar.lua
+modules/bars/HolyPowerBar.lua
+modules/bars/SoulShardsBar.lua
+modules/bars/ArcaneChargesBar.lua
+modules/bars/RuneBar.lua
 modules/unitframes/Defaults.lua
 modules/unitframes/StyleManager.lua
 modules/unitframes/WidgetConfigs.lua

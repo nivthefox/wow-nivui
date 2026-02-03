@@ -5,6 +5,16 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Combo Points bar for Rogue and Feral Druid
+- Holy Power bar for Paladin
+- Soul Shards bar for Warlock
+- Arcane Charges bar for Arcane Mage
+- Rune bar for Death Knight with cooldown tracking
+
 ## [1.4.3](https://github.com/nivthefox/wow-nivui/releases/tag/v1.4.3) - 2026-02-02
 
 ### Fixed
