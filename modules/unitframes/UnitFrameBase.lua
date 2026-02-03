@@ -120,9 +120,13 @@ function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
 
         if hasAuras and blizzardFrame.auraPools then
             blizzardFrame.auraPools:ReleaseAll()
-            if not state.aurasDisabled then
-                state.aurasDisabled = true
-                blizzardFrame.UpdateAuras = function() end
+            if not state.aurasHooked and blizzardFrame.UpdateAuras then
+                state.aurasHooked = true
+                hooksecurefunc(blizzardFrame, "UpdateAuras", function(f)
+                    if f.auraPools and f.auraPools.ReleaseAll then
+                        f.auraPools:ReleaseAll()
+                    end
+                end)
             end
         end
 
