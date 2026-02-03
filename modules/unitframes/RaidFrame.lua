@@ -388,6 +388,7 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
     frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
     frame:RegisterUnitEvent("UNIT_FLAGS", unit)
     frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
+    frame:RegisterEvent("RAID_TARGET_UPDATE")
 
     frame:SetScript("OnEvent", function(self, event, _eventUnit)
         if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
@@ -411,6 +412,8 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
             Base.UpdateStatusText(memberState)
         elseif event:find("SPELLCAST") then
             Base.UpdateCastbar(memberState)
+        elseif event == "RAID_TARGET_UPDATE" then
+            Base.UpdateRaidMarker(memberState)
         end
     end)
 
