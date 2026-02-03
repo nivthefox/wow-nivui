@@ -490,218 +490,6 @@ end
 
 NivUI.Config.Bars.SectionHandlers = SectionHandlers
 
---- Configuration table for the Stagger Bar config panel.
-local staggerBarConfig = {
-    barType = "stagger",
-    displayName = "Stagger Bar",
-    dbKey = "staggerBar",
-    defaults = NivUI.staggerBarDefaults,
-    contentHeight = 900,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applySetting = "visibility" },
-        { type = "header", text = "Appearance" },
-        { type = "fgTexture", applySetting = "barTexture" },
-        { type = "bgTexture", applySetting = "background" },
-        { type = "bgColor", applySetting = "background" },
-        { type = "borderDropdown", applySetting = "border" },
-        { type = "borderColor", applySetting = "border" },
-        { type = "header", text = "Stagger Colors" },
-        { type = "color", nestedKey = "colors", key = "light", label = "Light:" },
-        { type = "color", nestedKey = "colors", key = "moderate", label = "Moderate:" },
-        { type = "color", nestedKey = "colors", key = "heavy", label = "Heavy:" },
-        { type = "color", nestedKey = "colors", key = "extreme", label = "Extreme:" },
-        { type = "header", text = "Text" },
-        { type = "fontDropdown", applySetting = "font" },
-        { type = "fontSizeSlider", applySetting = "font" },
-        { type = "fontColor", applySetting = "font" },
-        { type = "fontShadow", applySetting = "font" },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applySetting = "locked" },
-        { type = "widthSlider", applySetting = "position" },
-        { type = "heightSlider", applySetting = "position" },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Chi Bar config panel.
-local chiBarConfig = {
-    barType = "chi",
-    displayName = "Chi Bar",
-    dbKey = "chiBar",
-    defaults = NivUI.chiBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.ChiBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.ChiBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.ChiBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.ChiBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.ChiBar_ApplyLockState() end },
-        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.ChiBar_LoadPosition() end, rebuildFunc = function() if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.ChiBar_LoadPosition() end, rebuildFunc = function() if NivUI.ChiBar then NivUI.ChiBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Essence Bar config panel.
-local essenceBarConfig = {
-    barType = "essence",
-    displayName = "Essence Bar",
-    dbKey = "essenceBar",
-    defaults = NivUI.essenceBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.EssenceBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.EssenceBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.EssenceBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.EssenceBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.EssenceBar_ApplyLockState() end },
-        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.EssenceBar_LoadPosition() end, rebuildFunc = function() if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.EssenceBar_LoadPosition() end, rebuildFunc = function() if NivUI.EssenceBar then NivUI.EssenceBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Combo Points Bar config panel.
-local comboPointsBarConfig = {
-    barType = "comboPoints",
-    displayName = "Combo Points Bar",
-    dbKey = "comboPointsBar",
-    defaults = NivUI.comboPointsBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.ComboPointsBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.ComboPointsBar then NivUI.ComboPointsBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.ComboPointsBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.ComboPointsBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.ComboPointsBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.ComboPointsBar_ApplyLockState() end },
-        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.ComboPointsBar_LoadPosition() end, rebuildFunc = function() if NivUI.ComboPointsBar then NivUI.ComboPointsBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.ComboPointsBar_LoadPosition() end, rebuildFunc = function() if NivUI.ComboPointsBar then NivUI.ComboPointsBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Holy Power Bar config panel.
-local holyPowerBarConfig = {
-    barType = "holyPower",
-    displayName = "Holy Power Bar",
-    dbKey = "holyPowerBar",
-    defaults = NivUI.holyPowerBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.HolyPowerBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.HolyPowerBar then NivUI.HolyPowerBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.HolyPowerBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.HolyPowerBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.HolyPowerBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.HolyPowerBar_ApplyLockState() end },
-        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.HolyPowerBar_LoadPosition() end, rebuildFunc = function() if NivUI.HolyPowerBar then NivUI.HolyPowerBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.HolyPowerBar_LoadPosition() end, rebuildFunc = function() if NivUI.HolyPowerBar then NivUI.HolyPowerBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Soul Shards Bar config panel.
-local soulShardsBarConfig = {
-    barType = "soulShards",
-    displayName = "Soul Shards Bar",
-    dbKey = "soulShardsBar",
-    defaults = NivUI.soulShardsBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.SoulShardsBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.SoulShardsBar then NivUI.SoulShardsBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.SoulShardsBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.SoulShardsBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.SoulShardsBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.SoulShardsBar_ApplyLockState() end },
-        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.SoulShardsBar_LoadPosition() end, rebuildFunc = function() if NivUI.SoulShardsBar then NivUI.SoulShardsBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.SoulShardsBar_LoadPosition() end, rebuildFunc = function() if NivUI.SoulShardsBar then NivUI.SoulShardsBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Arcane Charges Bar config panel.
-local arcaneChargesBarConfig = {
-    barType = "arcaneCharges",
-    displayName = "Arcane Charges Bar",
-    dbKey = "arcaneChargesBar",
-    defaults = NivUI.arcaneChargesBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.ArcaneChargesBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.ArcaneChargesBar then NivUI.ArcaneChargesBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.ArcaneChargesBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.ArcaneChargesBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.ArcaneChargesBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.ArcaneChargesBar_ApplyLockState() end },
-        { type = "widthSlider", min = 60, max = 400, applyFunc = function() NivUI.ArcaneChargesBar_LoadPosition() end, rebuildFunc = function() if NivUI.ArcaneChargesBar then NivUI.ArcaneChargesBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.ArcaneChargesBar_LoadPosition() end, rebuildFunc = function() if NivUI.ArcaneChargesBar then NivUI.ArcaneChargesBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
---- Configuration table for the Rune Bar config panel.
-local runeBarConfig = {
-    barType = "rune",
-    displayName = "Rune Bar",
-    dbKey = "runeBar",
-    defaults = NivUI.runeBarDefaults,
-    contentHeight = 500,
-    sections = {
-        { type = "enable" },
-        { type = "header", text = "General" },
-        { type = "visibility", applyFunc = function() NivUI.RuneBar_UpdateVisibility() end },
-        { type = "header", text = "Appearance" },
-        { type = "spacingSlider", rebuildFunc = function() if NivUI.RuneBar then NivUI.RuneBar:RebuildSegments() end end },
-        { type = "emptyColor", applyFunc = function() NivUI.RuneBar_ApplyColors() end },
-        { type = "filledColor", applyFunc = function() NivUI.RuneBar_ApplyColors() end },
-        { type = "borderColor", applyFunc = function() NivUI.RuneBar_ApplyBorder() end },
-        { type = "header", text = "Position" },
-        { type = "lockedCheckbox", applyFunc = function() NivUI.RuneBar_ApplyLockState() end },
-        { type = "widthSlider", min = 120, max = 480, applyFunc = function() NivUI.RuneBar_LoadPosition() end, rebuildFunc = function() if NivUI.RuneBar then NivUI.RuneBar:RebuildSegments() end end },
-        { type = "heightSlider", applyFunc = function() NivUI.RuneBar_LoadPosition() end, rebuildFunc = function() if NivUI.RuneBar then NivUI.RuneBar:RebuildSegments() end end },
-        { type = "intervalSlider" },
-    },
-}
-
-NivUI.Config.Bars.staggerBarConfig = staggerBarConfig
-NivUI.Config.Bars.chiBarConfig = chiBarConfig
-NivUI.Config.Bars.essenceBarConfig = essenceBarConfig
-NivUI.Config.Bars.comboPointsBarConfig = comboPointsBarConfig
-NivUI.Config.Bars.holyPowerBarConfig = holyPowerBarConfig
-NivUI.Config.Bars.soulShardsBarConfig = soulShardsBarConfig
-NivUI.Config.Bars.arcaneChargesBarConfig = arcaneChargesBarConfig
-NivUI.Config.Bars.runeBarConfig = runeBarConfig
-
 --- Factory function to build a class bar configuration panel.
 --- @param parent Frame The parent frame to attach the config panel to.
 --- @param config table Configuration table
@@ -767,11 +555,60 @@ function NivUI.Config.Bars.BuildClassBarConfig(parent, config, Components)
     }
 end
 
+--- Auto-wires apply functions for config sections based on globalRef
+--- @param sections table The sections array from the registration config
+--- @param globalRef string The global reference name (e.g., "ChiBar")
+local function AutoWireSections(sections, globalRef)
+    for _, section in ipairs(sections) do
+        -- Wire applyFunc if not already set
+        if not section.applyFunc and not section.applySetting then
+            if section.type == "visibility" then
+                section.applyFunc = function()
+                    local fn = NivUI[globalRef .. "_UpdateVisibility"]
+                    if fn then fn() end
+                end
+            elseif section.type == "emptyColor" or section.type == "filledColor" then
+                section.applyFunc = function()
+                    local fn = NivUI[globalRef .. "_ApplyColors"]
+                    if fn then fn() end
+                end
+            elseif section.type == "borderColor" then
+                section.applyFunc = function()
+                    local fn = NivUI[globalRef .. "_ApplyBorder"]
+                    if fn then fn() end
+                end
+            elseif section.type == "lockedCheckbox" then
+                section.applyFunc = function()
+                    local fn = NivUI[globalRef .. "_ApplyLockState"]
+                    if fn then fn() end
+                end
+            elseif section.type == "widthSlider" or section.type == "heightSlider" then
+                section.applyFunc = function()
+                    local fn = NivUI[globalRef .. "_LoadPosition"]
+                    if fn then fn() end
+                end
+            end
+        end
+
+        -- Auto-wire rebuildFunc for sliders that affect segments
+        if not section.rebuildFunc then
+            if section.type == "spacingSlider" or section.type == "widthSlider" or section.type == "heightSlider" then
+                section.rebuildFunc = function()
+                    local frame = NivUI[globalRef]
+                    if frame and frame.RebuildSegments then
+                        frame:RebuildSegments()
+                    end
+                end
+            end
+        end
+    end
+end
+
 --- Sets up the Class Bars tab with subtabs for each bar type.
 --- @param ContentArea Frame The content area frame
 --- @param Components table The Components table from ConfigFrame
 --- @return Frame container The tab container
---- @return table results Table with stagger, chi, essence results for OnBarMoved
+--- @return table results Table keyed by barType for OnBarMoved
 function NivUI.Config.Bars.SetupTab(ContentArea, Components)
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
@@ -779,7 +616,9 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
 
     local subTabs = {}
     local subTabContainers = {}
+    local results = {}
     local currentSubTab = 1
+    local prevTab = nil
 
     local function SelectSubTab(index)
         for i, tab in ipairs(subTabs) do
@@ -794,176 +633,73 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
         currentSubTab = index
     end
 
-    local staggerResult = NivUI.Config.Bars.BuildClassBarConfig(container, staggerBarConfig, Components)
-    staggerResult.container:SetPoint("TOPLEFT", 0, -42)
-    staggerResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, staggerResult.container)
+    local tabIndex = 0
+    for _, regConfig in ipairs(NivUI:GetRegisteredClassBars()) do
+        tabIndex = tabIndex + 1
 
-    local staggerTab = Components.GetTab(container, "Stagger")
-    staggerTab:SetPoint("TOPLEFT", 0, 0)
-    staggerTab:SetScript("OnClick", function() SelectSubTab(1) end)
-    table.insert(subTabs, staggerTab)
+        -- Deep copy sections to avoid mutating the registration
+        local sections = {}
+        for _, section in ipairs(regConfig.configSections) do
+            local copy = {}
+            for k, v in pairs(section) do
+                copy[k] = v
+            end
+            table.insert(sections, copy)
+        end
 
-    local chiResult = NivUI.Config.Bars.BuildClassBarConfig(container, chiBarConfig, Components)
-    chiResult.container:SetPoint("TOPLEFT", 0, -42)
-    chiResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, chiResult.container)
+        -- Auto-wire apply functions
+        AutoWireSections(sections, regConfig.globalRef)
 
-    local chiTab = Components.GetTab(container, "Chi")
-    chiTab:SetPoint("LEFT", staggerTab, "RIGHT", 0, 0)
-    chiTab:SetScript("OnClick", function() SelectSubTab(2) end)
-    table.insert(subTabs, chiTab)
+        local barConfig = {
+            barType = regConfig.barType,
+            displayName = regConfig.displayName,
+            dbKey = regConfig.dbKey,
+            defaults = regConfig.defaults,
+            contentHeight = regConfig.contentHeight or 500,
+            sections = sections,
+        }
 
-    local essenceResult = NivUI.Config.Bars.BuildClassBarConfig(container, essenceBarConfig, Components)
-    essenceResult.container:SetPoint("TOPLEFT", 0, -42)
-    essenceResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, essenceResult.container)
+        local result = NivUI.Config.Bars.BuildClassBarConfig(container, barConfig, Components)
+        result.container:SetPoint("TOPLEFT", 0, -42)
+        result.container:SetPoint("BOTTOMRIGHT", 0, 0)
+        table.insert(subTabContainers, result.container)
+        results[regConfig.barType] = result
 
-    local essenceTab = Components.GetTab(container, "Essence")
-    essenceTab:SetPoint("LEFT", chiTab, "RIGHT", 0, 0)
-    essenceTab:SetScript("OnClick", function() SelectSubTab(3) end)
-    table.insert(subTabs, essenceTab)
-
-    local comboPointsResult = NivUI.Config.Bars.BuildClassBarConfig(container, comboPointsBarConfig, Components)
-    comboPointsResult.container:SetPoint("TOPLEFT", 0, -42)
-    comboPointsResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, comboPointsResult.container)
-
-    local comboPointsTab = Components.GetTab(container, "Combo")
-    comboPointsTab:SetPoint("LEFT", essenceTab, "RIGHT", 0, 0)
-    comboPointsTab:SetScript("OnClick", function() SelectSubTab(4) end)
-    table.insert(subTabs, comboPointsTab)
-
-    local holyPowerResult = NivUI.Config.Bars.BuildClassBarConfig(container, holyPowerBarConfig, Components)
-    holyPowerResult.container:SetPoint("TOPLEFT", 0, -42)
-    holyPowerResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, holyPowerResult.container)
-
-    local holyPowerTab = Components.GetTab(container, "Holy")
-    holyPowerTab:SetPoint("LEFT", comboPointsTab, "RIGHT", 0, 0)
-    holyPowerTab:SetScript("OnClick", function() SelectSubTab(5) end)
-    table.insert(subTabs, holyPowerTab)
-
-    local soulShardsResult = NivUI.Config.Bars.BuildClassBarConfig(container, soulShardsBarConfig, Components)
-    soulShardsResult.container:SetPoint("TOPLEFT", 0, -42)
-    soulShardsResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, soulShardsResult.container)
-
-    local soulShardsTab = Components.GetTab(container, "Shards")
-    soulShardsTab:SetPoint("LEFT", holyPowerTab, "RIGHT", 0, 0)
-    soulShardsTab:SetScript("OnClick", function() SelectSubTab(6) end)
-    table.insert(subTabs, soulShardsTab)
-
-    local arcaneChargesResult = NivUI.Config.Bars.BuildClassBarConfig(container, arcaneChargesBarConfig, Components)
-    arcaneChargesResult.container:SetPoint("TOPLEFT", 0, -42)
-    arcaneChargesResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, arcaneChargesResult.container)
-
-    local arcaneChargesTab = Components.GetTab(container, "Arcane")
-    arcaneChargesTab:SetPoint("LEFT", soulShardsTab, "RIGHT", 0, 0)
-    arcaneChargesTab:SetScript("OnClick", function() SelectSubTab(7) end)
-    table.insert(subTabs, arcaneChargesTab)
-
-    local runeResult = NivUI.Config.Bars.BuildClassBarConfig(container, runeBarConfig, Components)
-    runeResult.container:SetPoint("TOPLEFT", 0, -42)
-    runeResult.container:SetPoint("BOTTOMRIGHT", 0, 0)
-    table.insert(subTabContainers, runeResult.container)
-
-    local runeTab = Components.GetTab(container, "Runes")
-    runeTab:SetPoint("LEFT", arcaneChargesTab, "RIGHT", 0, 0)
-    runeTab:SetScript("OnClick", function() SelectSubTab(8) end)
-    table.insert(subTabs, runeTab)
+        local tab = Components.GetTab(container, regConfig.tabName or regConfig.displayName)
+        if prevTab then
+            tab:SetPoint("LEFT", prevTab, "RIGHT", 0, 0)
+        else
+            tab:SetPoint("TOPLEFT", 0, 0)
+        end
+        local idx = tabIndex
+        tab:SetScript("OnClick", function() SelectSubTab(idx) end)
+        table.insert(subTabs, tab)
+        prevTab = tab
+    end
 
     container:SetScript("OnShow", function()
         SelectSubTab(currentSubTab)
     end)
 
-    return container, {
-        stagger = staggerResult,
-        chi = chiResult,
-        essence = essenceResult,
-        comboPoints = comboPointsResult,
-        holyPower = holyPowerResult,
-        soulShards = soulShardsResult,
-        arcaneCharges = arcaneChargesResult,
-        rune = runeResult,
-    }
+    return container, results
 end
 
 --- Sets up the OnBarMoved callback for updating sliders when bars are moved.
 --- @param results table The results table from SetupTab
 function NivUI.Config.Bars.SetupOnBarMoved(results)
     NivUI.OnBarMoved = function()
-        local staggerDb = NivUI.current.staggerBar
-        local staggerDefaults = NivUI.staggerBarDefaults
-        if results.stagger and results.stagger.widthSlider then
-            results.stagger.widthSlider:SetValue(staggerDb.width or staggerDefaults.width)
-        end
-        if results.stagger and results.stagger.heightSlider then
-            results.stagger.heightSlider:SetValue(staggerDb.height or staggerDefaults.height)
-        end
-
-        local chiDb = NivUI.current.chiBar or {}
-        local chiDefaults = NivUI.chiBarDefaults
-        if results.chi and results.chi.widthSlider then
-            results.chi.widthSlider:SetValue(chiDb.width or chiDefaults.width)
-        end
-        if results.chi and results.chi.heightSlider then
-            results.chi.heightSlider:SetValue(chiDb.height or chiDefaults.height)
-        end
-
-        local essenceDb = NivUI.current.essenceBar or {}
-        local essenceDefaults = NivUI.essenceBarDefaults
-        if results.essence and results.essence.widthSlider then
-            results.essence.widthSlider:SetValue(essenceDb.width or essenceDefaults.width)
-        end
-        if results.essence and results.essence.heightSlider then
-            results.essence.heightSlider:SetValue(essenceDb.height or essenceDefaults.height)
-        end
-
-        local comboPointsDb = NivUI.current.comboPointsBar or {}
-        local comboPointsDefaults = NivUI.comboPointsBarDefaults
-        if results.comboPoints and results.comboPoints.widthSlider then
-            results.comboPoints.widthSlider:SetValue(comboPointsDb.width or comboPointsDefaults.width)
-        end
-        if results.comboPoints and results.comboPoints.heightSlider then
-            results.comboPoints.heightSlider:SetValue(comboPointsDb.height or comboPointsDefaults.height)
-        end
-
-        local holyPowerDb = NivUI.current.holyPowerBar or {}
-        local holyPowerDefaults = NivUI.holyPowerBarDefaults
-        if results.holyPower and results.holyPower.widthSlider then
-            results.holyPower.widthSlider:SetValue(holyPowerDb.width or holyPowerDefaults.width)
-        end
-        if results.holyPower and results.holyPower.heightSlider then
-            results.holyPower.heightSlider:SetValue(holyPowerDb.height or holyPowerDefaults.height)
-        end
-
-        local soulShardsDb = NivUI.current.soulShardsBar or {}
-        local soulShardsDefaults = NivUI.soulShardsBarDefaults
-        if results.soulShards and results.soulShards.widthSlider then
-            results.soulShards.widthSlider:SetValue(soulShardsDb.width or soulShardsDefaults.width)
-        end
-        if results.soulShards and results.soulShards.heightSlider then
-            results.soulShards.heightSlider:SetValue(soulShardsDb.height or soulShardsDefaults.height)
-        end
-
-        local arcaneChargesDb = NivUI.current.arcaneChargesBar or {}
-        local arcaneChargesDefaults = NivUI.arcaneChargesBarDefaults
-        if results.arcaneCharges and results.arcaneCharges.widthSlider then
-            results.arcaneCharges.widthSlider:SetValue(arcaneChargesDb.width or arcaneChargesDefaults.width)
-        end
-        if results.arcaneCharges and results.arcaneCharges.heightSlider then
-            results.arcaneCharges.heightSlider:SetValue(arcaneChargesDb.height or arcaneChargesDefaults.height)
-        end
-
-        local runeDb = NivUI.current.runeBar or {}
-        local runeDefaults = NivUI.runeBarDefaults
-        if results.rune and results.rune.widthSlider then
-            results.rune.widthSlider:SetValue(runeDb.width or runeDefaults.width)
-        end
-        if results.rune and results.rune.heightSlider then
-            results.rune.heightSlider:SetValue(runeDb.height or runeDefaults.height)
+        for barType, regConfig in pairs(NivUI.classBarRegistry) do
+            local db = NivUI.current[regConfig.dbKey] or {}
+            local defaults = regConfig.defaults
+            local result = results[barType]
+            if result then
+                if result.widthSlider then
+                    result.widthSlider:SetValue(db.width or defaults.width)
+                end
+                if result.heightSlider then
+                    result.heightSlider:SetValue(db.height or defaults.height)
+                end
+            end
         end
     end
 end

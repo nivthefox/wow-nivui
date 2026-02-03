@@ -6,6 +6,32 @@ NivUI.current = NivUI.current or {}
 NivUI.UPDATE_INTERVAL = 0.1
 
 NivUI.eventCallbacks = NivUI.eventCallbacks or {}
+NivUI.classBarRegistry = NivUI.classBarRegistry or {}
+
+function NivUI:RegisterClassBar(barType, config)
+    config.barType = barType
+    config.dbKey = barType .. "Bar"
+    self.classBarRegistry[barType] = config
+
+    -- Store defaults for backward compatibility
+    self[barType .. "BarDefaults"] = config.defaults
+
+    -- Create the module immediately
+    if config.createModule then
+        config.module = config.createModule()
+    end
+end
+
+function NivUI:GetRegisteredClassBars()
+    local ordered = {}
+    for _, config in pairs(self.classBarRegistry) do
+        table.insert(ordered, config)
+    end
+    table.sort(ordered, function(a, b)
+        return (a.sortOrder or 999) < (b.sortOrder or 999)
+    end)
+    return ordered
+end
 
 -- ReloadUI debouncing: allows multiple toggles to coalesce before actually reloading
 local pendingReload = false
@@ -21,143 +47,6 @@ function NivUI:RequestReload()
         ReloadUI()
     end)
 end
-
-NivUI.staggerBarDefaults = {
-    visibility = "combat",
-    updateInterval = 0.2,
-    width = 394,
-    height = 20,
-    point = "CENTER",
-    x = 0,
-    y = -200,
-    locked = false,
-
-    foregroundTexture = "Default",
-    backgroundTexture = "Default",
-    backgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
-    borderStyle = "thin",
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    borderWidth = 1,
-
-    font = "Friz Quadrata",
-    fontSize = 12,
-    fontColor = { r = 1, g = 1, b = 1 },
-    fontShadow = true,
-    colors = {
-        light = { r = 0, g = 1, b = 0 },
-        moderate = { r = 1, g = 1, b = 0 },
-        heavy = { r = 1, g = 0, b = 0 },
-        extreme = { r = 1, g = 0, b = 1 },
-    },
-}
-
-NivUI.staggerBarDefaults.barTexture = NivUI.staggerBarDefaults.foregroundTexture
-NivUI.defaults = NivUI.staggerBarDefaults
-
-NivUI.chiBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -250,
-    width = 200,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.0, g = 0.8, b = 0.6, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
-
-NivUI.essenceBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -280,
-    width = 200,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.15, g = 0.75, b = 0.85, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
-
-NivUI.comboPointsBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -310,
-    width = 200,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 1.0, g = 0.96, b = 0.41, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
-
-NivUI.holyPowerBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -340,
-    width = 200,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.95, g = 0.9, b = 0.6, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
-
-NivUI.soulShardsBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -370,
-    width = 200,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.58, g = 0.51, b = 0.79, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
-
-NivUI.arcaneChargesBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -400,
-    width = 160,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.1, g = 0.5, b = 0.9, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
-
-NivUI.runeBarDefaults = {
-    point = "CENTER",
-    x = 0,
-    y = -430,
-    width = 240,
-    height = 20,
-    spacing = 2,
-    locked = true,
-    visibility = "combat",
-    emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
-    filledColor = { r = 0.77, g = 0.12, b = 0.23, a = 1.0 },
-    borderColor = { r = 0, g = 0, b = 0, a = 1 },
-    updateInterval = 0.05,
-}
 
 local BUILTIN_TEXTURES = {
     { value = "Default", name = "Default", path = "Interface\\TargetingFrame\\UI-StatusBar" },
@@ -303,75 +192,16 @@ function NivUI.DeepCopy(src)
 end
 
 function NivUI:InitializeDB()
-    if not NivUI.current.staggerBar then
-        NivUI.current.staggerBar = {}
-    end
-    for k, v in pairs(self.staggerBarDefaults) do
-        if NivUI.current.staggerBar[k] == nil then
-            NivUI.current.staggerBar[k] = NivUI.DeepCopy(v)
+    -- Initialize all registered class bars
+    for _, config in pairs(self.classBarRegistry) do
+        local dbKey = config.dbKey
+        if not NivUI.current[dbKey] then
+            NivUI.current[dbKey] = {}
         end
-    end
-
-    if not NivUI.current.chiBar then
-        NivUI.current.chiBar = {}
-    end
-    for k, v in pairs(self.chiBarDefaults) do
-        if NivUI.current.chiBar[k] == nil then
-            NivUI.current.chiBar[k] = NivUI.DeepCopy(v)
-        end
-    end
-
-    if not NivUI.current.essenceBar then
-        NivUI.current.essenceBar = {}
-    end
-    for k, v in pairs(self.essenceBarDefaults) do
-        if NivUI.current.essenceBar[k] == nil then
-            NivUI.current.essenceBar[k] = NivUI.DeepCopy(v)
-        end
-    end
-
-    if not NivUI.current.comboPointsBar then
-        NivUI.current.comboPointsBar = {}
-    end
-    for k, v in pairs(self.comboPointsBarDefaults) do
-        if NivUI.current.comboPointsBar[k] == nil then
-            NivUI.current.comboPointsBar[k] = NivUI.DeepCopy(v)
-        end
-    end
-
-    if not NivUI.current.holyPowerBar then
-        NivUI.current.holyPowerBar = {}
-    end
-    for k, v in pairs(self.holyPowerBarDefaults) do
-        if NivUI.current.holyPowerBar[k] == nil then
-            NivUI.current.holyPowerBar[k] = NivUI.DeepCopy(v)
-        end
-    end
-
-    if not NivUI.current.soulShardsBar then
-        NivUI.current.soulShardsBar = {}
-    end
-    for k, v in pairs(self.soulShardsBarDefaults) do
-        if NivUI.current.soulShardsBar[k] == nil then
-            NivUI.current.soulShardsBar[k] = NivUI.DeepCopy(v)
-        end
-    end
-
-    if not NivUI.current.arcaneChargesBar then
-        NivUI.current.arcaneChargesBar = {}
-    end
-    for k, v in pairs(self.arcaneChargesBarDefaults) do
-        if NivUI.current.arcaneChargesBar[k] == nil then
-            NivUI.current.arcaneChargesBar[k] = NivUI.DeepCopy(v)
-        end
-    end
-
-    if not NivUI.current.runeBar then
-        NivUI.current.runeBar = {}
-    end
-    for k, v in pairs(self.runeBarDefaults) do
-        if NivUI.current.runeBar[k] == nil then
-            NivUI.current.runeBar[k] = NivUI.DeepCopy(v)
+        for k, v in pairs(config.defaults) do
+            if NivUI.current[dbKey][k] == nil then
+                NivUI.current[dbKey][k] = NivUI.DeepCopy(v)
+            end
         end
     end
 

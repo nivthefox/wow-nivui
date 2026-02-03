@@ -38,8 +38,8 @@ local function FormatNumber(num)
     end
 end
 
-local STAGGER_TICK_RATE = 0.5          -- Seconds between stagger damage ticks
-local STAGGER_DECAY_PER_SECOND = 0.10  -- 10% of stagger pool drains per second
+local STAGGER_TICK_RATE = 0.5
+local STAGGER_DECAY_PER_SECOND = 0.10
 
 local function GetStaggerTickDamage()
     local stagger = UnitStagger("player") or 0
@@ -316,7 +316,7 @@ local function CreateStaggerBarUI()
         end
     end)
 
-    resizeHandle:SetScript("OnMouseUp", function(self, _button)
+    resizeHandle:SetScript("OnMouseUp", function(self)
         frame:StopMovingOrSizing()
         local db = NivUI.current.staggerBar
         db.width = frame:GetWidth()
@@ -422,18 +422,81 @@ local function OnEnable(frame)
     NivUI:RegisterApplyCallback("position", function() LoadPosition(frame) end)
 end
 
-local function OnDisable(_frame)
+local function OnDisable()
     NivUI.StaggerBar = nil
 end
 
-local StaggerBarModule = NivUI.BarBase.CreateModule({
-    barType = "stagger",
-    createUI = CreateStaggerBarUI,
-    registerEvents = RegisterEvents,
-    onUpdate = OnUpdate,
-    onEnable = OnEnable,
-    onDisable = OnDisable,
+NivUI:RegisterClassBar("stagger", {
+    displayName = "Stagger Bar",
+    tabName = "Stagger",
+    sortOrder = 1,
+    globalRef = "StaggerBar",
+    contentHeight = 900,
+
+    defaults = {
+        visibility = "combat",
+        updateInterval = 0.2,
+        width = 394,
+        height = 20,
+        point = "CENTER",
+        x = 0,
+        y = -200,
+        locked = false,
+        foregroundTexture = "Default",
+        backgroundTexture = "Default",
+        backgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
+        borderStyle = "thin",
+        borderColor = { r = 0, g = 0, b = 0, a = 1 },
+        borderWidth = 1,
+        font = "Friz Quadrata",
+        fontSize = 12,
+        fontColor = { r = 1, g = 1, b = 1 },
+        fontShadow = true,
+        colors = {
+            light = { r = 0, g = 1, b = 0 },
+            moderate = { r = 1, g = 1, b = 0 },
+            heavy = { r = 1, g = 0, b = 0 },
+            extreme = { r = 1, g = 0, b = 1 },
+        },
+    },
+
+    configSections = {
+        { type = "enable" },
+        { type = "header", text = "General" },
+        { type = "visibility", applySetting = "visibility" },
+        { type = "header", text = "Appearance" },
+        { type = "fgTexture", applySetting = "barTexture" },
+        { type = "bgTexture", applySetting = "background" },
+        { type = "bgColor", applySetting = "background" },
+        { type = "borderDropdown", applySetting = "border" },
+        { type = "borderColor", applySetting = "border" },
+        { type = "header", text = "Stagger Colors" },
+        { type = "color", nestedKey = "colors", key = "light", label = "Light:" },
+        { type = "color", nestedKey = "colors", key = "moderate", label = "Moderate:" },
+        { type = "color", nestedKey = "colors", key = "heavy", label = "Heavy:" },
+        { type = "color", nestedKey = "colors", key = "extreme", label = "Extreme:" },
+        { type = "header", text = "Text" },
+        { type = "fontDropdown", applySetting = "font" },
+        { type = "fontSizeSlider", applySetting = "font" },
+        { type = "fontColor", applySetting = "font" },
+        { type = "fontShadow", applySetting = "font" },
+        { type = "header", text = "Position" },
+        { type = "lockedCheckbox", applySetting = "locked" },
+        { type = "widthSlider", applySetting = "position" },
+        { type = "heightSlider", applySetting = "position" },
+        { type = "intervalSlider" },
+    },
+
+    createModule = function()
+        return NivUI.BarBase.CreateModule({
+            barType = "stagger",
+            createUI = CreateStaggerBarUI,
+            registerEvents = RegisterEvents,
+            onUpdate = OnUpdate,
+            onEnable = OnEnable,
+            onDisable = OnDisable,
+        })
+    end,
 })
 
-NivUI.StaggerBarModule = StaggerBarModule
 NivUI.UpdateVisibility = UpdateVisibility
