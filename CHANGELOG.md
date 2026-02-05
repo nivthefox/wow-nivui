@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Arcane Charges bar for Arcane Mage
 - Rune bar for Death Knight with cooldown tracking
 
+### Fixed
+
+- Castbar no longer crashes on empowered channels when target cast timing data is secret
+
 ## [1.4.3](https://github.com/nivthefox/wow-nivui/releases/tag/v1.4.3) - 2026-02-02
 
 ### Fixed

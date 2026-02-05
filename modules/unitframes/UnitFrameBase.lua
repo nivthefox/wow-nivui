@@ -689,7 +689,7 @@ function UnitFrameBase.UpdateCastbar(state)
         end
     end
 
-    if isEmpowered and widget.AddStages then
+    if isEmpowered and widget.AddStages and not issecretvalue(endTimeMS) then
         local totalDurationMS = endTimeMS - startTimeMS
         widget:AddStages(numStages, unit, totalDurationMS)
     elseif widget.ClearStages then
