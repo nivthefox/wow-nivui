@@ -5,6 +5,7 @@ NivUI.Config.Bars = {}
 local FRAME_WIDTH = 680
 local SIDEBAR_WIDTH = 100
 local SECTION_SPACING = 20
+local TAB_HEIGHT = 24
 
 --- Section handler dispatch table for BuildClassBarConfig
 --- Each handler returns the widget and an optional onShow refresh function
@@ -614,23 +615,52 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
     container:SetAllPoints()
     container:Hide()
 
-    local subTabs = {}
-    local subTabContainers = {}
+    local allTabs = {}
     local results = {}
     local currentSubTab = 1
-    local prevTab = nil
 
     local function SelectSubTab(index)
-        for i, tab in ipairs(subTabs) do
+        for i, tabData in ipairs(allTabs) do
             if i == index then
-                PanelTemplates_SelectTab(tab)
-                subTabContainers[i]:Show()
+                PanelTemplates_SelectTab(tabData.tab)
+                tabData.container:Show()
             else
-                PanelTemplates_DeselectTab(tab)
-                subTabContainers[i]:Hide()
+                PanelTemplates_DeselectTab(tabData.tab)
+                tabData.container:Hide()
             end
         end
         currentSubTab = index
+    end
+
+    local function LayoutTabs()
+        local containerWidth = container:GetWidth()
+        if containerWidth == 0 then
+            containerWidth = 600
+        end
+
+        local x, y = 0, 0
+        local numRows = 1
+
+        for _, tabData in ipairs(allTabs) do
+            local tabWidth = tabData.tab:GetWidth()
+
+            if x + tabWidth > containerWidth and x > 0 then
+                x = 0
+                y = y - TAB_HEIGHT
+                numRows = numRows + 1
+            end
+
+            tabData.tab:ClearAllPoints()
+            tabData.tab:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+            x = x + tabWidth
+        end
+
+        local contentOffset = -(numRows * TAB_HEIGHT) - 10
+        for _, tabData in ipairs(allTabs) do
+            tabData.container:ClearAllPoints()
+            tabData.container:SetPoint("TOPLEFT", 0, contentOffset)
+            tabData.container:SetPoint("BOTTOMRIGHT", 0, 0)
+        end
     end
 
     local tabIndex = 0
@@ -660,24 +690,24 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
         }
 
         local result = NivUI.Config.Bars.BuildClassBarConfig(container, barConfig, Components)
-        result.container:SetPoint("TOPLEFT", 0, -42)
-        result.container:SetPoint("BOTTOMRIGHT", 0, 0)
-        table.insert(subTabContainers, result.container)
         results[regConfig.barType] = result
 
         local tab = Components.GetTab(container, regConfig.tabName or regConfig.displayName)
-        if prevTab then
-            tab:SetPoint("LEFT", prevTab, "RIGHT", 0, 0)
-        else
-            tab:SetPoint("TOPLEFT", 0, 0)
-        end
         local idx = tabIndex
         tab:SetScript("OnClick", function() SelectSubTab(idx) end)
-        table.insert(subTabs, tab)
-        prevTab = tab
+
+        table.insert(allTabs, {
+            tab = tab,
+            container = result.container,
+        })
     end
 
+    container:SetScript("OnSizeChanged", function()
+        LayoutTabs()
+    end)
+
     container:SetScript("OnShow", function()
+        LayoutTabs()
         SelectSubTab(currentSubTab)
     end)
 
