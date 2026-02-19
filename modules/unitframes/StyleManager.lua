@@ -647,6 +647,7 @@ function NivUI:CreateCustomRaidGroup(name)
             dps = false,
         },
         members = {},
+        excludePlayer = false,
         styleName = defaultStyleName,
         enabled = true,
     }

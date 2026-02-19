@@ -39,6 +39,10 @@ local function GetFilteredUnits(groupConfig)
                     end
                 end
 
+                if shouldInclude and groupConfig.excludePlayer and UnitIsUnit(unit, "player") then
+                    shouldInclude = false
+                end
+
                 if shouldInclude then
                     table.insert(units, unit)
                 end
@@ -66,6 +70,10 @@ local function GetFilteredUnits(groupConfig)
                             shouldInclude = true
                         end
                     end
+                end
+
+                if shouldInclude and groupConfig.excludePlayer and UnitIsUnit(unit, "player") then
+                    shouldInclude = false
                 end
 
                 if shouldInclude then

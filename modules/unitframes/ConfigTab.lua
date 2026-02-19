@@ -1171,6 +1171,28 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
             AddRow(scrollContainer, 4)
         end
 
+        -- Exclude Player checkbox (applies to both filter types)
+        local excludeRow = CreateFrame("Frame", nil, frame)
+        excludeRow:SetHeight(24)
+        excludeRow:SetPoint("LEFT", 20, 0)
+        excludeRow:SetPoint("RIGHT", -20, 0)
+
+        local excludeCheckbox = CreateFrame("CheckButton", nil, excludeRow, "SettingsCheckboxTemplate")
+        excludeCheckbox:SetPoint("LEFT", 0, 0)
+        excludeCheckbox:SetText("")
+        excludeCheckbox:SetChecked(groupData.excludePlayer or false)
+
+        excludeCheckbox:SetScript("OnClick", function(self)
+            groupData.excludePlayer = self:GetChecked()
+            NivUI:SaveCustomRaidGroup(groupId, groupData)
+        end)
+
+        local excludeLabel = excludeRow:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        excludeLabel:SetPoint("LEFT", excludeCheckbox, "RIGHT", 4, 0)
+        excludeLabel:SetText("Exclude Player")
+
+        AddRow(excludeRow, 4)
+
         local styleRow = CreateFrame("Frame", nil, frame)
         styleRow:SetHeight(28)
         styleRow:SetPoint("LEFT", 20, 0)
