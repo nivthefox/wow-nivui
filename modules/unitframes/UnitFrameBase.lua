@@ -484,10 +484,12 @@ function UnitFrameBase.UpdateStatusText(state)
     elseif config.showGhost and UnitIsGhost(unit) then
         text = "GHOST"
         color = config.color and config.color.ghost
-    elseif config.showAFK and UnitIsAFK(unit) then
+    -- UnitIsAFK/UnitIsDND return secret booleans during combat. Players cannot
+    -- be AFK or DND while in combat, so skipping these checks is correct.
+    elseif not InCombatLockdown() and config.showAFK and UnitIsAFK(unit) then
         text = "AFK"
         color = config.color and config.color.afk
-    elseif config.showDND and UnitIsDND(unit) then
+    elseif not InCombatLockdown() and config.showDND and UnitIsDND(unit) then
         text = "DND"
         color = config.color and config.color.dnd
     end
@@ -1114,6 +1116,7 @@ function UnitFrameBase.BuildCustomFrame(state)
                 UnitFrameBase.UpdateNameText(state)
             elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
                 UnitFrameBase.UpdateStatusIndicators(state)
+                UnitFrameBase.UpdateStatusText(state)
             elseif event == "PLAYER_UPDATE_RESTING" then
                 UnitFrameBase.UpdateStatusIndicators(state)
             elseif event == "PLAYER_FLAGS_CHANGED" or event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then

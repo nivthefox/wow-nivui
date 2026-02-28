@@ -199,6 +199,7 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
             Base.UpdateNameText(memberState)
         elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
             Base.UpdateStatusIndicators(memberState)
+            Base.UpdateStatusText(memberState)
         elseif event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
             Base.UpdateStatusText(memberState)
         elseif event:find("SPELLCAST") then
