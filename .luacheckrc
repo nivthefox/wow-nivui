@@ -10,6 +10,7 @@ ignore = {
 	-- "113/LE_.*", -- Accessing an undefined (Lua ENUM type) global variable
 	-- "113/NUM_LE_.*", -- Accessing an undefined (Lua ENUM type) global variable
 	"122/StaticPopupDialogs", -- Setting a read-only field of a global variable "StaticPopupDialogs"
+	"122/CompactPartyFrame", -- Neutering Blizzard's CompactPartyFrame
 	"122/FocusFrame", -- Modifying Blizzard's FocusFrame
 	"122/TargetFrame", -- Modifying Blizzard's TargetFrame
 	"112/SlashCmdList", -- Standard WoW slash command registration

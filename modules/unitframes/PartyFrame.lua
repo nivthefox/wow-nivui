@@ -82,7 +82,7 @@ local function HideBlizzardPartyFrames(state)
     if CompactPartyFrame then
         CompactPartyFrame:UnregisterAllEvents()
         CompactPartyFrame:Hide()
-        CompactPartyFrame:SetScript("OnShow", function(self) self:Hide() end)
+        CompactPartyFrame.UpdateVisibility = function() end
     end
 
     for i = 1, 4 do
