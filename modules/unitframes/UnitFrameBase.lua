@@ -484,12 +484,12 @@ function UnitFrameBase.UpdateStatusText(state)
     elseif config.showGhost and UnitIsGhost(unit) then
         text = "GHOST"
         color = config.color and config.color.ghost
-    -- UnitIsAFK/UnitIsDND return secret booleans during combat. Players cannot
-    -- be AFK or DND while in combat, so skipping these checks is correct.
-    elseif not InCombatLockdown() and config.showAFK and UnitIsAFK(unit) then
+    -- UnitIsAFK/UnitIsDND can return secret booleans (not just during combat).
+    -- Guard with issecretvalue() instead of InCombatLockdown().
+    elseif config.showAFK and not issecretvalue(UnitIsAFK(unit)) and UnitIsAFK(unit) then
         text = "AFK"
         color = config.color and config.color.afk
-    elseif not InCombatLockdown() and config.showDND and UnitIsDND(unit) then
+    elseif config.showDND and not issecretvalue(UnitIsDND(unit)) and UnitIsDND(unit) then
         text = "DND"
         color = config.color and config.color.dnd
     end
