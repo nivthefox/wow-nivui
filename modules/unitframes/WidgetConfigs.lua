@@ -446,8 +446,46 @@ NivUI.UnitFrames.WidgetConfigs = {
         {
             label = "Dispellable",
             entries = {
-                { kind = "checkbox", key = "highlightDispellable", label = "Highlight Dispellable" },
-                { kind = "colorPicker", key = "dispellableColor", label = "Highlight Color", hasAlpha = true },
+                { kind = "dropdown", key = "dispelIndicator", label = "Dispel Indicator", options = "DISPEL_INDICATOR" },
+            },
+        },
+    },
+
+    importantDebuffs = {
+        {
+            label = "General",
+            entries = {
+                { kind = "checkbox", key = "enabled", label = "Enabled" },
+                { kind = "slider", key = "iconSize", label = "Icon Size", min = 12, max = 40, step = 1 },
+                { kind = "slider", key = "spacing", label = "Spacing", min = 0, max = 8, step = 1 },
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
+        {
+            label = "Layout",
+            entries = {
+                { kind = "slider", key = "perRow", label = "Icons Per Row", min = 1, max = 8, step = 1 },
+                { kind = "slider", key = "maxIcons", label = "Max Icons", min = 1, max = 10, step = 1 },
+                { kind = "dropdown", key = "growth", label = "Growth Direction", options = "AURA_GROWTH" },
+            },
+        },
+        {
+            label = "Display",
+            entries = {
+                { kind = "checkbox", key = "showDuration", label = "Show Duration" },
+                { kind = "checkbox", key = "showStacks", label = "Show Stacks" },
+            },
+        },
+        {
+            label = "Dispellable",
+            entries = {
+                { kind = "dropdown", key = "dispelIndicator", label = "Dispel Indicator", options = "DISPEL_INDICATOR" },
             },
         },
     },
@@ -474,6 +512,7 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         PORTRAIT_SHAPES = self.PORTRAIT_SHAPES,
         TEXT_FORMATS = self.TEXT_FORMATS,
         AURA_GROWTH = self.AURA_GROWTH,
+        DISPEL_INDICATOR = self.DISPEL_INDICATOR,
         BAR_ORIENTATIONS = self.BAR_ORIENTATIONS,
         FONT_OUTLINES = self.FONT_OUTLINES,
         ANCHOR_POINTS = self.ANCHOR_POINTS,

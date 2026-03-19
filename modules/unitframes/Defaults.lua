@@ -87,6 +87,12 @@ NivUI.UnitFrames.AURA_GROWTH = {
     { value = "DOWN", name = "Down" },
 }
 
+NivUI.UnitFrames.DISPEL_INDICATOR = {
+    { value = "none", name = "None" },
+    { value = "iconBorder", name = "Icon Border" },
+    { value = "healthTint", name = "Health Bar Tint" },
+}
+
 NivUI.UnitFrames.BAR_ORIENTATIONS = {
     { value = "HORIZONTAL", name = "Horizontal" },
     { value = "VERTICAL", name = "Vertical" },
@@ -328,9 +334,23 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         growth = "RIGHT",
         showDuration = true,
         showStacks = true,
-        highlightDispellable = true,
-        dispellableColor = { r = 0, g = 1, b = 0, a = 1 },
+        dispelIndicator = "iconBorder",
         filterPlayer = false,
+    },
+
+    importantDebuffs = {
+        enabled = false,
+        anchor = DefaultAnchor("CENTER", "frame", "CENTER", 0, 0),
+        strata = "MEDIUM",
+        frameLevel = 6,
+        iconSize = 24,
+        spacing = 2,
+        perRow = 3,
+        maxIcons = 3,
+        growth = "RIGHT",
+        showDuration = true,
+        showStacks = true,
+        dispelIndicator = "iconBorder",
     },
 }
 
@@ -351,6 +371,7 @@ NivUI.UnitFrames.WIDGET_ORDER = {
     "castbar",
     "buffs",
     "debuffs",
+    "importantDebuffs",
 }
 
 NivUI.UnitFrames.WIDGET_NAMES = {
@@ -370,4 +391,5 @@ NivUI.UnitFrames.WIDGET_NAMES = {
     castbar = "Castbar",
     buffs = "Buffs",
     debuffs = "Debuffs",
+    importantDebuffs = "Important Debuffs",
 }

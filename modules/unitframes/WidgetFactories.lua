@@ -601,6 +601,37 @@ function WF.castbar(parent, config, _style, _unit)
     return frame
 end
 
+--- Dispel type index → Blizzard color object mapping.
+--- Used to build the step-curve for C_UnitAuras.GetAuraDispelTypeColor().
+local _debuffColorByIndex = {
+    [0] = _G.DEBUFF_TYPE_NONE_COLOR,
+    [1] = _G.DEBUFF_TYPE_MAGIC_COLOR,
+    [2] = _G.DEBUFF_TYPE_CURSE_COLOR,
+    [3] = _G.DEBUFF_TYPE_DISEASE_COLOR,
+    [4] = _G.DEBUFF_TYPE_POISON_COLOR,
+    [5] = _G.DEBUFF_TYPE_BLEED_COLOR,
+}
+
+--- Step-curve for GetAuraDispelTypeColor(). Built once at load time, reused for every call.
+--- Returns nil if C_CurveUtil is unavailable (older clients, PTR changes).
+local _debuffColorCurve
+do
+    local ok, curve = pcall(function()
+        if not C_CurveUtil or not C_CurveUtil.CreateColorCurve then return nil end
+        if not Enum or not Enum.LuaCurveType or not Enum.LuaCurveType.Step then return nil end
+        local c = C_CurveUtil.CreateColorCurve()
+        c:SetType(Enum.LuaCurveType.Step)
+        for idx, col in pairs(_debuffColorByIndex) do
+            if col then c:AddPoint(idx, col) end
+        end
+        return c
+    end)
+    _debuffColorCurve = ok and curve or nil
+end
+
+NivUI.UnitFrames = NivUI.UnitFrames or {}
+NivUI.UnitFrames.DebuffColorCurve = _debuffColorCurve
+
 local function CreateAuraWidget(parent, config, widgetType, unit, options)
     options = options or {}
     local forPreview = options.forPreview
@@ -621,7 +652,9 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
     frame.icons = {}
     frame.config = config
     frame.unit = unit
-    frame.filter = (widgetType == "buffs") and "HELPFUL" or "HARMFUL"
+    frame.filter = (widgetType == "buffs") and "HELPFUL"
+        or (widgetType == "importantDebuffs") and "HARMFUL|IMPORTANT"
+        or "HARMFUL"
 
     local iconAnchor = (config.growth == "LEFT") and "TOPRIGHT" or "TOPLEFT"
 
@@ -652,7 +685,8 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
         icon.border = icon:CreateTexture(nil, "OVERLAY")
         icon.border:SetPoint("TOPLEFT", -1, 1)
         icon.border:SetPoint("BOTTOMRIGHT", 1, -1)
-        icon.border:SetColorTexture(0, 1, 0, 1)
+        icon.border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+        icon.border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
         icon.border:Hide()
 
         if not forPreview then
@@ -711,6 +745,14 @@ end
 
 function WF.debuffs(parent, config, _style, unit, options)
     local frame = CreateAuraWidget(parent, config, "debuffs", unit, options)
+    if options and options.forPreview then
+        PopulateTestAuras(frame, TEST_DEBUFFS)
+    end
+    return frame
+end
+
+function WF.importantDebuffs(parent, config, _style, unit, options)
+    local frame = CreateAuraWidget(parent, config, "importantDebuffs", unit, options)
     if options and options.forPreview then
         PopulateTestAuras(frame, TEST_DEBUFFS)
     end

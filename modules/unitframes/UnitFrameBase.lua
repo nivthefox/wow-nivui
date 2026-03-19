@@ -222,7 +222,9 @@ function UnitFrameBase.UpdateHealthBar(state)
     end
 
     widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
-    widget:SetStatusBarColor(r, g, b, a)
+    if not state.hasDispelTint then
+        widget:SetStatusBarColor(r, g, b, a)
+    end
 
     if widget.absorbBar then
         if config.showAbsorb and UnitGetTotalAbsorbs then
@@ -769,16 +771,6 @@ function UnitFrameBase.UpdateRangeAlpha(state)
     state.rangeAlphaApplied = true
 end
 
---- Safely extract a number from a potentially secret value.
---- @param v any The value to extract a number from
---- @return number|nil The extracted number, or nil if extraction failed
-local function SafeNumber(v)
-    if v == nil then return nil end
-    local ok, s = pcall(tostring, v)
-    if not ok then return nil end
-    return tonumber(s)
-end
-
 --- Set cooldown from aura duration object (secret-safe).
 --- @param icon Frame The icon frame with a cooldown child
 --- @param unit string The unit ID
@@ -803,6 +795,40 @@ local function SetCooldownFromAura(icon, unit, auraInstanceID)
     return false
 end
 
+--- Collects auras for a unit using the secret-safe GetAuraSlots/GetAuraDataBySlot APIs.
+--- @param unit string The unit ID
+--- @param filter string The aura filter string (e.g. "HELPFUL", "HARMFUL", "HARMFUL|IMPORTANT")
+--- @param maxIcons number Maximum number of auras to collect
+--- @param filterPlayer boolean If true, only include auras cast by the player
+--- @return table Array of aura data tables
+local function CollectAuras(unit, filter, maxIcons, filterPlayer)
+    local auras = {}
+    if not C_UnitAuras or not C_UnitAuras.GetAuraSlots then return auras end
+
+    local slots = { C_UnitAuras.GetAuraSlots(unit, filter, maxIcons * 2) }
+    for i = 2, #slots do
+        local aura = C_UnitAuras.GetAuraDataBySlot(unit, slots[i])
+        if aura and aura.auraInstanceID then
+            if filterPlayer then
+                local playerFilter = filter:find("HELPFUL") and "HELPFUL|PLAYER" or "HARMFUL|PLAYER"
+                local isFilteredOut = C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, playerFilter)
+                if isFilteredOut == false then
+                    auras[#auras + 1] = aura
+                end
+            else
+                auras[#auras + 1] = aura
+            end
+            if #auras >= maxIcons then break end
+        end
+    end
+    return auras
+end
+
+--- Updates an aura widget (buffs, debuffs, or importantDebuffs) for a unit frame.
+--- Uses instance-ID-based C APIs to avoid reading secret-protected aura fields.
+--- @param state table The unit frame state table
+--- @param widgetName string The widget name ("buffs", "debuffs", or "importantDebuffs")
+--- @param filter string The aura filter string
 local function UpdateAuraWidget(state, widgetName, filter)
     if not state.customFrame or not state.customFrame.widgets then return end
     local widget = state.customFrame.widgets[widgetName]
@@ -821,23 +847,11 @@ local function UpdateAuraWidget(state, widgetName, filter)
     local filterPlayer = config.filterPlayer
     local showDuration = config.showDuration
     local showStacks = config.showStacks
-    local highlightDispellable = (widgetName == "debuffs") and config.highlightDispellable
-    local dispellableColor = config.dispellableColor
+    local isDebuffWidget = (widgetName == "debuffs" or widgetName == "importantDebuffs")
+    local showDispelBorder = isDebuffWidget and (config.dispelIndicator == "iconBorder")
+    local debuffColorCurve = showDispelBorder and NivUI.UnitFrames.DebuffColorCurve or nil
 
-    state.auraCache = state.auraCache or {}
-    wipe(state.auraCache)
-    local auras = state.auraCache
-    local all = C_UnitAuras.GetUnitAuras(unit, filter) or {}
-    for _, aura in ipairs(all) do
-        local include = true
-        if filterPlayer and aura.sourceUnit ~= "player" then
-            include = false
-        end
-        if include then
-            table.insert(auras, aura)
-        end
-        if #auras >= config.maxIcons then break end
-    end
+    local auras = CollectAuras(unit, filter, config.maxIcons, filterPlayer)
 
     for i, icon in ipairs(widget.icons) do
         local aura = auras[i]
@@ -854,16 +868,26 @@ local function UpdateAuraWidget(state, widgetName, filter)
                 end
             end
 
-            local nApps = SafeNumber(aura.applications)
-            if showStacks and nApps and nApps > 1 then
-                icon.stacks:SetText(nApps)
+            if showStacks and C_UnitAuras.GetAuraApplicationDisplayCount then
+                local count = C_UnitAuras.GetAuraApplicationDisplayCount(unit, aura.auraInstanceID, 2, 99)
+                if count then
+                    icon.stacks:SetText(count)
+                else
+                    icon.stacks:SetText("")
+                end
             else
                 icon.stacks:SetText("")
             end
 
-            if highlightDispellable and aura.dispelName then
-                icon.border:SetColorTexture(dispellableColor.r, dispellableColor.g, dispellableColor.b, dispellableColor.a or 1)
-                icon.border:Show()
+            if debuffColorCurve and C_UnitAuras.GetAuraDispelTypeColor then
+                local color = C_UnitAuras.GetAuraDispelTypeColor(unit, aura.auraInstanceID, debuffColorCurve)
+                if color then
+                    local r, g, b = color:GetRGBA()
+                    icon.border:SetVertexColor(r, g, b, 1)
+                    icon.border:Show()
+                else
+                    icon.border:Hide()
+                end
             else
                 icon.border:Hide()
             end
@@ -874,8 +898,54 @@ local function UpdateAuraWidget(state, widgetName, filter)
             if icon.cooldown then
                 pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
             end
+            icon.border:Hide()
             icon:Hide()
         end
+    end
+end
+
+--- Runs a separate pass over harmful auras to tint the health bar when dispelIndicator is "healthTint".
+--- @param state table The unit frame state table
+local function UpdateDispelTint(state)
+    if not state.customFrame or not state.customFrame.widgets then return end
+    local debuffWidget = state.customFrame.widgets.debuffs
+    if not debuffWidget then return end
+    local config = debuffWidget.config
+    if config.dispelIndicator ~= "healthTint" then
+        state.hasDispelTint = false
+        return
+    end
+
+    local healthBar = state.customFrame.widgets.healthBar
+    if not healthBar then return end
+
+    local unit = state.unit
+    local curve = NivUI.UnitFrames.DebuffColorCurve
+    if not curve or not UnitExists(unit) or not C_UnitAuras.GetAuraDispelTypeColor then
+        if state.hasDispelTint then
+            state.hasDispelTint = false
+            UnitFrameBase.UpdateHealthBar(state)
+        end
+        return
+    end
+
+    local slots = { C_UnitAuras.GetAuraSlots(unit, "HARMFUL", 40) }
+    for i = 2, #slots do
+        local aura = C_UnitAuras.GetAuraDataBySlot(unit, slots[i])
+        if aura and aura.auraInstanceID then
+            local color = C_UnitAuras.GetAuraDispelTypeColor(unit, aura.auraInstanceID, curve)
+            if color then
+                local r, g, b = color:GetRGBA()
+                healthBar:SetStatusBarColor(r, g, b)
+                state.hasDispelTint = true
+                return
+            end
+        end
+    end
+
+    if state.hasDispelTint then
+        state.hasDispelTint = false
+        UnitFrameBase.UpdateHealthBar(state)
     end
 end
 
@@ -889,6 +959,18 @@ end
 --- @param state table The unit frame state table
 function UnitFrameBase.UpdateDebuffs(state)
     UpdateAuraWidget(state, "debuffs", "HARMFUL")
+end
+
+--- Updates the important debuffs widget for a unit frame.
+--- @param state table The unit frame state table
+function UnitFrameBase.UpdateImportantDebuffs(state)
+    UpdateAuraWidget(state, "importantDebuffs", "HARMFUL|IMPORTANT")
+end
+
+--- Updates the dispel tint on the health bar.
+--- @param state table The unit frame state table
+function UnitFrameBase.UpdateDispelTint(state)
+    UpdateDispelTint(state)
 end
 
 --- Creates all enabled widgets for a unit frame based on its style configuration.
@@ -1132,6 +1214,8 @@ function UnitFrameBase.BuildCustomFrame(state)
             elseif event == "UNIT_AURA" then
                 UnitFrameBase.UpdateBuffs(state)
                 UnitFrameBase.UpdateDebuffs(state)
+                UnitFrameBase.UpdateImportantDebuffs(state)
+                UnitFrameBase.UpdateDispelTint(state)
             elseif event == "PLAYER_ENTERING_WORLD"
                 or event == "ZONE_CHANGED_NEW_AREA"
                 or event == "ENCOUNTER_START"
