@@ -83,6 +83,13 @@ local function HideBlizzardPartyFrames(state)
         CompactPartyFrame:UnregisterAllEvents()
         CompactPartyFrame:Hide()
         CompactPartyFrame.UpdateVisibility = function() end
+
+        for i = 1, 5 do
+            local member = _G["CompactPartyFrameMember" .. i]
+            if member then
+                member:UnregisterAllEvents()
+            end
+        end
     end
 
     for i = 1, 4 do
