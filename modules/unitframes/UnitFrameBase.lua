@@ -1097,6 +1097,15 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:SetAttribute("type2", "togglemenu")
     customFrame:RegisterForClicks("AnyUp")
 
+    customFrame:SetScript("OnEnter", function(self)
+        GameTooltip_SetDefaultAnchor(GameTooltip, self)
+        GameTooltip:SetUnit(state.unit)
+        GameTooltip:Show()
+    end)
+    customFrame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition(state.frameType, customFrame)
 
     if not positionApplied then
