@@ -653,7 +653,7 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
     frame.config = config
     frame.unit = unit
     frame.filter = (widgetType == "buffs") and "HELPFUL"
-        or (widgetType == "importantDebuffs") and "HARMFUL|IMPORTANT"
+        or (widgetType == "importantDebuffs") and "HARMFUL|RAID"
         or "HARMFUL"
 
     local iconAnchor = (config.growth == "LEFT") and "TOPRIGHT" or "TOPLEFT"

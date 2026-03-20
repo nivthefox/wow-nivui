@@ -964,7 +964,7 @@ end
 --- Updates the important debuffs widget for a unit frame.
 --- @param state table The unit frame state table
 function UnitFrameBase.UpdateImportantDebuffs(state)
-    UpdateAuraWidget(state, "importantDebuffs", "HARMFUL|IMPORTANT")
+    UpdateAuraWidget(state, "importantDebuffs", "HARMFUL|RAID")
 end
 
 --- Updates the dispel tint on the health bar.
