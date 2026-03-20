@@ -80,22 +80,13 @@ local function HideBlizzardPartyFrames(state)
     state.pendingHide = false
 
     if CompactPartyFrame then
-        CompactPartyFrame:UnregisterAllEvents()
-        CompactPartyFrame:Hide()
-        CompactPartyFrame.UpdateVisibility = function() end
-
-        for i = 1, 5 do
-            local member = _G["CompactPartyFrameMember" .. i]
-            if member then
-                member:UnregisterAllEvents()
-            end
-        end
+        RegisterStateDriver(CompactPartyFrame, "visibility", "hide")
     end
 
     for i = 1, 4 do
         local frame = _G["PartyMemberFrame" .. i]
         if frame then
-            Base.KillVisual(frame)
+            RegisterStateDriver(frame, "visibility", "hide")
         end
     end
 
