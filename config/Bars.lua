@@ -36,7 +36,10 @@ function SectionHandlers.visibility(content, section, config, Components)
             content,
             section.label or "Bar Visible:",
             function() return NivUI:GetVisibilityOptions() end,
-            function(value) return NivUI:GetSetting("visibility") == value end,
+            function(value)
+                local db = NivUI.current[config.dbKey] or {}
+                return (db.visibility or config.defaults.visibility) == value
+            end,
             function(value)
                 NivUI.current[config.dbKey].visibility = value
                 NivUI:ApplySettings(section.applySetting)
@@ -69,7 +72,10 @@ function SectionHandlers.fgTexture(content, section, config, Components)
         content,
         section.label or "Foreground:",
         function() return NivUI:GetBarTextures() end,
-        function() return NivUI:GetSetting("foregroundTexture") end,
+        function()
+            local db = NivUI.current[config.dbKey] or {}
+            return db.foregroundTexture or config.defaults.foregroundTexture
+        end,
         function(value)
             NivUI.current[config.dbKey].foregroundTexture = value
             NivUI:ApplySettings(section.applySetting or "barTexture")
@@ -86,7 +92,10 @@ function SectionHandlers.bgTexture(content, section, config, Components)
         content,
         section.label or "Background:",
         function() return NivUI:GetBarTextures() end,
-        function() return NivUI:GetSetting("backgroundTexture") end,
+        function()
+            local db = NivUI.current[config.dbKey] or {}
+            return db.backgroundTexture or config.defaults.backgroundTexture
+        end,
         function(value)
             NivUI.current[config.dbKey].backgroundTexture = value
             NivUI:ApplySettings(section.applySetting or "background")
@@ -120,7 +129,10 @@ function SectionHandlers.borderDropdown(content, section, config, Components)
         content,
         section.label or "Border Style:",
         function() return NivUI:GetBorders() end,
-        function(value) return NivUI:GetSetting("borderStyle") == value end,
+        function(value)
+            local db = NivUI.current[config.dbKey] or {}
+            return (db.borderStyle or config.defaults.borderStyle) == value
+        end,
         function(value)
             NivUI.current[config.dbKey].borderStyle = value
             NivUI:ApplySettings(section.applySetting or "border")
@@ -224,7 +236,10 @@ function SectionHandlers.fontDropdown(content, section, config, Components)
         content,
         section.label or "Font:",
         function() return NivUI:GetFonts() end,
-        function(value) return NivUI:GetSetting("font") == value end,
+        function(value)
+            local db = NivUI.current[config.dbKey] or {}
+            return (db.font or config.defaults.font) == value
+        end,
         function(value)
             NivUI.current[config.dbKey].font = value
             NivUI:ApplySettings(section.applySetting or "font")

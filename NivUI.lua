@@ -166,21 +166,6 @@ function NivUI:ApplySettings(settingName)
     end
 end
 
-function NivUI:GetSetting(key)
-    local db = NivUI.current and NivUI.current.staggerBar or {}
-    if db[key] ~= nil then
-        return db[key]
-    end
-    return self.staggerBarDefaults[key]
-end
-
-function NivUI:GetColors()
-    local db = NivUI.current and NivUI.current.staggerBar or {}
-    if db.colors then
-        return db.colors
-    end
-    return self.staggerBarDefaults.colors
-end
 
 function NivUI.DeepCopy(src)
     if type(src) ~= "table" then return src end

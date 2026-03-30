@@ -367,55 +367,10 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
 
     state.memberStates[unit] = memberState
 
-    frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
-    frame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
-    frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
-    frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
-    frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
-    frame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
-    frame:RegisterUnitEvent("UNIT_LEVEL", unit)
-    frame:RegisterUnitEvent("UNIT_FACTION", unit)
-    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
-
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
-    frame:RegisterUnitEvent("UNIT_FLAGS", unit)
-    frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
-    frame:RegisterEvent("RAID_TARGET_UPDATE")
+    Base.RegisterStandardEvents(frame, unit)
 
     frame:SetScript("OnEvent", function(self, event, _eventUnit)
-        if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-            Base.UpdateHealthBar(memberState)
-            Base.UpdateHealthText(memberState)
-        elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
-            Base.UpdatePowerBar(memberState)
-            Base.UpdatePowerText(memberState)
-        elseif event == "UNIT_MODEL_CHANGED" then
-            Base.UpdatePortrait(memberState)
-        elseif event == "UNIT_NAME_UPDATE" then
-            Base.UpdateNameText(memberState)
-        elseif event == "UNIT_LEVEL" then
-            Base.UpdateLevelText(memberState)
-        elseif event == "UNIT_FACTION" then
-            Base.UpdateHealthBar(memberState)
-            Base.UpdateNameText(memberState)
-        elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
-            Base.UpdateStatusIndicators(memberState)
-            Base.UpdateStatusText(memberState)
-        elseif event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
-            Base.UpdateStatusText(memberState)
-        elseif event:find("SPELLCAST") then
-            Base.UpdateCastbar(memberState)
-        elseif event == "RAID_TARGET_UPDATE" then
-            Base.UpdateRaidMarker(memberState)
-        end
+        Base.HandleEvent(memberState, event)
     end)
 
     frame:SetScript("OnUpdate", function(self, elapsed)
@@ -429,7 +384,6 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
         Base.UpdateHealthText(memberState)
         Base.UpdatePowerBar(memberState)
         Base.UpdatePowerText(memberState)
-        Base.UpdateStatusText(memberState)
         Base.UpdateCastbar(memberState)
         Base.UpdateRangeAlpha(memberState)
     end)
@@ -655,6 +609,7 @@ local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
@@ -669,8 +624,18 @@ eventFrame:SetScript("OnEvent", function(self, event)
         or event == "PLAYER_ENTERING_WORLD"
         or event == "ZONE_CHANGED_NEW_AREA" then
         OnGroupRosterUpdate()
-    elseif event == "PLAYER_REGEN_ENABLED" then
-        HideBlizzardRaidFrames()
+    elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+        if event == "PLAYER_REGEN_ENABLED" then
+            HideBlizzardRaidFrames()
+        end
+        for _, state in pairs(states) do
+            if state.enabled and state.memberStates then
+                for _, memberState in pairs(state.memberStates) do
+                    Base.UpdateStatusIndicators(memberState)
+                    Base.UpdateStatusText(memberState)
+                end
+            end
+        end
     end
 end)
 

@@ -159,52 +159,10 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
 
     state.memberStates[unit] = memberState
 
-    frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
-    frame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
-    frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
-    frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
-    frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
-    frame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
-    frame:RegisterUnitEvent("UNIT_LEVEL", unit)
-    frame:RegisterUnitEvent("UNIT_FACTION", unit)
-    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
-
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
-    frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", unit)
-    frame:RegisterUnitEvent("UNIT_FLAGS", unit)
-    frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
+    Base.RegisterStandardEvents(frame, unit)
 
     frame:SetScript("OnEvent", function(_self, event, _eventUnit)
-        if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-            Base.UpdateHealthBar(memberState)
-            Base.UpdateHealthText(memberState)
-        elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
-            Base.UpdatePowerBar(memberState)
-            Base.UpdatePowerText(memberState)
-        elseif event == "UNIT_MODEL_CHANGED" then
-            Base.UpdatePortrait(memberState)
-        elseif event == "UNIT_NAME_UPDATE" then
-            Base.UpdateNameText(memberState)
-        elseif event == "UNIT_LEVEL" then
-            Base.UpdateLevelText(memberState)
-        elseif event == "UNIT_FACTION" then
-            Base.UpdateHealthBar(memberState)
-            Base.UpdateNameText(memberState)
-        elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
-            Base.UpdateStatusIndicators(memberState)
-            Base.UpdateStatusText(memberState)
-        elseif event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
-            Base.UpdateStatusText(memberState)
-        elseif event:find("SPELLCAST") then
-            Base.UpdateCastbar(memberState)
-        end
+        Base.HandleEvent(memberState, event)
     end)
 
     frame:SetScript("OnUpdate", function(_self, elapsed)
@@ -216,7 +174,6 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
         Base.UpdateHealthText(memberState)
         Base.UpdatePowerBar(memberState)
         Base.UpdatePowerText(memberState)
-        Base.UpdateStatusText(memberState)
         Base.UpdateCastbar(memberState)
     end)
 
@@ -394,6 +351,8 @@ local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 
 eventFrame:SetScript("OnEvent", function(_self, event)
     if event == "PLAYER_LOGIN" then
@@ -405,6 +364,15 @@ eventFrame:SetScript("OnEvent", function(_self, event)
         end
     elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
         OnGroupRosterUpdate()
+    elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+        for _, state in pairs(groupStates) do
+            if state.enabled and state.memberStates then
+                for _, memberState in pairs(state.memberStates) do
+                    Base.UpdateStatusIndicators(memberState)
+                    Base.UpdateStatusText(memberState)
+                end
+            end
+        end
     end
 end)
 

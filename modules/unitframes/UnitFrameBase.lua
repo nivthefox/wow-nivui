@@ -1061,6 +1061,71 @@ local function ClearFrameWidgets(frame)
     end
 end
 
+--- Handles shared event dispatch for all unit frame types.
+--- Routes common events (health, power, model, name, level, faction, status,
+--- raid marker, aura, castbar) to the appropriate update functions.
+--- Frame-type-specific events (visibility, leader/role/resting) are handled
+--- by the individual frame type's OnEvent after calling this function.
+--- @param state table The unit frame state table (or memberState for multi-unit frames)
+--- @param event string The event name
+function UnitFrameBase.HandleEvent(state, event)
+    if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
+        UnitFrameBase.UpdateHealthBar(state)
+        UnitFrameBase.UpdateHealthText(state)
+    elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
+        UnitFrameBase.UpdatePowerBar(state)
+        UnitFrameBase.UpdatePowerText(state)
+    elseif event == "UNIT_MODEL_CHANGED" then
+        UnitFrameBase.UpdatePortrait(state)
+    elseif event == "UNIT_NAME_UPDATE" then
+        UnitFrameBase.UpdateNameText(state)
+    elseif event == "UNIT_LEVEL" then
+        UnitFrameBase.UpdateLevelText(state)
+    elseif event == "UNIT_FACTION" then
+        UnitFrameBase.UpdateHealthBar(state)
+        UnitFrameBase.UpdateNameText(state)
+    elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+        UnitFrameBase.UpdateStatusIndicators(state)
+        UnitFrameBase.UpdateStatusText(state)
+    elseif event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
+        UnitFrameBase.UpdateStatusText(state)
+    elseif event == "RAID_TARGET_UPDATE" then
+        UnitFrameBase.UpdateRaidMarker(state)
+    elseif event == "UNIT_AURA" then
+        UnitFrameBase.UpdateBuffs(state)
+        UnitFrameBase.UpdateDebuffs(state)
+        UnitFrameBase.UpdateImportantDebuffs(state)
+        UnitFrameBase.UpdateDispelTint(state)
+    elseif CASTBAR_EVENTS[event] then
+        UnitFrameBase.UpdateCastbar(state)
+    end
+end
+
+--- Registers the standard set of unit events shared by all frame types.
+--- This includes health, power, model, name, level, faction, status flags,
+--- connection, aura, spellcast, and raid target events.
+--- Does NOT register PLAYER_REGEN_ENABLED/DISABLED — multi-unit frames handle
+--- those at the container level; single-unit frames register them separately.
+--- @param frame Frame The frame to register events on
+--- @param unit string The unit token (e.g., "player", "party1")
+function UnitFrameBase.RegisterStandardEvents(frame, unit)
+    frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
+    frame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
+    frame:RegisterUnitEvent("UNIT_MAXPOWER", unit)
+    frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", unit)
+    frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
+    frame:RegisterUnitEvent("UNIT_NAME_UPDATE", unit)
+    frame:RegisterUnitEvent("UNIT_LEVEL", unit)
+    frame:RegisterUnitEvent("UNIT_FACTION", unit)
+    frame:RegisterUnitEvent("UNIT_FLAGS", unit)
+    frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
+    frame:RegisterUnitEvent("UNIT_AURA", unit)
+    for castEvent in pairs(CASTBAR_EVENTS) do
+        frame:RegisterUnitEvent(castEvent, unit)
+    end
+    frame:RegisterEvent("RAID_TARGET_UPDATE")
+end
+
 --- Builds or rebuilds the custom unit frame for a module.
 --- Creates the secure frame, widgets, registers events, and sets up update scripts.
 --- @param state table The unit frame state table
@@ -1148,25 +1213,9 @@ function UnitFrameBase.BuildCustomFrame(state)
             end)
         end
 
-        customFrame:RegisterUnitEvent("UNIT_MAXHEALTH", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_MAXPOWER", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_DISPLAYPOWER", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_MODEL_CHANGED", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_NAME_UPDATE", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_LEVEL", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_FACTION", state.unit)
+        UnitFrameBase.RegisterStandardEvents(customFrame, state.unit)
         customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
         customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_STOP", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE", state.unit)
 
         if state.registerEvents then
             state.registerEvents(customFrame)
@@ -1179,52 +1228,23 @@ function UnitFrameBase.BuildCustomFrame(state)
         customFrame:RegisterEvent("PLAYER_ALIVE")
         customFrame:RegisterEvent("PLAYER_DEAD")
         customFrame:RegisterEvent("PLAYER_UNGHOST")
-        customFrame:RegisterEvent("RAID_TARGET_UPDATE")
         customFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
         customFrame:RegisterEvent("PARTY_LEADER_CHANGED")
         customFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
         customFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
         customFrame:RegisterEvent("PLAYER_FLAGS_CHANGED")
-        customFrame:RegisterUnitEvent("UNIT_FLAGS", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_CONNECTION", state.unit)
-        customFrame:RegisterUnitEvent("UNIT_AURA", state.unit)
 
         customFrame:SetScript("OnEvent", function(self, event, eventUnit)
-            if event == "UNIT_MAXHEALTH" or event == "UNIT_ABSORB_AMOUNT_CHANGED" then
-                UnitFrameBase.UpdateHealthBar(state)
-                UnitFrameBase.UpdateHealthText(state)
-            elseif event == "UNIT_MAXPOWER" or event == "UNIT_DISPLAYPOWER" then
-                UnitFrameBase.UpdatePowerBar(state)
-                UnitFrameBase.UpdatePowerText(state)
-            elseif event == "UNIT_MODEL_CHANGED" then
-                UnitFrameBase.UpdatePortrait(state)
-            elseif event == "UNIT_NAME_UPDATE" then
-                UnitFrameBase.UpdateNameText(state)
-            elseif event == "UNIT_LEVEL" then
-                UnitFrameBase.UpdateLevelText(state)
-            elseif event == "UNIT_FACTION" then
-                UnitFrameBase.UpdateHealthBar(state)
-                UnitFrameBase.UpdateNameText(state)
-            elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+            UnitFrameBase.HandleEvent(state, event)
+
+            if event == "PLAYER_UPDATE_RESTING" then
                 UnitFrameBase.UpdateStatusIndicators(state)
+            elseif event == "PLAYER_FLAGS_CHANGED" then
                 UnitFrameBase.UpdateStatusText(state)
-            elseif event == "PLAYER_UPDATE_RESTING" then
-                UnitFrameBase.UpdateStatusIndicators(state)
-            elseif event == "PLAYER_FLAGS_CHANGED" or event == "UNIT_FLAGS" or event == "UNIT_CONNECTION" then
-                UnitFrameBase.UpdateStatusText(state)
-            elseif event == "RAID_TARGET_UPDATE" then
-                UnitFrameBase.UpdateRaidMarker(state)
             elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
                 UnitFrameBase.UpdateLeaderIcon(state)
             elseif event == "PLAYER_ROLES_ASSIGNED" then
                 UnitFrameBase.UpdateRoleIcon(state)
-            elseif CASTBAR_EVENTS[event] then
-                UnitFrameBase.UpdateCastbar(state)
-            elseif event == "UNIT_AURA" then
-                UnitFrameBase.UpdateBuffs(state)
-                UnitFrameBase.UpdateDebuffs(state)
-                UnitFrameBase.UpdateImportantDebuffs(state)
-                UnitFrameBase.UpdateDispelTint(state)
             elseif event == "PLAYER_ENTERING_WORLD"
                 or event == "ZONE_CHANGED_NEW_AREA"
                 or event == "ENCOUNTER_START"
