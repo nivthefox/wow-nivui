@@ -5,7 +5,7 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.5.0) - 2026-04-03
 
 ### Added
 
@@ -14,10 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Soul Shards bar for Warlock
 - Arcane Charges bar for Arcane Mage
 - Rune bar for Death Knight with cooldown tracking
+- Hovering over a unit frame now shows the standard unit tooltip
+- "Exclude Player" option for Custom Raid Groups
 
 ### Fixed
 
 - Castbar no longer crashes on empowered channels when target cast timing data is secret
+- AFK and DND status text no longer disappears during combat
+- Blizzard's default party frames now properly hide when NivUI party frames are active
+- Important debuffs now filter correctly on unit frames
+- Aura display is more reliable during combat
 
 ## [1.4.3](https://github.com/nivthefox/wow-nivui/releases/tag/v1.4.3) - 2026-02-02
 

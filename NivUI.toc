@@ -1,8 +1,8 @@
-## Interface: 120000
+## Interface: 120001
 ## Title: NivUI
 ## Notes: Niv's UI customizations
 ## Author: Niv
-## Version: 1.4.3
+## Version: 1.5.0
 ## SavedVariables: NivUI_DB
 ## SavedVariablesPerCharacter: NivUI_CurrentProfile
 
