@@ -346,13 +346,15 @@ local function UpdateDamageAbsorbDisplay(widget, config, calculator, maxHP)
     UpdateOverflowGlow(glow, config.showDamageAbsorbOverflowGlow, clamped)
 end
 
--- GetIncomingHeals returns four values; binding through a local truncates
--- the spill so SetValue's interpolation slot doesn't get a secret number.
-local function UpdateHealPredictionDisplay(widget, config, calculator, maxHP)
+-- The 12.0 calculator's GetIncomingHeals returns zero regardless of how the
+-- prediction is populated, so heal prediction goes through the legacy API
+-- the way Blizzard's own UnitFrame.lua does. Overflow past missing health is
+-- clipped by the HP bar's SetClipsChildren(true) flag set in the factory.
+local function UpdateHealPredictionDisplay(widget, config, unit, maxHP)
     local bar = widget.healPredictionBar
     if not bar then return end
 
-    if not config.showHealPrediction or not calculator then
+    if not config.showHealPrediction or not UnitGetIncomingHeals then
         bar:Hide()
         return
     end
@@ -376,7 +378,8 @@ local function UpdateHealPredictionDisplay(widget, config, calculator, maxHP)
     bar:SetReverseFill(false)
     bar:SetMinMaxValues(0, maxHP)
 
-    local incoming = calculator:GetIncomingHeals()
+    local healSource = (config.healPredictionSource == "self") and "player" or nil
+    local incoming = UnitGetIncomingHeals(unit, healSource) or 0
     bar:SetValue(incoming)
     bar:Show()
 end
@@ -454,7 +457,7 @@ function UnitFrameBase.UpdateHealthBar(state)
 
     UpdateHealAbsorbDisplay(widget, config, widget.calculator, maxHealth)
     UpdateDamageAbsorbDisplay(widget, config, widget.calculator, maxHealth)
-    UpdateHealPredictionDisplay(widget, config, widget.calculator, maxHealth)
+    UpdateHealPredictionDisplay(widget, config, unit, maxHealth)
 end
 
 local function ShouldShowPowerBar(unit, visibility)

@@ -164,6 +164,10 @@ function WF.healthBar(parent, config, _style, unit, options)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
 
+    if frame.SetClipsChildren then
+        frame:SetClipsChildren(true)
+    end
+
     frame.originalHpBarWidth = config.size.width
 
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
