@@ -253,6 +253,39 @@ function NivUI:SetClassBarEnabled(barType, enabled)
     self:TriggerEvent("ClassBarEnabledChanged", { barType = barType, enabled = enabled })
 end
 
+--- Migrates the legacy `showAbsorb` healthBar widget config to `showDamageAbsorb`.
+--- Walks every profile's unit frame styles, copies the value if the new key is
+--- missing, clears the old key, and sets a per-profile flag so the migration
+--- never re-runs. Idempotent.
+--- @return boolean migrated True if any profile was touched
+function NivUI:MigrateHealthBarShowAbsorb()
+    if not NivUI_DB or not NivUI_DB.profiles then return false end
+
+    local migratedAny = false
+    for _, profile in pairs(NivUI_DB.profiles) do
+        if type(profile) == "table" then
+            profile.migrations = profile.migrations or {}
+            if not profile.migrations.healthBarShowAbsorbRename then
+                local styles = profile.unitFrameStyles
+                if type(styles) == "table" then
+                    for _, style in pairs(styles) do
+                        local hb = type(style) == "table" and style.healthBar
+                        if type(hb) == "table" and hb.showAbsorb ~= nil then
+                            if hb.showDamageAbsorb == nil then
+                                hb.showDamageAbsorb = hb.showAbsorb
+                            end
+                            hb.showAbsorb = nil
+                            migratedAny = true
+                        end
+                    end
+                end
+                profile.migrations.healthBarShowAbsorbRename = true
+            end
+        end
+    end
+    return migratedAny
+end
+
 --- Migrates old flat NivUI_DB structure to the new profiles structure.
 --- Called once on ADDON_LOADED if migration is needed.
 --- @return boolean migrated True if migration occurred
@@ -287,6 +320,7 @@ initFrame:SetScript("OnEvent", function(self, _, addon)
     NivUI_CurrentProfile = NivUI_CurrentProfile or "Default"
 
     NivUI:MigrateToProfiles()
+    NivUI:MigrateHealthBarShowAbsorb()
 
     if not NivUI_DB.profiles then
         NivUI_DB.profiles = { ["Default"] = {} }

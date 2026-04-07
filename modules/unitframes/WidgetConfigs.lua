@@ -53,10 +53,42 @@ NivUI.UnitFrames.WidgetConfigs = {
             },
         },
         {
-            label = "Absorb",
+            label = "Damage Absorbs",
             entries = {
-                { kind = "checkbox", key = "showAbsorb", label = "Show Absorb Overlay" },
-                { kind = "colorPicker", key = "absorbColor", label = "Absorb Color", hasAlpha = true },
+                { kind = "checkbox", key = "showDamageAbsorb", label = "Show Damage Absorbs" },
+                { kind = "colorPicker", key = "absorbColor", label = "Absorb Color", hasAlpha = true, showIf = { key = "showDamageAbsorb", value = true } },
+                { kind = "slider", key = "damageAbsorbFrameLevelOffset", label = "Layer Offset", min = 0, max = 10, step = 1, showIf = { key = "showDamageAbsorb", value = true } },
+                { kind = "checkbox", key = "showDamageAbsorbOverflowGlow", label = "Show Overflow Glow", showIf = { key = "showDamageAbsorb", value = true } },
+                { kind = "colorPicker", key = "damageAbsorbOverflowGlowColor", label = "Glow Color", hasAlpha = true, showIf = { key = "showDamageAbsorb", value = true } },
+                { kind = "slider", key = "damageAbsorbOverflowGlowWidth", label = "Glow Width", min = 1, max = 10, step = 1, showIf = { key = "showDamageAbsorb", value = true } },
+            },
+        },
+        {
+            label = "Heal Absorbs",
+            entries = {
+                { kind = "checkbox", key = "showHealAbsorb", label = "Show Heal Absorbs" },
+                { kind = "colorPicker", key = "healAbsorbColor", label = "Heal Absorb Color", hasAlpha = true, showIf = { key = "showHealAbsorb", value = true } },
+                { kind = "slider", key = "healAbsorbFrameLevelOffset", label = "Layer Offset", min = 0, max = 10, step = 1, showIf = { key = "showHealAbsorb", value = true } },
+                { kind = "checkbox", key = "showHealAbsorbOverflowGlow", label = "Show Overflow Glow", showIf = { key = "showHealAbsorb", value = true } },
+                { kind = "colorPicker", key = "healAbsorbOverflowGlowColor", label = "Glow Color", hasAlpha = true, showIf = { key = "showHealAbsorb", value = true } },
+                { kind = "slider", key = "healAbsorbOverflowGlowWidth", label = "Glow Width", min = 1, max = 10, step = 1, showIf = { key = "showHealAbsorb", value = true } },
+            },
+        },
+        {
+            label = "Heal Prediction",
+            entries = {
+                { kind = "checkbox", key = "showHealPrediction", label = "Show Incoming Heals" },
+                { kind = "colorPicker", key = "healPredictionColor", label = "Prediction Color", hasAlpha = true, showIf = { key = "showHealPrediction", value = true } },
+                { kind = "dropdown", key = "healPredictionSource", label = "Heal Source", options = "HEAL_PREDICTION_SOURCES", showIf = { key = "showHealPrediction", value = true } },
+                { kind = "slider", key = "healPredictionFrameLevelOffset", label = "Layer Offset", min = 0, max = 10, step = 1, showIf = { key = "showHealPrediction", value = true } },
+            },
+        },
+        {
+            label = "Max HP Loss",
+            entries = {
+                { kind = "checkbox", key = "showTempMaxHealthLoss", label = "Show Max HP Loss" },
+                { kind = "dropdown", key = "tempMaxHealthLossTextureSource", label = "Texture Source", options = "TEMP_MAX_HEALTH_LOSS_TEXTURE_SOURCES", showIf = { key = "showTempMaxHealthLoss", value = true } },
+                { kind = "colorPicker", key = "tempMaxHealthLossColor", label = "Tint Color", hasAlpha = true, showIf = { key = "showTempMaxHealthLoss", value = true } },
             },
         },
     },
@@ -518,6 +550,8 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         ANCHOR_POINTS = self.ANCHOR_POINTS,
         TEXT_ALIGNMENTS = self.TEXT_ALIGNMENTS,
         FRAME_STRATA = self.FRAME_STRATA,
+        HEAL_PREDICTION_SOURCES = self.HEAL_PREDICTION_SOURCES,
+        TEMP_MAX_HEALTH_LOSS_TEXTURE_SOURCES = self.TEMP_MAX_HEALTH_LOSS_TEXTURE_SOURCES,
     }
     return lists[optionName] or {}
 end

@@ -98,6 +98,16 @@ NivUI.UnitFrames.BAR_ORIENTATIONS = {
     { value = "VERTICAL", name = "Vertical" },
 }
 
+NivUI.UnitFrames.HEAL_PREDICTION_SOURCES = {
+    { value = "all", name = "All Healers" },
+    { value = "self", name = "Only Me" },
+}
+
+NivUI.UnitFrames.TEMP_MAX_HEALTH_LOSS_TEXTURE_SOURCES = {
+    { value = "blizzardAtlas", name = "Blizzard Atlas" },
+    { value = "healthBarTexture", name = "Health Bar Texture" },
+}
+
 NivUI.UnitFrames.FRAME_STRATA = {
     { value = "BACKGROUND", name = "Background" },
     { value = "LOW", name = "Low" },
@@ -149,9 +159,37 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         customColor = { r = 0.2, g = 0.8, b = 0.2 },
         gradientStart = { r = 1, g = 0, b = 0 },
         gradientEnd = { r = 0, g = 1, b = 0 },
-        showAbsorb = true,
-        absorbColor = { r = 0.8, g = 0.8, b = 0.2, a = 0.5 },
         backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 },
+
+        -- Damage absorbs (renamed from showAbsorb; absorbColor preserved).
+        showDamageAbsorb = true,
+        absorbColor = { r = 0.8, g = 0.8, b = 0.2, a = 0.5 },
+        damageAbsorbFrameLevelOffset = 2,
+
+        -- Heal absorbs (debuffs that consume incoming healing).
+        showHealAbsorb = false,
+        healAbsorbColor = { r = 0.4, g = 0.1, b = 0.1, a = 0.85 },
+        healAbsorbFrameLevelOffset = 3,
+
+        -- Incoming heal prediction.
+        showHealPrediction = false,
+        healPredictionColor = { r = 0.4, g = 1.0, b = 0.4, a = 0.5 },
+        healPredictionSource = "all",
+        healPredictionFrameLevelOffset = 1,
+
+        -- Overflow glows shown when an absorb exceeds max HP and is clamped.
+        showHealAbsorbOverflowGlow = true,
+        healAbsorbOverflowGlowColor = { r = 1.0, g = 0.2, b = 0.2, a = 0.8 },
+        healAbsorbOverflowGlowWidth = 3,
+
+        showDamageAbsorbOverflowGlow = true,
+        damageAbsorbOverflowGlowColor = { r = 1.0, g = 0.8, b = 0.2, a = 0.8 },
+        damageAbsorbOverflowGlowWidth = 3,
+
+        -- Max HP reduction display.
+        showTempMaxHealthLoss = true,
+        tempMaxHealthLossTextureSource = "blizzardAtlas",
+        tempMaxHealthLossColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
     },
 
     powerBar = {

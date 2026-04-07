@@ -143,7 +143,7 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
         frame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
     end
 
-    frame.widgets = Base.CreateWidgets(frame, style, unit)
+    frame.widgets = Base.CreateWidgets(frame, style, unit, { frameType = "customRaid_" .. groupId })
     Base.ApplyAnchors(frame, frame.widgets, style)
 
     local memberState = {

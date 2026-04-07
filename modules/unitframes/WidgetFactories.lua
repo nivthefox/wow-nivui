@@ -23,12 +23,112 @@ end
 
 local WF = NivUI.WidgetFactories
 
-function WF.healthBar(parent, config, _style, unit)
+--- Atlas mapping for the temp max health loss bar's "blizzardAtlas" mode.
+--- Frame types missing from this table fall back to the healthBarTexture mode.
+--- TargetFrame swaps between normal and MinusMob variants at runtime based on
+--- target classification — see UpdateMaxHealthLossDisplay in UnitFrameBase.
+local TEMP_MAX_HP_LOSS_ATLASES = {
+    player       = "UI-HUD-UnitFrame-Player-PortraitOn-Bar-TempHPLoss",
+    party        = "UI-HUD-UnitFrame-Player-PortraitOn-Bar-TempHPLoss",
+    target       = "UI-HUD-UnitFrame-Target-PortraitOn-Bar-TempHPLoss",
+    focus        = "UI-HUD-UnitFrame-Target-PortraitOn-Bar-TempHPLoss",
+    targettarget = "UI-HUD-UnitFrame-Target-MinusMob-PortraitOn-Bar-TempHPLoss",
+    pet          = "UI-HUD-UnitFrame-Target-MinusMob-PortraitOn-Bar-TempHPLoss",
+}
+
+local TEMP_MAX_HP_LOSS_TARGET_MINUS_MOB =
+    "UI-HUD-UnitFrame-Target-MinusMob-PortraitOn-Bar-TempHPLoss"
+
+--- Returns the atlas name for a given frame type, or nil if no atlas is
+--- defined and the lostMaxBar should fall back to the healthBarTexture mode.
+--- Exposed so the per-update path can re-resolve atlases (TargetFrame's
+--- classification swap).
+--- @param frameType string|nil Frame type token (player, target, party, …)
+--- @return string|nil atlasName
+function WF.GetTempMaxHealthLossAtlas(frameType)
+    if not frameType then return nil end
+    return TEMP_MAX_HP_LOSS_ATLASES[frameType]
+end
+
+function WF.GetTempMaxHealthLossTargetMinusMobAtlas()
+    return TEMP_MAX_HP_LOSS_TARGET_MINUS_MOB
+end
+
+--- Creates and returns a configured UnitHealPredictionCalculator if the API
+--- is available on this client. The calculator owns its mode state, so this
+--- helper applies every mode the health bar relies on.
+local function CreateHealthCalculator()
+    if not CreateUnitHealPredictionCalculator then return nil end
+    local calc = CreateUnitHealPredictionCalculator()
+    calc:SetMaximumHealthMode(Enum.UnitMaximumHealthMode.Default)
+    calc:SetDamageAbsorbClampMode(Enum.UnitDamageAbsorbClampMode.MaximumHealth)
+    calc:SetHealAbsorbClampMode(Enum.UnitHealAbsorbClampMode.MaximumHealth)
+    calc:SetHealAbsorbMode(Enum.UnitHealAbsorbMode.Total)
+    calc:SetIncomingHealClampMode(Enum.UnitIncomingHealClampMode.MissingHealth)
+    calc:SetIncomingHealOverflowPercent(0)
+    return calc
+end
+
+--- Builds an overlay StatusBar parented to the HP bar. Anchoring is left to
+--- the per-update functions because heal absorbs anchor to the HP bar's left
+--- edge, damage absorbs anchor to the right edge, and heal prediction anchors
+--- to the live health fill texture's right edge.
+--- @param hpBar StatusBar The parent health bar
+--- @param texturePath string The status bar texture path
+--- @param color table { r, g, b, a }
+--- @param frameLevel number Absolute frame level (already offset)
+--- @return StatusBar overlay
+local function CreateOverlayBar(hpBar, texturePath, color, frameLevel)
+    local bar = CreateFrame("StatusBar", nil, hpBar)
+    bar:SetStatusBarTexture(texturePath)
+    bar:SetOrientation("HORIZONTAL")
+    bar:SetFrameLevel(frameLevel)
+    bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+    bar:Hide()
+    return bar
+end
+
+--- Builds a thin glow texture anchored to one edge of the HP bar. Visibility
+--- is driven later by the calculator's `clamped` flag, which is a plain Lua
+--- boolean and safe to test.
+--- @param hpBar StatusBar The parent health bar
+--- @param edge string "LEFT" or "RIGHT"
+--- @param color table { r, g, b, a }
+--- @param width number Pixel width of the glow
+--- @param frameLevel number Absolute frame level
+--- @return Frame glow A frame holding the glow texture
+local function CreateOverflowGlow(hpBar, edge, color, width, frameLevel)
+    local glow = CreateFrame("Frame", nil, hpBar)
+    glow:SetFrameLevel(frameLevel)
+    glow:SetWidth(width)
+    if edge == "LEFT" then
+        glow:SetPoint("TOPLEFT", hpBar, "TOPLEFT", 0, 0)
+        glow:SetPoint("BOTTOMLEFT", hpBar, "BOTTOMLEFT", 0, 0)
+    else
+        glow:SetPoint("TOPRIGHT", hpBar, "TOPRIGHT", 0, 0)
+        glow:SetPoint("BOTTOMRIGHT", hpBar, "BOTTOMRIGHT", 0, 0)
+    end
+    local tex = glow:CreateTexture(nil, "OVERLAY")
+    tex:SetTexture("Interface\\Buttons\\WHITE8x8")
+    tex:SetVertexColor(color.r, color.g, color.b, color.a or 1)
+    tex:SetAllPoints(glow)
+    glow.texture = tex
+    glow:Hide()
+    return glow
+end
+
+function WF.healthBar(parent, config, _style, unit, options)
     unit = unit or "player"
+    options = options or {}
     local frame = CreateFrame("StatusBar", nil, parent)
     frame:SetSize(config.size.width, config.size.height)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
+
+    -- Original pixel width is the reference used by the max HP loss display
+    -- to compute the shrunken HP bar width. Captured here at construction so
+    -- the per-update path can restore it without re-reading config.
+    frame.originalHpBarWidth = config.size.width
 
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetTexture("Interface\\Buttons\\WHITE8x8")
@@ -54,31 +154,78 @@ function WF.healthBar(parent, config, _style, unit)
     frame.bg:SetVertexColor(bgR, bgG, bgB, bgA)
     frame:SetStatusBarColor(r, g, b, a)
 
-    local health = UnitHealth(unit)
     local maxHealth = UnitHealthMax(unit)
     if maxHealth and (issecretvalue(maxHealth) or maxHealth > 0) then
         frame:SetMinMaxValues(0, maxHealth)
-        frame:SetValue(health)
+        frame:SetValue(UnitHealth(unit))
     else
         frame:SetMinMaxValues(0, 100000)
         frame:SetValue(71000)
     end
 
-    if config.showAbsorb then
-        local absorbBar = CreateFrame("StatusBar", nil, frame)
-        absorbBar:SetAllPoints(frame)
-        absorbBar:SetFrameLevel((config.frameLevel or 2) + 1)
-        absorbBar:SetStatusBarTexture(texturePath)
-        absorbBar:SetOrientation(config.orientation or "HORIZONTAL")
-        absorbBar:SetReverseFill(true)
+    -- Calculator + frame type are stored on the bar so the per-update path
+    -- in UnitFrameBase can reach them without piping through state.
+    frame.calculator = CreateHealthCalculator()
+    frame.frameType = options.frameType
+    frame.texturePath = texturePath
 
-        local ac = config.absorbColor or { r = 0.8, g = 0.8, b = 0.2, a = 0.5 }
-        absorbBar:SetStatusBarColor(ac.r, ac.g, ac.b, ac.a or 0.5)
+    local baseLevel = frame:GetFrameLevel()
 
-        absorbBar:SetMinMaxValues(0, maxHealth or 100000)
-        absorbBar:SetValue(0)
+    -- Lost max bar — sibling to the HP bar in the parent's coordinate space,
+    -- anchored to the HP bar's TOPLEFT/BOTTOMLEFT, fixed at the original
+    -- width. As the HP bar shrinks via SetWidth, this bar continues to
+    -- occupy the original area and reverse-fills its right portion to show
+    -- the lost max region. Frame level is one below the HP bar so the HP
+    -- bar paints over it where they overlap.
+    do
+        local lostMaxBar = CreateFrame("StatusBar", nil, parent)
+        lostMaxBar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+        lostMaxBar:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+        lostMaxBar:SetWidth(frame.originalHpBarWidth)
+        lostMaxBar:SetFrameStrata(frame:GetFrameStrata())
+        lostMaxBar:SetFrameLevel(math.max(0, baseLevel - 1))
+        lostMaxBar:SetMinMaxValues(0, 1)
+        lostMaxBar:SetValue(0)
+        lostMaxBar:SetReverseFill(true)
+        lostMaxBar:Hide()
+        -- Texture is applied in the per-update path so style changes and
+        -- TargetFrame's runtime classification swap reach it without a rebuild.
+        frame.lostMaxBar = lostMaxBar
+    end
 
-        frame.absorbBar = absorbBar
+    -- Heal absorb overlay — left edge, forward fill, frame level above the HP bar.
+    do
+        local color = config.healAbsorbColor or { r = 0.4, g = 0.1, b = 0.1, a = 0.85 }
+        local offset = config.healAbsorbFrameLevelOffset or 3
+        local bar = CreateOverlayBar(frame, texturePath, color, baseLevel + offset)
+        frame.healAbsorbBar = bar
+
+        local glowColor = config.healAbsorbOverflowGlowColor or { r = 1.0, g = 0.2, b = 0.2, a = 0.8 }
+        local glowWidth = config.healAbsorbOverflowGlowWidth or 3
+        frame.healAbsorbOverflowGlow = CreateOverflowGlow(frame, "LEFT", glowColor, glowWidth, baseLevel + offset + 1)
+    end
+
+    -- Damage absorb overlay — right edge, reverse fill, replaces the legacy
+    -- absorbBar field entirely. The new bar lives on the calculator pipeline.
+    do
+        local color = config.absorbColor or { r = 0.8, g = 0.8, b = 0.2, a = 0.5 }
+        local offset = config.damageAbsorbFrameLevelOffset or 2
+        local bar = CreateOverlayBar(frame, texturePath, color, baseLevel + offset)
+        bar:SetReverseFill(true)
+        frame.damageAbsorbBar = bar
+
+        local glowColor = config.damageAbsorbOverflowGlowColor or { r = 1.0, g = 0.8, b = 0.2, a = 0.8 }
+        local glowWidth = config.damageAbsorbOverflowGlowWidth or 3
+        frame.damageAbsorbOverflowGlow = CreateOverflowGlow(frame, "RIGHT", glowColor, glowWidth, baseLevel + offset + 1)
+    end
+
+    -- Heal prediction overlay — left edge anchors to the live health fill
+    -- texture's right edge in the per-update path. Forward fill.
+    do
+        local color = config.healPredictionColor or { r = 0.4, g = 1.0, b = 0.4, a = 0.5 }
+        local offset = config.healPredictionFrameLevelOffset or 1
+        local bar = CreateOverlayBar(frame, texturePath, color, baseLevel + offset)
+        frame.healPredictionBar = bar
     end
 
     frame.widgetType = "healthBar"

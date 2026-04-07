@@ -178,7 +178,7 @@ function MultiUnitFrameBase.CreateModule(config)
             frame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
         end
 
-        frame.widgets = Base.CreateWidgets(frame, style, unit)
+        frame.widgets = Base.CreateWidgets(frame, style, unit, { frameType = config.frameType })
         Base.ApplyAnchors(frame, frame.widgets, style)
 
         if config.memberVisibilityMode == "state_driver" then
