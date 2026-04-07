@@ -389,7 +389,11 @@ local function UpdateHealPredictionDisplay(widget, config, calculator, maxHP)
 
     bar:SetReverseFill(false)
     bar:SetMinMaxValues(0, maxHP)
-    bar:SetValue(calculator:GetIncomingHeals())
+    -- GetIncomingHeals returns four values (amount, fromHealer, fromOthers,
+    -- clamped). Only `amount` belongs in SetValue's first slot — the others
+    -- would spill into the interpolation arg, which doesn't accept secrets.
+    local incoming = calculator:GetIncomingHeals()
+    bar:SetValue(incoming)
     bar:Show()
 end
 
