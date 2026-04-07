@@ -5,20 +5,15 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.6.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.6.0) - 2026-04-07
 
 ### Added
 
-- Heal absorb display on the unit frame health bar (left edge, grows rightward), with optional left-edge overflow glow when the absorb exceeds max HP
-- Incoming heal prediction display on the unit frame health bar, anchored to the live health fill edge, with a "Heal Source" option to show all healers' incoming heals or only the player's
-- Damage absorb overflow glow (right edge) when the shield exceeds max HP
-- Max HP reduction display: when a debuff or boss mechanic shrinks a unit's max HP, the active health region compresses and the lost portion is shown with a configurable texture (Blizzard's atlas variants per frame type, or the health bar texture tinted with a chosen color)
-- Designer controls for every new overlay: per-overlay color, frame layer offset, overflow glow color and width, max HP loss texture source and tint
-- Health bar overlays now flow through a single `UnitHealPredictionCalculator` per frame, replacing the legacy `UnitGetTotalAbsorbs` path
-
-### Changed
-
-- The `showAbsorb` health bar option has been renamed to `showDamageAbsorb`. Existing settings are migrated automatically on first load.
+- Heal absorb display on unit frame health bars, so healers can see when an incoming cast will be eaten by Necrotic Strike or similar debuffs
+- Incoming heal prediction on unit frame health bars, with an option to show all healers' casts or only your own
+- Overflow glows on both absorb types when the shield or heal absorb exceeds the unit's maximum health
+- Max HP reduction display: when a boss mechanic shrinks a unit's maximum health, the lost portion appears at the right end of the bar
+- Designer controls for every new overlay, including per-overlay colors, layer ordering, and texture choices for the max HP loss display
 
 ## [1.5.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.5.0) - 2026-04-03
 
