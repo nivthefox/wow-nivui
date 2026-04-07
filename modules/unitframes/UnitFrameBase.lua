@@ -267,9 +267,13 @@ local function UpdateMaxHealthLossDisplay(widget, config, unit)
 end
 
 --- Updates the heal absorb overlay (left edge of the bar, forward fill).
---- The amount returned by `GetHealAbsorbs` may be a secret value and is
---- passed straight through to `SetValue`. The `clamped` flag is a plain Lua
---- boolean and drives the left-edge overflow glow.
+--- The amount AND clamped values returned by `GetHealAbsorbs` may both be
+--- secret. The amount is passed straight through to `SetValue`; the clamped
+--- flag drives the overflow glow via `SetAlphaFromBoolean`, which is the
+--- secret-safe way to translate a tainted boolean into a visual change.
+--- The glow frame itself stays Shown so the C-side alpha set has somewhere
+--- to land — config.showHealAbsorbOverflowGlow gates whether we paint it
+--- at all.
 local function UpdateHealAbsorbDisplay(widget, config, calculator, maxHP)
     local bar = widget.healAbsorbBar
     local glow = widget.healAbsorbOverflowGlow
@@ -302,8 +306,9 @@ local function UpdateHealAbsorbDisplay(widget, config, calculator, maxHP)
     bar:Show()
 
     if glow then
-        if config.showHealAbsorbOverflowGlow and clamped then
+        if config.showHealAbsorbOverflowGlow then
             glow:Show()
+            glow:SetAlphaFromBoolean(clamped, 1.0, 0.0)
         else
             glow:Hide()
         end
@@ -311,6 +316,7 @@ local function UpdateHealAbsorbDisplay(widget, config, calculator, maxHP)
 end
 
 --- Updates the damage absorb overlay (right edge of the bar, reverse fill).
+--- See UpdateHealAbsorbDisplay for the secret-safe glow handling rationale.
 local function UpdateDamageAbsorbDisplay(widget, config, calculator, maxHP)
     local bar = widget.damageAbsorbBar
     local glow = widget.damageAbsorbOverflowGlow
@@ -341,8 +347,9 @@ local function UpdateDamageAbsorbDisplay(widget, config, calculator, maxHP)
     bar:Show()
 
     if glow then
-        if config.showDamageAbsorbOverflowGlow and clamped then
+        if config.showDamageAbsorbOverflowGlow then
             glow:Show()
+            glow:SetAlphaFromBoolean(clamped, 1.0, 0.0)
         else
             glow:Hide()
         end
