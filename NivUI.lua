@@ -253,34 +253,46 @@ function NivUI:SetClassBarEnabled(barType, enabled)
     self:TriggerEvent("ClassBarEnabledChanged", { barType = barType, enabled = enabled })
 end
 
---- Migrates the legacy `showAbsorb` healthBar widget config to `showDamageAbsorb`.
---- Walks every profile's unit frame styles, copies the value if the new key is
---- missing, clears the old key, and sets a per-profile flag so the migration
---- never re-runs. Idempotent.
---- @return boolean migrated True if any profile was touched
+local function RenameStyleShowAbsorb(style)
+    local hb = type(style) == "table" and style.healthBar
+    if type(hb) ~= "table" or hb.showAbsorb == nil then
+        return false
+    end
+    if hb.showDamageAbsorb == nil then
+        hb.showDamageAbsorb = hb.showAbsorb
+    end
+    hb.showAbsorb = nil
+    return true
+end
+
+local function MigrateProfileShowAbsorb(profile)
+    if type(profile) ~= "table" then return false end
+
+    profile.migrations = profile.migrations or {}
+    if profile.migrations.healthBarShowAbsorbRename then return false end
+    profile.migrations.healthBarShowAbsorbRename = true
+
+    local styles = profile.unitFrameStyles
+    if type(styles) ~= "table" then return false end
+
+    local migrated = false
+    for _, style in pairs(styles) do
+        if RenameStyleShowAbsorb(style) then
+            migrated = true
+        end
+    end
+    return migrated
+end
+
+--- Renames the legacy `showAbsorb` healthBar widget config to `showDamageAbsorb`
+--- across every profile. Idempotent: a per-profile flag prevents re-runs.
 function NivUI:MigrateHealthBarShowAbsorb()
     if not NivUI_DB or not NivUI_DB.profiles then return false end
 
     local migratedAny = false
     for _, profile in pairs(NivUI_DB.profiles) do
-        if type(profile) == "table" then
-            profile.migrations = profile.migrations or {}
-            if not profile.migrations.healthBarShowAbsorbRename then
-                local styles = profile.unitFrameStyles
-                if type(styles) == "table" then
-                    for _, style in pairs(styles) do
-                        local hb = type(style) == "table" and style.healthBar
-                        if type(hb) == "table" and hb.showAbsorb ~= nil then
-                            if hb.showDamageAbsorb == nil then
-                                hb.showDamageAbsorb = hb.showAbsorb
-                            end
-                            hb.showAbsorb = nil
-                            migratedAny = true
-                        end
-                    end
-                end
-                profile.migrations.healthBarShowAbsorbRename = true
-            end
+        if MigrateProfileShowAbsorb(profile) then
+            migratedAny = true
         end
     end
     return migratedAny

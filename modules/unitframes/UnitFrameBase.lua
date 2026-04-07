@@ -186,73 +186,72 @@ function UnitFrameBase.SetSecureVisibility(frame, visible)
     RegisterStateDriver(frame, "visibility", visible and "show" or "hide")
 end
 
---- Resolves the texture (or atlas) for the temp max health loss bar.
---- Atlas mode falls back to the tinted health bar texture when no atlas is
---- defined for the frame type (raid, boss, custom raid). The TargetFrame
---- atlas swaps between normal and MinusMob variants at runtime based on the
---- target's classification — that's why this runs per-update, not at init.
---- @param widget StatusBar The health bar widget (which owns lostMaxBar)
---- @param config table The healthBar widget config
---- @param unit string The unit token
+local DEFAULT_TEMP_MAX_HEALTH_LOSS_COLOR = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 }
+local FALLBACK_STATUS_BAR_TEXTURE = "Interface\\TargetingFrame\\UI-StatusBar"
+local SMALL_TARGET_CLASSIFICATIONS = { minus = true, trivial = true }
+
+local function ResolveLostMaxAtlas(widget, unit, source)
+    if source ~= "blizzardAtlas" then
+        return nil
+    end
+
+    local atlas = NivUI.WidgetFactories.GetTempMaxHealthLossAtlas(widget.frameType)
+    if not atlas then
+        return nil
+    end
+
+    if widget.frameType ~= "target" then
+        return atlas
+    end
+
+    local classification = UnitClassification and UnitClassification(unit)
+    if SMALL_TARGET_CLASSIFICATIONS[classification] then
+        return NivUI.WidgetFactories.GetTempMaxHealthLossTargetMinusMobAtlas()
+    end
+    return atlas
+end
+
 local function ApplyLostMaxBarTexture(widget, config, unit)
     local lostMaxBar = widget.lostMaxBar
     if not lostMaxBar then return end
 
-    local color = config.tempMaxHealthLossColor or { r = 0.2, g = 0.2, b = 0.2, a = 0.8 }
-    local source = config.tempMaxHealthLossTextureSource or "blizzardAtlas"
-
-    local atlas
-    if source == "blizzardAtlas" then
-        atlas = NivUI.WidgetFactories.GetTempMaxHealthLossAtlas(widget.frameType)
-        -- TargetFrame uses the MinusMob atlas variant for small/minor mobs.
-        -- Re-resolve here so retargeting onto a small mob swaps without a rebuild.
-        if widget.frameType == "target" and atlas then
-            local classification = UnitClassification and UnitClassification(unit)
-            if classification == "minus" or classification == "trivial" then
-                atlas = NivUI.WidgetFactories.GetTempMaxHealthLossTargetMinusMobAtlas()
-            end
-        end
-    end
+    local color = config.tempMaxHealthLossColor or DEFAULT_TEMP_MAX_HEALTH_LOSS_COLOR
+    local atlas = ResolveLostMaxAtlas(widget, unit, config.tempMaxHealthLossTextureSource or "blizzardAtlas")
 
     if atlas then
         lostMaxBar:SetStatusBarTexture(atlas)
         local barTex = lostMaxBar:GetStatusBarTexture()
         if barTex then barTex:SetVertexColor(1, 1, 1, 1) end
-    else
-        lostMaxBar:SetStatusBarTexture(widget.texturePath or "Interface\\TargetingFrame\\UI-StatusBar")
-        local barTex = lostMaxBar:GetStatusBarTexture()
-        if barTex then barTex:SetVertexColor(color.r, color.g, color.b, color.a or 1) end
+        return
     end
+
+    lostMaxBar:SetStatusBarTexture(widget.texturePath or FALLBACK_STATUS_BAR_TEXTURE)
+    local barTex = lostMaxBar:GetStatusBarTexture()
+    if barTex then barTex:SetVertexColor(color.r, color.g, color.b, color.a or 1) end
 end
 
---- Updates the lost-max bar and resizes the HP bar to match the active max.
---- Must run BEFORE the prediction overlays each update because the overlays
---- read `hpBar:GetWidth()` to size themselves and would otherwise use a stale
---- width for one frame.
----
---- Note on the API value: `GetUnitTotalModifiedMaxHealthPercent` returns the
---- LOST fraction in `[0, 1]` (0 = unmodified, 0.3 = 30% lost), matching
---- Blizzard's TempMaxHealthLossMixin behavior in CompactUnitFrame.lua. Both
---- operands of the arithmetic below are plain numbers; no secret values are
---- involved at this stage.
---- @param widget StatusBar The health bar widget
---- @param config table The healthBar widget config
---- @param unit string The unit token
+local function ClampUnit(value)
+    if value < 0 then return 0 end
+    if value > 1 then return 1 end
+    return value
+end
+
+-- Blizzard's TempMaxHealthLossMixin treats the API value as the LOST fraction
+-- (0 = unreduced, 0.3 = 30% lost), even though the wiki names the function
+-- ambiguously. The HP bar shrinks to (1 - lostFraction) of the original width.
 local function UpdateMaxHealthLossDisplay(widget, config, unit)
     local lostMaxBar = widget.lostMaxBar
     if not lostMaxBar then return end
 
     local original = widget.originalHpBarWidth or widget:GetWidth()
+
     if not config.showTempMaxHealthLoss or not GetUnitTotalModifiedMaxHealthPercent then
         widget:SetWidth(original)
         lostMaxBar:Hide()
         return
     end
 
-    local lostPercent = GetUnitTotalModifiedMaxHealthPercent(unit) or 0
-    if lostPercent < 0 then lostPercent = 0 end
-    if lostPercent > 1 then lostPercent = 1 end
-
+    local lostPercent = ClampUnit(GetUnitTotalModifiedMaxHealthPercent(unit) or 0)
     if lostPercent <= 0 then
         widget:SetWidth(original)
         lostMaxBar:Hide()
@@ -266,18 +265,42 @@ local function UpdateMaxHealthLossDisplay(widget, config, unit)
     lostMaxBar:Show()
 end
 
---- Updates the heal absorb overlay (left edge of the bar, forward fill).
---- The amount AND clamped values returned by `GetHealAbsorbs` may both be
---- secret. The amount is passed straight through to `SetValue`; the clamped
---- flag drives the overflow glow via `SetAlphaFromBoolean`, which is the
---- secret-safe way to translate a tainted boolean into a visual change.
---- The glow frame itself stays Shown so the C-side alpha set has somewhere
---- to land — config.showHealAbsorbOverflowGlow gates whether we paint it
---- at all.
+-- The clamped flag is itself a secret boolean and cannot be tested in Lua;
+-- SetAlphaFromBoolean is the C-side helper that translates it into alpha.
+local function UpdateOverflowGlow(glow, enabled, clamped)
+    if not glow then return end
+    if not enabled then
+        glow:Hide()
+        return
+    end
+    glow:Show()
+    glow:SetAlphaFromBoolean(clamped, 1.0, 0.0)
+end
+
+local function ReanchorAbsorbBar(bar, widget, anchorPoint)
+    local barWidth = widget:GetWidth()
+    if bar._lastBarWidth == barWidth then
+        return barWidth
+    end
+
+    bar:ClearAllPoints()
+    if anchorPoint == "LEFT" then
+        bar:SetPoint("TOPLEFT", widget, "TOPLEFT", 0, 0)
+        bar:SetPoint("BOTTOMLEFT", widget, "BOTTOMLEFT", 0, 0)
+    else
+        bar:SetPoint("TOPRIGHT", widget, "TOPRIGHT", 0, 0)
+        bar:SetPoint("BOTTOMRIGHT", widget, "BOTTOMRIGHT", 0, 0)
+    end
+    bar:SetWidth(barWidth)
+    bar._lastBarWidth = barWidth
+    return barWidth
+end
+
 local function UpdateHealAbsorbDisplay(widget, config, calculator, maxHP)
     local bar = widget.healAbsorbBar
-    local glow = widget.healAbsorbOverflowGlow
     if not bar then return end
+
+    local glow = widget.healAbsorbOverflowGlow
 
     if not config.showHealAbsorb or not calculator then
         bar:Hide()
@@ -285,18 +308,8 @@ local function UpdateHealAbsorbDisplay(widget, config, calculator, maxHP)
         return
     end
 
-    local barWidth = widget:GetWidth()
+    local barWidth = ReanchorAbsorbBar(bar, widget, "LEFT")
     if not barWidth or barWidth <= 0 then return end
-
-    -- Re-anchor only when the parent width changed; the cache avoids
-    -- redundant ClearAllPoints/SetPoint calls every frame.
-    if bar._lastBarWidth ~= barWidth then
-        bar:ClearAllPoints()
-        bar:SetPoint("TOPLEFT", widget, "TOPLEFT", 0, 0)
-        bar:SetPoint("BOTTOMLEFT", widget, "BOTTOMLEFT", 0, 0)
-        bar:SetWidth(barWidth)
-        bar._lastBarWidth = barWidth
-    end
 
     bar:SetReverseFill(false)
     bar:SetMinMaxValues(0, maxHP)
@@ -305,22 +318,14 @@ local function UpdateHealAbsorbDisplay(widget, config, calculator, maxHP)
     bar:SetValue(amount)
     bar:Show()
 
-    if glow then
-        if config.showHealAbsorbOverflowGlow then
-            glow:Show()
-            glow:SetAlphaFromBoolean(clamped, 1.0, 0.0)
-        else
-            glow:Hide()
-        end
-    end
+    UpdateOverflowGlow(glow, config.showHealAbsorbOverflowGlow, clamped)
 end
 
---- Updates the damage absorb overlay (right edge of the bar, reverse fill).
---- See UpdateHealAbsorbDisplay for the secret-safe glow handling rationale.
 local function UpdateDamageAbsorbDisplay(widget, config, calculator, maxHP)
     local bar = widget.damageAbsorbBar
-    local glow = widget.damageAbsorbOverflowGlow
     if not bar then return end
+
+    local glow = widget.damageAbsorbOverflowGlow
 
     if not config.showDamageAbsorb or not calculator then
         bar:Hide()
@@ -328,16 +333,8 @@ local function UpdateDamageAbsorbDisplay(widget, config, calculator, maxHP)
         return
     end
 
-    local barWidth = widget:GetWidth()
+    local barWidth = ReanchorAbsorbBar(bar, widget, "RIGHT")
     if not barWidth or barWidth <= 0 then return end
-
-    if bar._lastBarWidth ~= barWidth then
-        bar:ClearAllPoints()
-        bar:SetPoint("TOPRIGHT", widget, "TOPRIGHT", 0, 0)
-        bar:SetPoint("BOTTOMRIGHT", widget, "BOTTOMRIGHT", 0, 0)
-        bar:SetWidth(barWidth)
-        bar._lastBarWidth = barWidth
-    end
 
     bar:SetReverseFill(true)
     bar:SetMinMaxValues(0, maxHP)
@@ -346,22 +343,11 @@ local function UpdateDamageAbsorbDisplay(widget, config, calculator, maxHP)
     bar:SetValue(amount)
     bar:Show()
 
-    if glow then
-        if config.showDamageAbsorbOverflowGlow then
-            glow:Show()
-            glow:SetAlphaFromBoolean(clamped, 1.0, 0.0)
-        else
-            glow:Hide()
-        end
-    end
+    UpdateOverflowGlow(glow, config.showDamageAbsorbOverflowGlow, clamped)
 end
 
---- Updates the incoming heal prediction overlay. This is the only overlay
---- that anchors to the live health fill texture's right edge instead of a
---- fixed HP bar edge — the segment grows rightward from wherever the green
---- fill currently ends. The calculator's `MissingHealth` clamp mode + zero
---- overflow keep this from extending past the HP bar's right edge, so no
---- clip frame is needed.
+-- GetIncomingHeals returns four values; binding through a local truncates
+-- the spill so SetValue's interpolation slot doesn't get a secret number.
 local function UpdateHealPredictionDisplay(widget, config, calculator, maxHP)
     local bar = widget.healPredictionBar
     if not bar then return end
@@ -389,17 +375,12 @@ local function UpdateHealPredictionDisplay(widget, config, calculator, maxHP)
 
     bar:SetReverseFill(false)
     bar:SetMinMaxValues(0, maxHP)
-    -- GetIncomingHeals returns four values (amount, fromHealer, fromOthers,
-    -- clamped). Only `amount` belongs in SetValue's first slot — the others
-    -- would spill into the interpolation arg, which doesn't accept secrets.
+
     local incoming = calculator:GetIncomingHeals()
     bar:SetValue(incoming)
     bar:Show()
 end
 
---- Invalidates the cached "last applied bar width" on every overlay so the
---- next per-update call re-anchors them. Called when the HP bar's pixel
---- width changes (max HP loss landing/clearing, layout/style change).
 local function InvalidateOverlayAnchors(widget)
     if widget.healAbsorbBar then widget.healAbsorbBar._lastBarWidth = nil end
     if widget.damageAbsorbBar then widget.damageAbsorbBar._lastBarWidth = nil end
@@ -409,16 +390,47 @@ local function InvalidateOverlayAnchors(widget)
     end
 end
 
---- Updates the health bar widget for a unit frame.
---- All four prediction values (current health, damage absorbs, heal absorbs,
---- incoming heals) flow through a single UnitHealPredictionCalculator
---- populated by one `UnitGetDetailedHealPrediction` call per update. No Lua
---- arithmetic, comparisons, or boolean tests on values returned from the
---- calculator — they may be secret. The `clamped` booleans returned alongside
---- absorb amounts are plain Lua booleans and ARE safe to test.
---- @param state table The unit frame state table
+local function ResolveHealthBarColors(config, unit)
+    local r, g, b, a = 0.2, 0.8, 0.2, 1
+    local bg = config.backgroundColor
+    local bgR, bgG, bgB, bgA = bg.r, bg.g, bg.b, bg.a or 0.8
+
+    if config.colorMode == "class" then
+        r, g, b = GetClassColor(unit)
+    elseif config.colorMode == "class_inverted" then
+        local cc = config.customColor
+        r, g, b, a = cc.r, cc.g, cc.b, cc.a or 1
+        bgR, bgG, bgB = GetClassColor(unit)
+    elseif config.colorMode == "custom" then
+        local cc = config.customColor
+        r, g, b, a = cc.r, cc.g, cc.b, cc.a or 1
+    elseif config.colorMode == "reaction" then
+        local reaction = UnitReaction(unit, "player")
+        local color = reaction and FACTION_BAR_COLORS[reaction]
+        if color then
+            r, g, b = color.r, color.g, color.b
+        end
+    end
+
+    return r, g, b, a, bgR, bgG, bgB, bgA
+end
+
+local function PopulateHealthBarValue(widget, config, calculator, unit, maxHealth)
+    widget:SetMinMaxValues(0, maxHealth)
+
+    if not (calculator and UnitGetDetailedHealPrediction) then
+        widget:SetValue(UnitHealth(unit))
+        return
+    end
+
+    local healSource = (config.healPredictionSource == "self") and "player" or nil
+    UnitGetDetailedHealPrediction(unit, healSource, calculator)
+    widget:SetValue(calculator:GetCurrentHealth())
+end
+
 function UnitFrameBase.UpdateHealthBar(state)
     if not state.customFrame or not state.customFrame.widgets.healthBar then return end
+
     local widget = state.customFrame.widgets.healthBar
     local config = GetWidgetConfig(state, "healthBar")
     local unit = state.unit
@@ -426,62 +438,23 @@ function UnitFrameBase.UpdateHealthBar(state)
     local maxHealth = UnitHealthMax(unit)
     if not maxHealth then return end
 
-    -- Color update — independent of the calculator pipeline so the bar
-    -- still recolors on UNIT_FACTION / dispel even if the calculator path
-    -- short-circuits.
-    local r, g, b, a = 0.2, 0.8, 0.2, 1
-    local bgR, bgG, bgB, bgA = config.backgroundColor.r, config.backgroundColor.g, config.backgroundColor.b, config.backgroundColor.a or 0.8
-
-    if config.colorMode == "class" then
-        r, g, b = GetClassColor(unit)
-    elseif config.colorMode == "class_inverted" then
-        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
-        bgR, bgG, bgB = GetClassColor(unit)
-    elseif config.colorMode == "custom" then
-        r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
-    elseif config.colorMode == "reaction" then
-        local reaction = UnitReaction(unit, "player")
-        if reaction then
-            local color = FACTION_BAR_COLORS[reaction]
-            if color then
-                r, g, b = color.r, color.g, color.b
-            end
-        end
-    end
-
+    local r, g, b, a, bgR, bgG, bgB, bgA = ResolveHealthBarColors(config, unit)
     widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
     if not state.hasDispelTint then
         widget:SetStatusBarColor(r, g, b, a)
     end
 
-    -- Populate the calculator. The third arg is the "heal source" filter:
-    -- "player" → only the local player's heals counted toward the prediction;
-    -- nil → all healers. The mode mapping is per-frame config.
-    local calculator = widget.calculator
-    if calculator and UnitGetDetailedHealPrediction then
-        local healSource = (config.healPredictionSource == "self") and "player" or nil
-        UnitGetDetailedHealPrediction(unit, healSource, calculator)
+    PopulateHealthBarValue(widget, config, widget.calculator, unit, maxHealth)
 
-        widget:SetMinMaxValues(0, maxHealth)
-        widget:SetValue(calculator:GetCurrentHealth())
-    else
-        -- Calculator API unavailable — fall back to the legacy direct path
-        -- so the bar still functions on clients that don't expose it.
-        widget:SetMinMaxValues(0, maxHealth)
-        widget:SetValue(UnitHealth(unit))
-    end
-
-    -- Max HP loss must run before the overlay updates because it changes
-    -- `widget:GetWidth()`, which the overlays read to size themselves.
     local widthBefore = widget:GetWidth()
     UpdateMaxHealthLossDisplay(widget, config, unit)
     if widget:GetWidth() ~= widthBefore then
         InvalidateOverlayAnchors(widget)
     end
 
-    UpdateHealAbsorbDisplay(widget, config, calculator, maxHealth)
-    UpdateDamageAbsorbDisplay(widget, config, calculator, maxHealth)
-    UpdateHealPredictionDisplay(widget, config, calculator, maxHealth)
+    UpdateHealAbsorbDisplay(widget, config, widget.calculator, maxHealth)
+    UpdateDamageAbsorbDisplay(widget, config, widget.calculator, maxHealth)
+    UpdateHealPredictionDisplay(widget, config, widget.calculator, maxHealth)
 end
 
 local function ShouldShowPowerBar(unit, visibility)

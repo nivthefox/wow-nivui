@@ -327,7 +327,8 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     frame.currentWidget = nil
 
     local TAB_HEIGHT = 24
-    local TAB_HOLDER_PADDING = 14   -- Space between tab row(s) and content.
+    local TAB_CONTENT_GAP = 14
+    local FALLBACK_TAB_HOLDER_WIDTH = 600
 
     local tabHolder = CreateFrame("Frame", nil, frame)
     tabHolder:SetHeight(28)
@@ -336,20 +337,15 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     frame.tabHolder = tabHolder
 
     local contentArea = CreateFrame("Frame", nil, frame)
-    contentArea:SetPoint("TOPLEFT", 0, -(TAB_HEIGHT + TAB_HOLDER_PADDING))
+    contentArea:SetPoint("TOPLEFT", 0, -(TAB_HEIGHT + TAB_CONTENT_GAP))
     contentArea:SetPoint("BOTTOMRIGHT", 0, 0)
     frame.contentArea = contentArea
 
-    --- Lays out the per-widget tab buttons across as many rows as needed to
-    --- fit within the tab holder's width, mirroring the wrapping logic in
-    --- config/Bars.lua's class-bar tab strip. After laying out, the tab
-    --- holder grows to fit and the content area is pushed down so it never
-    --- overlaps the wrapped tabs.
     local function LayoutTabRows(self)
         if #self.tabButtons == 0 then return end
 
         local containerWidth = self.tabHolder:GetWidth()
-        if containerWidth == 0 then containerWidth = 600 end
+        if containerWidth == 0 then containerWidth = FALLBACK_TAB_HOLDER_WIDTH end
 
         local x, y = 0, 0
         local numRows = 1
@@ -368,12 +364,11 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
 
         self.tabHolder:SetHeight(numRows * TAB_HEIGHT + 4)
         self.contentArea:ClearAllPoints()
-        self.contentArea:SetPoint("TOPLEFT", 0, -(numRows * TAB_HEIGHT + TAB_HOLDER_PADDING))
+        self.contentArea:SetPoint("TOPLEFT", 0, -(numRows * TAB_HEIGHT + TAB_CONTENT_GAP))
         self.contentArea:SetPoint("BOTTOMRIGHT", 0, 0)
     end
     frame.LayoutTabRows = LayoutTabRows
 
-    -- Re-wrap when the panel resizes (e.g., the user resizes the config window).
     frame:SetScript("OnSizeChanged", function(self)
         LayoutTabRows(self)
     end)
@@ -438,8 +433,6 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 self:SelectTab(i)
             end)
 
-            -- Provisional anchor; LayoutTabRows() at the end of the loop
-            -- re-anchors every tab into wrapped rows that fit the panel width.
             tab:SetPoint("TOPLEFT", 0, 0)
 
             table.insert(self.tabButtons, tab)
