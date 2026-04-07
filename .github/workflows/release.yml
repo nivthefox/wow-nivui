@@ -43,7 +43,7 @@ jobs:
                 title: $title,
                 url: $url,
                 description: $body,
-                color: 5814783,
+                color: 65430,
                 timestamp: $timestamp,
                 footer: { text: "NivUI" }
               }]
