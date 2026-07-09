@@ -9,6 +9,33 @@ function NivUI.BarBase.CreateModule(config)
 
     local module = {}
 
+    local function RegisterWithEditMode(frame)
+        if not NivUI.EditMode then return end
+
+        local barConfig = NivUI.classBarRegistry[state.barType]
+        if not barConfig then return end
+
+        local frameType = "classBar_" .. state.barType
+        local selection = NivUI.EditMode:CreateSelectionFrame(frameType, frame)
+
+        if not selection.barDragHooked then
+            selection.barDragHooked = true
+            local origDragStop = selection:GetScript("OnDragStop")
+            selection:SetScript("OnDragStop", function(self)
+                origDragStop(self)
+                self.customFrame:SetMovable(true)
+            end)
+        end
+
+        if NivUI.EditMode:IsActive() then
+            if not frame:IsShown() then
+                frame:Show()
+            end
+            NivUI.EditMode:ShowHighlighted(frameType)
+            NivUI.EditMode:RegisterFrameForMagnetism(frame)
+        end
+    end
+
     function module.Enable()
         if state.enabled then return end
 
@@ -27,10 +54,20 @@ function NivUI.BarBase.CreateModule(config)
         if config.onEnable then
             config.onEnable(state.frame)
         end
+
+        RegisterWithEditMode(state.frame)
     end
 
     function module.Disable()
         if not state.enabled then return end
+
+        local frameType = "classBar_" .. state.barType
+        if NivUI.EditMode then
+            NivUI.EditMode:HideSelection(frameType)
+            if state.frame then
+                NivUI.EditMode:UnregisterFrameFromMagnetism(state.frame)
+            end
+        end
 
         if state.frame then
             state.frame:UnregisterAllEvents()

@@ -54,6 +54,24 @@ function NivUI.EditMode:UnregisterVisibilityDriver(frameType)
 end
 
 function NivUI.EditMode:SavePosition(frameType, customFrame)
+    local barType = frameType:match("^classBar_(.+)$")
+    if barType then
+        local barConfig = NivUI.classBarRegistry[barType]
+        if barConfig then
+            local db = NivUI.current[barConfig.dbKey]
+            if db then
+                local point, _, _, x, y = customFrame:GetPoint(1)
+                db.point = point
+                db.x = x
+                db.y = y
+                if NivUI.OnBarMoved then
+                    NivUI.OnBarMoved()
+                end
+            end
+        end
+        return
+    end
+
     NivUI.current.unitFramePositions = NivUI.current.unitFramePositions or {}
 
     local point, relativeTo, relativePoint, offsetX, offsetY = customFrame:GetPoint(1)
@@ -306,6 +324,12 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
         local groupConfig = NivUI:GetCustomRaidGroup(groupId)
         if groupConfig then
             labelText = groupConfig.name
+        end
+    elseif frameType:find("^classBar_") then
+        local barType = frameType:gsub("^classBar_", "")
+        local barConfig = NivUI.classBarRegistry and NivUI.classBarRegistry[barType]
+        if barConfig then
+            labelText = barConfig.displayName or barType
         end
     end
     selection.Label:SetText(labelText)
@@ -607,6 +631,13 @@ end
 local function OnEditModeExit()
     editModeActive = false
     NivUI.EditMode:HideAllSelections()
+
+    for _, config in pairs(NivUI.classBarRegistry) do
+        local updateFn = NivUI[config.globalRef .. "_UpdateVisibility"]
+        if updateFn then
+            updateFn()
+        end
+    end
 end
 
 EventRegistry:RegisterCallback("EditMode.Enter", OnEditModeEnter, NivUI.EditMode)

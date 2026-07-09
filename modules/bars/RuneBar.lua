@@ -16,15 +16,16 @@ local UpdateVisibility
 local UpdateRunes
 
 local function ShouldShow()
+    if NivUI.EditMode and NivUI.EditMode:IsActive() then
+        return true
+    end
+
     local visibility = GetSetting("visibility")
 
     if visibility == "never" then
         return false
     end
 
-    if not GetSetting("locked") then
-        return true
-    end
     if not isDeathKnight then
         return false
     end
@@ -130,12 +131,6 @@ local function LoadPosition(frame)
         db.width or defaults.width,
         db.height or defaults.height
     )
-
-    if GetSetting("locked") then
-        frame.resizeHandle:Hide()
-    else
-        frame.resizeHandle:Show()
-    end
 end
 
 local function ApplyColors(frame)
@@ -153,82 +148,15 @@ local function ApplyBorder(frame)
     frame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
 end
 
-local function ApplyLockState(frame)
-    local locked = GetSetting("locked")
-    if locked then
-        frame.resizeHandle:Hide()
-    else
-        frame.resizeHandle:Show()
-        frame:Show()
-    end
-    UpdateVisibility()
-end
-
-local function EnableDragging(frame)
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-
-    frame:SetScript("OnDragStart", function(self)
-        if not GetSetting("locked") then
-            self:StartMoving()
-        end
-    end)
-
-    frame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        local db = NivUI.current.runeBar
-        local point, _, _, x, y = self:GetPoint()
-        db.point = point
-        db.x = x
-        db.y = y
-        if NivUI.OnBarMoved then
-            NivUI.OnBarMoved()
-        end
-    end)
-end
-
 local function CreateRuneBarUI()
     local frame = CreateFrame("Frame", "NivUIRuneBar", UIParent)
     frame:SetSize(240, 20)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, -430)
-    frame:SetResizable(true)
-    frame:SetResizeBounds(120, 5, 480, 60)
     frame:Hide()
-
-    local clickBg = frame:CreateTexture(nil, "BACKGROUND", nil, -1)
-    clickBg:SetAllPoints()
-    clickBg:SetColorTexture(0, 0, 0, 0)
 
     local segmentContainer = CreateFrame("Frame", nil, frame)
     segmentContainer:SetAllPoints()
     frame.segmentContainer = segmentContainer
-
-    local resizeHandle = CreateFrame("Button", nil, frame)
-    resizeHandle:SetSize(16, 16)
-    resizeHandle:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-    resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-    resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-    resizeHandle:Hide()
-    frame.resizeHandle = resizeHandle
-
-    resizeHandle:SetScript("OnMouseDown", function(self, button)
-        if button == "LeftButton" then
-            frame:StartSizing("BOTTOMRIGHT")
-        end
-    end)
-
-    resizeHandle:SetScript("OnMouseUp", function(self, _button)
-        frame:StopMovingOrSizing()
-        local db = NivUI.current.runeBar
-        db.width = frame:GetWidth()
-        db.height = frame:GetHeight()
-        frame:RebuildSegments()
-        if NivUI.OnBarMoved then
-            NivUI.OnBarMoved()
-        end
-    end)
 
     local border = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     border:SetPoint("TOPLEFT", -1, 1)
@@ -313,7 +241,6 @@ local function OnEnable(frame)
 
     LoadPosition(frame)
     ApplyBorder(frame)
-    EnableDragging(frame)
     CheckClass()
     frame:RebuildSegments()
 end
@@ -343,11 +270,6 @@ NivUI.RuneBar_ApplyBorder = function()
         ApplyBorder(NivUI.RuneBar)
     end
 end
-NivUI.RuneBar_ApplyLockState = function()
-    if NivUI.RuneBar then
-        ApplyLockState(NivUI.RuneBar)
-    end
-end
 NivUI.RuneBar_LoadPosition = function()
     if NivUI.RuneBar then
         LoadPosition(NivUI.RuneBar)
@@ -372,7 +294,6 @@ NivUI:RegisterClassBar("rune", {
         width = 240,
         height = 20,
         spacing = 2,
-        locked = true,
         visibility = "combat",
         emptyColor = { r = 0.2, g = 0.2, b = 0.2, a = 0.8 },
         filledColor = { r = 0.77, g = 0.12, b = 0.23, a = 1.0 },
@@ -390,7 +311,6 @@ NivUI:RegisterClassBar("rune", {
         { type = "filledColor" },
         { type = "borderColor" },
         { type = "header", text = "Position" },
-        { type = "lockedCheckbox" },
         { type = "widthSlider", min = 120, max = 480 },
         { type = "heightSlider" },
         { type = "intervalSlider" },

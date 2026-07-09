@@ -49,14 +49,14 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     local UpdateVisibility
 
     local function ShouldShow()
+        if NivUI.EditMode and NivUI.EditMode:IsActive() then
+            return true
+        end
+
         local visibility = GetSetting("visibility")
 
         if visibility == "never" then
             return false
-        end
-
-        if not GetSetting("locked") then
-            return true
         end
         if not hasResource then
             return false
@@ -118,12 +118,6 @@ function NivUI.SegmentedBarBase.CreateModule(config)
             db.width or defaults.width,
             db.height or defaults.height
         )
-
-        if GetSetting("locked") then
-            frame.resizeHandle:Hide()
-        else
-            frame.resizeHandle:Show()
-        end
     end
 
     local function ApplyColors(frame)
@@ -141,82 +135,15 @@ function NivUI.SegmentedBarBase.CreateModule(config)
         frame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
     end
 
-    local function ApplyLockState(frame)
-        local locked = GetSetting("locked")
-        if locked then
-            frame.resizeHandle:Hide()
-        else
-            frame.resizeHandle:Show()
-            frame:Show()
-        end
-        UpdateVisibility()
-    end
-
-    local function EnableDragging(frame)
-        frame:SetMovable(true)
-        frame:EnableMouse(true)
-        frame:RegisterForDrag("LeftButton")
-
-        frame:SetScript("OnDragStart", function(self)
-            if not GetSetting("locked") then
-                self:StartMoving()
-            end
-        end)
-
-        frame:SetScript("OnDragStop", function(self)
-            self:StopMovingOrSizing()
-            local db = NivUI.current[dbKey]
-            local point, _, _, x, y = self:GetPoint()
-            db.point = point
-            db.x = x
-            db.y = y
-            if NivUI.OnBarMoved then
-                NivUI.OnBarMoved()
-            end
-        end)
-    end
-
     local function CreateSegmentedBarUI()
         local frame = CreateFrame("Frame", frameName, UIParent)
         frame:SetSize(200, 20)
         frame:SetPoint("CENTER", UIParent, "CENTER", 0, defaultY)
-        frame:SetResizable(true)
-        frame:SetResizeBounds(60, 5, 400, 60)
         frame:Hide()
-
-        local clickBg = frame:CreateTexture(nil, "BACKGROUND", nil, -1)
-        clickBg:SetAllPoints()
-        clickBg:SetColorTexture(0, 0, 0, 0)
 
         local segmentContainer = CreateFrame("Frame", nil, frame)
         segmentContainer:SetAllPoints()
         frame.segmentContainer = segmentContainer
-
-        local resizeHandle = CreateFrame("Button", nil, frame)
-        resizeHandle:SetSize(16, 16)
-        resizeHandle:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-        resizeHandle:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-        resizeHandle:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-        resizeHandle:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-        resizeHandle:Hide()
-        frame.resizeHandle = resizeHandle
-
-        resizeHandle:SetScript("OnMouseDown", function(self, button)
-            if button == "LeftButton" then
-                frame:StartSizing("BOTTOMRIGHT")
-            end
-        end)
-
-        resizeHandle:SetScript("OnMouseUp", function(self, _button)
-            frame:StopMovingOrSizing()
-            local db = NivUI.current[dbKey]
-            db.width = frame:GetWidth()
-            db.height = frame:GetHeight()
-            frame:RebuildSegments()
-            if NivUI.OnBarMoved then
-                NivUI.OnBarMoved()
-            end
-        end)
 
         local border = CreateFrame("Frame", nil, frame, "BackdropTemplate")
         border:SetPoint("TOPLEFT", -1, 1)
@@ -382,7 +309,6 @@ function NivUI.SegmentedBarBase.CreateModule(config)
 
         LoadPosition(frame)
         ApplyBorder(frame)
-        EnableDragging(frame)
         CheckResource()
         frame:RebuildSegments()
     end
@@ -410,11 +336,6 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     NivUI[globalRef .. "_ApplyBorder"] = function()
         if NivUI[globalRef] then
             ApplyBorder(NivUI[globalRef])
-        end
-    end
-    NivUI[globalRef .. "_ApplyLockState"] = function()
-        if NivUI[globalRef] then
-            ApplyLockState(NivUI[globalRef])
         end
     end
     NivUI[globalRef .. "_LoadPosition"] = function()

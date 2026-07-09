@@ -306,35 +306,6 @@ function SectionHandlers.fontShadow(content, section, config, Components)
     return widget, onShow
 end
 
-function SectionHandlers.lockedCheckbox(content, section, config, Components)
-    local widget
-    if section.applySetting then
-        widget = Components.GetCheckbox(
-            content,
-            section.label or "Locked",
-            function(checked)
-                NivUI.current[config.dbKey].locked = checked
-                NivUI:ApplySettings(section.applySetting)
-            end
-        )
-    else
-        widget = Components.GetCheckbox(
-            content,
-            section.label or "Locked",
-            function(checked)
-                NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                NivUI.current[config.dbKey].locked = checked
-                if section.applyFunc then section.applyFunc() end
-            end
-        )
-    end
-    local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
-        widget:SetValue(db.locked or false)
-    end
-    return widget, onShow
-end
-
 function SectionHandlers.widthSlider(content, section, config, Components)
     local widget
     if section.applySetting then
@@ -591,11 +562,6 @@ local function AutoWireSections(sections, globalRef)
             elseif section.type == "borderColor" then
                 section.applyFunc = function()
                     local fn = NivUI[globalRef .. "_ApplyBorder"]
-                    if fn then fn() end
-                end
-            elseif section.type == "lockedCheckbox" then
-                section.applyFunc = function()
-                    local fn = NivUI[globalRef .. "_ApplyLockState"]
                     if fn then fn() end
                 end
             elseif section.type == "widthSlider" or section.type == "heightSlider" then
