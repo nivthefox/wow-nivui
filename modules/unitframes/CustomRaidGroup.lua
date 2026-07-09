@@ -49,7 +49,8 @@ local function GetFilteredUnits(groupConfig)
             end
         end
     else
-        for i = 1, 40 do
+        local count = GetNumGroupMembers()
+        for i = 1, count do
             local unit = "raid" .. i
             if UnitExists(unit) then
                 local shouldInclude = false

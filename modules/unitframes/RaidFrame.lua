@@ -55,7 +55,8 @@ local function GetActiveRaidSize()
     end
 
     local occupiedGroups = {}
-    for i = 1, GetNumGroupMembers() do
+    local count = GetNumGroupMembers()
+    for i = 1, count do
         local _, _, subgroup = GetRaidRosterInfo(i)
         if subgroup then
             occupiedGroups[subgroup] = true
@@ -94,7 +95,8 @@ end
 
 local function GetGroupUnits(groupNum)
     local units = {}
-    for i = 1, 40 do
+    local count = GetNumGroupMembers()
+    for i = 1, count do
         local unit = "raid" .. i
         if UnitExists(unit) then
             local _, _, subgroup = GetRaidRosterInfo(i)
@@ -108,7 +110,8 @@ end
 
 local function GetAllUnitsSortedByRole()
     local units = {}
-    for i = 1, 40 do
+    local count = GetNumGroupMembers()
+    for i = 1, count do
         local unit = "raid" .. i
         if UnitExists(unit) then
             table.insert(units, unit)
@@ -197,6 +200,7 @@ local function LayoutGroupMembers(raidSize, groupNum)
     for _, unit in ipairs(units) do
         local frame = state.memberFrames[unit]
         if frame then
+            frame:SetParent(groupFrame)
             frame:ClearAllPoints()
             frame:SetPoint("TOPLEFT", groupFrame, "TOPLEFT", xOffset, yOffset)
             frame:Show()
@@ -223,6 +227,10 @@ end
 local function LayoutGroupFrames(raidSize)
     local state = states[raidSize]
     if not state.container then return end
+
+    for _, frame in pairs(state.memberFrames) do
+        frame:Hide()
+    end
 
     local groupOrientation = NivUI:GetRaidGroupOrientation(raidSize)
     local groupGrowth = NivUI:GetRaidGroupGrowthDirection(raidSize)
