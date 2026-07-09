@@ -5,6 +5,17 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.7.0) - 2026-07-09
+
+### Added
+
+- Option to hide permanent (no-duration) buffs and debuffs from aura displays
+- Class bars now integrate with Edit Mode instead of using a separate locked setting
+
+### Fixed
+
+- Raid frames no longer show duplicate players after a roster change
+
 ## [1.6.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.6.0) - 2026-04-07
 
 ### Added
