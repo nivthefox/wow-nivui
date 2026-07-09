@@ -1018,8 +1018,9 @@ end
 --- @param filter string The aura filter string (e.g. "HELPFUL", "HARMFUL", "HARMFUL|IMPORTANT")
 --- @param maxIcons number Maximum number of auras to collect
 --- @param filterPlayer boolean If true, only include auras cast by the player
+--- @param filterNoDuration boolean If true, skip auras with no/infinite duration
 --- @return table Array of aura data tables
-local function CollectAuras(unit, filter, maxIcons, filterPlayer)
+local function CollectAuras(unit, filter, maxIcons, filterPlayer, filterNoDuration)
     local auras = {}
     if not C_UnitAuras or not C_UnitAuras.GetAuraSlots then return auras end
 
@@ -1027,7 +1028,9 @@ local function CollectAuras(unit, filter, maxIcons, filterPlayer)
     for i = 2, #slots do
         local aura = C_UnitAuras.GetAuraDataBySlot(unit, slots[i])
         if aura and aura.auraInstanceID then
-            if filterPlayer then
+            if filterNoDuration and aura.duration == 0 then
+                -- skip: infinite/no-duration aura
+            elseif filterPlayer then
                 local playerFilter = filter:find("HELPFUL") and "HELPFUL|PLAYER" or "HARMFUL|PLAYER"
                 local isFilteredOut = C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, playerFilter)
                 if isFilteredOut == false then
@@ -1063,13 +1066,14 @@ local function UpdateAuraWidget(state, widgetName, filter)
 
     local config = widget.config
     local filterPlayer = config.filterPlayer
+    local filterNoDuration = config.filterNoDuration
     local showDuration = config.showDuration
     local showStacks = config.showStacks
     local isDebuffWidget = (widgetName == "debuffs" or widgetName == "importantDebuffs")
     local showDispelBorder = isDebuffWidget and (config.dispelIndicator == "iconBorder")
     local debuffColorCurve = showDispelBorder and NivUI.UnitFrames.DebuffColorCurve or nil
 
-    local auras = CollectAuras(unit, filter, config.maxIcons, filterPlayer)
+    local auras = CollectAuras(unit, filter, config.maxIcons, filterPlayer, filterNoDuration)
 
     for i, icon in ipairs(widget.icons) do
         local aura = auras[i]

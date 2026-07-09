@@ -439,6 +439,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "showDuration", label = "Show Duration" },
                 { kind = "checkbox", key = "showStacks", label = "Show Stacks" },
                 { kind = "checkbox", key = "filterPlayer", label = "Only Player Buffs" },
+                { kind = "checkbox", key = "filterNoDuration", label = "Hide Permanent Buffs" },
             },
         },
     },
@@ -473,6 +474,7 @@ NivUI.UnitFrames.WidgetConfigs = {
                 { kind = "checkbox", key = "showDuration", label = "Show Duration" },
                 { kind = "checkbox", key = "showStacks", label = "Show Stacks" },
                 { kind = "checkbox", key = "filterPlayer", label = "Only Player Debuffs" },
+                { kind = "checkbox", key = "filterNoDuration", label = "Hide Permanent Debuffs" },
             },
         },
         {
