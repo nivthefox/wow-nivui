@@ -959,7 +959,6 @@ function UnitFrameBase.UpdateAllWidgets(state)
 end
 
 --- Updates the range-based alpha fading for a unit frame.
---- Fades out-of-range party/raid members to the configured alpha when enabled.
 --- @param state table The unit frame state table
 function UnitFrameBase.UpdateRangeAlpha(state)
     if not state.customFrame or not state.customFrame:IsShown() then return end
@@ -971,21 +970,13 @@ function UnitFrameBase.UpdateRangeAlpha(state)
         return
     end
 
-    local unit = state.unit
-    local isPartyUnit = unit:match("^party%d+$")
-    local isRaidUnit = unit:match("^raid%d+$")
-
-    if not isPartyUnit and not isRaidUnit then
-        if state.rangeAlphaApplied then
-            state.rangeAlphaApplied = nil
-            state.customFrame:SetAlpha(1)
-        end
-        return
-    end
-
-    local inRange = UnitInRange(unit)
+    local inRange, checkedRange = UnitInRange(state.unit)
     local outOfRangeAlpha = NivUI:GetOutOfRangeAlpha()
-    state.customFrame:SetAlphaFromBoolean(inRange, 1, outOfRangeAlpha)
+    if checkedRange and not inRange then
+        state.customFrame:SetAlpha(outOfRangeAlpha)
+    else
+        state.customFrame:SetAlpha(1)
+    end
     state.rangeAlphaApplied = true
 end
 
