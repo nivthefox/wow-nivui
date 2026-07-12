@@ -557,7 +557,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             for i, row in ipairs(rows) do
                 local y = -headerHeight - (i - 1) * ROW_HEIGHT
                 local rowFrame = CreateFrame("Frame", nil, holder)
-                rowFrame:SetHeight(rowHeight)
+                rowFrame:SetHeight(ROW_HEIGHT)
                 rowFrame:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, y)
                 rowFrame:SetPoint("TOPRIGHT", holder, "TOPRIGHT", 0, y)
 
