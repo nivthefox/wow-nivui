@@ -9,6 +9,30 @@ local Filters = NivUI.Filters
 local ROW_HEIGHT = 26
 local ICON_SIZE = 18
 
+StaticPopupDialogs["NIVUI_NEW_CUSTOM_FILTER"] = {
+    text = "Enter name for new custom filter:",
+    button1 = "Create",
+    button2 = "Cancel",
+    hasEditBox = 1,
+    OnAccept = function(dialog)
+        local ok, err = Filters:CreateCustom(dialog:GetEditBox():GetText())
+        if not ok then
+            print("|cffff2020NivUI:|r " .. tostring(err))
+        end
+    end,
+    EditBoxOnEnterPressed = function(editBox)
+        local dialog = editBox:GetParent()
+        local ok, err = Filters:CreateCustom(editBox:GetText())
+        if not ok then
+            print("|cffff2020NivUI:|r " .. tostring(err))
+        end
+        dialog:Hide()
+    end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+}
+
 local function BuildSpellRow(content)
     local row = CreateFrame("Button", nil, content)
     row:SetHeight(ROW_HEIGHT)
@@ -158,26 +182,10 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
     container:SetAllPoints()
     container:Hide()
 
-    local newRow = CreateFrame("Frame", nil, container)
-    newRow:SetHeight(24)
-    newRow:SetPoint("TOPLEFT", 4, -6)
-    newRow:SetPoint("TOPRIGHT", -4, -6)
-
-    local newButton = CreateFrame("Button", nil, newRow, "UIPanelButtonTemplate")
-    newButton:SetSize(90, 22)
-    newButton:SetPoint("RIGHT", 0, 0)
-    newButton:SetText("New Filter")
-
-    local newBox = CreateFrame("EditBox", nil, newRow, "InputBoxTemplate")
-    newBox:SetHeight(22)
-    newBox:SetPoint("LEFT", 6, 0)
-    newBox:SetPoint("RIGHT", newButton, "LEFT", -12, 0)
-    newBox:SetAutoFocus(false)
-
     local tabHolder = CreateFrame("Frame", nil, container)
     tabHolder:SetHeight(30)
-    tabHolder:SetPoint("TOPLEFT", newRow, "BOTTOMLEFT", 0, -8)
-    tabHolder:SetPoint("TOPRIGHT", newRow, "BOTTOMRIGHT", 0, -8)
+    tabHolder:SetPoint("TOPLEFT", 4, -6)
+    tabHolder:SetPoint("TOPRIGHT", -4, -6)
 
     local body = CreateFrame("Frame", nil, container)
     body:SetPoint("TOPLEFT", tabHolder, "BOTTOMLEFT", 0, -4)
@@ -185,11 +193,17 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
 
     local emptyLabel = body:CreateFontString(nil, "OVERLAY", "GameFontDisable")
     emptyLabel:SetPoint("TOPLEFT", 8, -8)
-    emptyLabel:SetText("No custom filters yet. Type a name above and click New Filter.")
+    emptyLabel:SetText("No custom filters yet. Click + to create one.")
 
     local spellPanel = CreateSpellPanel(body)
 
     local tabButtons = {}
+
+    local addButton = Components.GetTab(tabHolder, "+")
+    PanelTemplates_DeselectTab(addButton)
+    addButton:SetScript("OnClick", function()
+        StaticPopup_Show("NIVUI_NEW_CUSTOM_FILTER")
+    end)
 
     local function SelectFilter(name)
         container.currentFilter = name
@@ -215,12 +229,9 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
 
         local previous
         for i, name in ipairs(names) do
-            local btn = CreateFrame("Button", nil, tabHolder, "PanelTopTabButtonTemplate")
+            local btn = Components.GetTab(tabHolder, name)
             btn:SetID(i)
             btn.filterName = name
-            btn:SetText(name)
-            btn:SetScript("OnShow", function(self) PanelTemplates_TabResize(self, 10, nil, 60) end)
-            PanelTemplates_TabResize(btn, 10, nil, 60)
             btn:SetScript("OnClick", function() SelectFilter(name) end)
             if previous then
                 btn:SetPoint("LEFT", previous, "RIGHT", 0, 0)
@@ -229,6 +240,13 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
             end
             tabButtons[i] = btn
             previous = btn
+        end
+
+        addButton:ClearAllPoints()
+        if previous then
+            addButton:SetPoint("LEFT", previous, "RIGHT", 0, 0)
+        else
+            addButton:SetPoint("BOTTOMLEFT", tabHolder, "BOTTOMLEFT", 4, 0)
         end
 
         local selection = container.currentFilter
@@ -245,24 +263,12 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
         end
     end
 
-    local function CommitNew()
-        local ok, err = Filters:CreateCustom(newBox:GetText())
-        if ok then
-            container.currentFilter = strtrim(newBox:GetText())
-            newBox:SetText("")
-            newBox:ClearFocus()
-            RebuildTabs()
-        else
-            print("|cffff2020NivUI:|r " .. tostring(err))
-        end
-    end
-    newButton:SetScript("OnClick", CommitNew)
-    newBox:SetScript("OnEnterPressed", CommitNew)
-    newBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-
     container:SetScript("OnShow", RebuildTabs)
 
-    NivUI:RegisterCallback("CustomFiltersChanged", function()
+    NivUI:RegisterCallback("CustomFiltersChanged", function(data)
+        if data and data.name and not data.deleted then
+            container.currentFilter = data.name
+        end
         if container:IsShown() then RebuildTabs() end
     end)
     NivUI:RegisterCallback("ProfileSwitched", function()
