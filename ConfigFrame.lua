@@ -1,7 +1,7 @@
 local FRAME_WIDTH = 680
 local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
-local SIDEBAR_WIDTH = 100
+local SIDEBAR_WIDTH = 125
 
 local Components = {}
 
@@ -427,13 +427,22 @@ filtersTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
 filtersTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
 table.insert(sidebarTabs, filtersTab)
 
+-- Overlays tab (from config/Overlays.lua)
+local overlaysContainer = NivUI.Config.Overlays.SetupTab(ContentArea, Components)
+table.insert(sidebarContainers, overlaysContainer)
+
+local overlaysTab = Components.GetSidebarTab(Sidebar, "Custom Overlays")
+overlaysTab:SetPoint("TOPLEFT", filtersTab, "BOTTOMLEFT", 0, -2)
+overlaysTab:SetScript("OnClick", function() SelectSidebarTab(4) end)
+table.insert(sidebarTabs, overlaysTab)
+
 -- Profiles tab (from config/Profiles.lua)
 local profilesContainer = NivUI.Config.Profiles.SetupTab(ContentArea, Components)
 table.insert(sidebarContainers, profilesContainer)
 
 local profilesTab = Components.GetSidebarTab(Sidebar, "Profiles")
-profilesTab:SetPoint("TOPLEFT", filtersTab, "BOTTOMLEFT", 0, -2)
-profilesTab:SetScript("OnClick", function() SelectSidebarTab(4) end)
+profilesTab:SetPoint("TOPLEFT", overlaysTab, "BOTTOMLEFT", 0, -2)
+profilesTab:SetScript("OnClick", function() SelectSidebarTab(5) end)
 table.insert(sidebarTabs, profilesTab)
 
 ConfigFrame:SetScript("OnShow", function()

@@ -265,14 +265,14 @@ local function CreateWidgetList(parent, onSelect)
         wipe(self.buttons)
 
         local yOffset = 0
-        for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
+        local function AddButton(widgetType, label)
             local btn = CreateFrame("Button", nil, content)
             btn:SetSize(WIDGET_LIST_WIDTH - 30, 24)
             btn:SetPoint("TOPLEFT", 0, -yOffset)
 
             btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             btn.text:SetPoint("LEFT", 8, 0)
-            btn.text:SetText(NivUI.UnitFrames.WIDGET_NAMES[widgetType] or widgetType)
+            btn.text:SetText(label)
 
             btn.highlight = btn:CreateTexture(nil, "HIGHLIGHT")
             btn.highlight:SetAllPoints()
@@ -294,6 +294,11 @@ local function CreateWidgetList(parent, onSelect)
             yOffset = yOffset + 24
         end
 
+        for _, widgetType in ipairs(NivUI.UnitFrames.WIDGET_ORDER) do
+            AddButton(widgetType, NivUI.UnitFrames.WIDGET_NAMES[widgetType] or widgetType)
+        end
+        AddButton("overlays", "Overlays")
+
         content:SetHeight(yOffset)
     end
 
@@ -314,8 +319,16 @@ local function CreateWidgetList(parent, onSelect)
     return frame
 end
 
-local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPreview)
+--- Creates a reusable tabbed settings panel. Both the unit-frame designer (editing a
+--- style's widget) and the Custom Overlays tab (editing an overlay) drive it through opts.
+--- @param parent Frame The parent frame
+--- @param opts table getConfig(subject)->tab schema, getData(subject)->live table,
+---   save(subject) persists, refreshPreview() optional post-change hook
+--- @return Frame The panel, with :BuildFor(subject)
+function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
     local frame = CreateFrame("Frame", nil, parent)
+    frame.opts = opts
+    frame.subject = nil
 
     local bg = frame:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
@@ -324,7 +337,27 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
     frame.tabButtons = {}
     frame.tabPanels = {}
     frame.currentTab = 1
-    frame.currentWidget = nil
+
+    function frame:GetData()
+        return self.opts.getData(self.subject)
+    end
+
+    function frame:Commit(key, value)
+        local data = self.opts.getData(self.subject)
+        if not data then return end
+        DeepSet(data, key, value)
+        if self.opts.save then self.opts.save(self.subject) end
+        if self.opts.refreshPreview then self.opts.refreshPreview() end
+    end
+
+    function frame:CommitList(listName, rowKey, value)
+        local data = self.opts.getData(self.subject)
+        if not data then return end
+        data[listName] = data[listName] or {}
+        data[listName][rowKey] = value
+        if self.opts.save then self.opts.save(self.subject) end
+        if self.opts.refreshPreview then self.opts.refreshPreview() end
+    end
 
     local TAB_HEIGHT = 24
     local TAB_CONTENT_GAP = 14
@@ -390,14 +423,14 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         self.currentTab = index
     end
 
-    function frame:BuildForWidget(widgetType)
+    function frame:BuildFor(subject)
         local savedScrollPositions = {}
         for i, panel in ipairs(self.tabPanels) do
             savedScrollPositions[i] = panel:GetVerticalScroll()
         end
         local savedTab = self.currentTab
 
-        self.currentWidget = widgetType
+        self.subject = subject
 
         for _, btn in ipairs(self.tabButtons) do
             btn:Hide()
@@ -410,19 +443,29 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         end
         wipe(self.tabPanels)
 
-        if not widgetType then
+        if not subject then
             return
         end
 
-        local config = NivUI.UnitFrames.WidgetConfigs[widgetType]
+        local config = self.opts.getConfig(subject)
         if not config then
             return
         end
 
-        local style = getStyle()
-        local widgetData = style and style[widgetType] or {}
+        local widgetData = self.opts.getData(subject) or {}
 
-        for i, tabConfig in ipairs(config) do
+        local visibleTabs = {}
+        for _, tabConfig in ipairs(config) do
+            local show = true
+            if tabConfig.showIf then
+                show = (DeepGet(widgetData, tabConfig.showIf.key) == tabConfig.showIf.value)
+            end
+            if show then
+                visibleTabs[#visibleTabs + 1] = tabConfig
+            end
+        end
+
+        for i, tabConfig in ipairs(visibleTabs) do
             local tab = CreateFrame("Button", nil, self.tabHolder, "PanelTopTabButtonTemplate")
             tab:SetText(tabConfig.label)
             tab:SetScript("OnShow", function(self)
@@ -460,7 +503,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 end
 
                 if show then
-                    local entryFrame = self:CreateEntry(panelContent, entry, widgetType, widgetData, getStyle, saveStyle, refreshPreview)
+                    local entryFrame = self:CreateEntry(panelContent, entry, widgetData)
                     if entryFrame then
                         entryFrame:SetPoint("TOP", panelContent, "TOP", 0, -yOffset)
                         yOffset = yOffset + (entryFrame:GetHeight() or ROW_HEIGHT) + 4
@@ -491,7 +534,9 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         end)
     end
 
-    function frame:CreateEntry(parent, entry, widgetType, widgetData, getStyle, saveStyle, refreshPreview)
+    function frame:CreateEntry(parent, entry, widgetData)
+        local panel = self
+        local widgetType = self.subject
         local holder = CreateFrame("Frame", nil, parent)
         holder:SetHeight(ROW_HEIGHT)
         holder:SetPoint("LEFT", 10, 0)
@@ -510,12 +555,8 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
             checkBox:SetChecked(currentValue)
 
             checkBox:SetScript("OnClick", function()
-                local style = getStyle()
-                if style and style[widgetType] then
-                    DeepSet(style[widgetType], entry.key, checkBox:GetChecked())
-                    saveStyle(style)
-                    refreshPreview()
-                end
+                panel:Commit(entry.key, checkBox:GetChecked())
+                panel:BuildFor(panel.subject)
             end)
 
         elseif entry.kind == "filterMatrix" then
@@ -543,14 +584,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 toggle:SetPoint("CENTER", rowFrame, "RIGHT", x, 0)
                 toggle:SetChecked(widgetData[listName] and widgetData[listName][rowKey] or false)
                 toggle:SetScript("OnClick", function()
-                    local style = getStyle()
-                    if style and style[widgetType] then
-                        local data = style[widgetType]
-                        data[listName] = data[listName] or {}
-                        data[listName][rowKey] = toggle:GetChecked() or nil
-                        saveStyle(style)
-                        refreshPreview()
-                    end
+                    panel:CommitList(listName, rowKey, toggle:GetChecked() or nil)
                 end)
             end
 
@@ -601,12 +635,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 if updating then return end
                 updating = true
                 editBox:SetText(tostring(math.floor(value)))
-                local style = getStyle()
-                if style and style[widgetType] then
-                    DeepSet(style[widgetType], entry.key, value)
-                    saveStyle(style)
-                    refreshPreview()
-                end
+                panel:Commit(entry.key, value)
                 updating = false
             end)
 
@@ -615,12 +644,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                 value = math.max(entry.min, math.min(entry.max, value))
                 updating = true
                 slider:SetValue(value)
-                local style = getStyle()
-                if style and style[widgetType] then
-                    DeepSet(style[widgetType], entry.key, value)
-                    saveStyle(style)
-                    refreshPreview()
-                end
+                panel:Commit(entry.key, value)
                 updating = false
                 self:ClearFocus()
             end)
@@ -647,18 +671,12 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                     rootDescription:CreateRadio(
                         opt.name,
                         function()
-                            local style = getStyle()
-                            local val = style and style[widgetType] and DeepGet(style[widgetType], entry.key)
-                            return val == opt.value
+                            local data = panel:GetData()
+                            return data and DeepGet(data, entry.key) == opt.value
                         end,
                         function()
-                            local style = getStyle()
-                            if style and style[widgetType] then
-                                DeepSet(style[widgetType], entry.key, opt.value)
-                                saveStyle(style)
-                                refreshPreview()
-                                self:BuildForWidget(widgetType)
-                            end
+                            panel:Commit(entry.key, opt.value)
+                            panel:BuildFor(panel.subject)
                         end
                     )
                 end
@@ -682,17 +700,11 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                     rootDescription:CreateRadio(
                         preview,
                         function()
-                            local style = getStyle()
-                            local val = style and style[widgetType] and DeepGet(style[widgetType], entry.key)
-                            return val == tex.value
+                            local data = panel:GetData()
+                            return data and DeepGet(data, entry.key) == tex.value
                         end,
                         function()
-                            local style = getStyle()
-                            if style and style[widgetType] then
-                                DeepSet(style[widgetType], entry.key, tex.value)
-                                saveStyle(style)
-                                refreshPreview()
-                            end
+                            panel:Commit(entry.key, tex.value)
                         end
                     )
                 end
@@ -716,17 +728,11 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                     rootDescription:CreateRadio(
                         font.name,
                         function()
-                            local style = getStyle()
-                            local val = style and style[widgetType] and DeepGet(style[widgetType], entry.key)
-                            return val == font.value
+                            local data = panel:GetData()
+                            return data and DeepGet(data, entry.key) == font.value
                         end,
                         function()
-                            local style = getStyle()
-                            if style and style[widgetType] then
-                                DeepSet(style[widgetType], entry.key, font.value)
-                                saveStyle(style)
-                                refreshPreview()
-                            end
+                            panel:Commit(entry.key, font.value)
                         end
                     )
                 end
@@ -762,13 +768,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                         local a = entry.hasAlpha and ColorPickerFrame:GetColorAlpha() or nil
                         swatch.currentColor = { r = r, g = g, b = b, a = a }
                         swatch:SetColor(CreateColor(r, g, b))
-
-                        local style = getStyle()
-                        if style and style[widgetType] then
-                            DeepSet(style[widgetType], entry.key, swatch.currentColor)
-                            saveStyle(style)
-                            refreshPreview()
-                        end
+                        panel:Commit(entry.key, swatch.currentColor)
                     end
 
                     info.cancelFunc = function(previousValues)
@@ -783,6 +783,103 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         end
 
         return holder
+    end
+
+    return frame
+end
+
+--- Designer-facing wrapper: a settings panel bound to the current style's widget data.
+local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPreview)
+    local panel = NivUI.UnitFrames:CreateSettingsPanel(parent, {
+        getConfig = function(widgetType) return NivUI.UnitFrames.WidgetConfigs[widgetType] end,
+        getData = function(widgetType)
+            local style = getStyle()
+            return style and style[widgetType] or nil
+        end,
+        save = function()
+            local style = getStyle()
+            if style then saveStyle(style) end
+        end,
+        refreshPreview = refreshPreview,
+    })
+    panel.BuildForWidget = panel.BuildFor
+    return panel
+end
+
+--- Designer-facing panel that picks which overlays apply to the current style. Overlays
+--- themselves are authored in the Custom Overlays tab; this is only a checkbox list.
+local function CreateOverlaySelector(parent, getStyle, saveStyle, refreshPreview)
+    local frame = CreateFrame("Frame", nil, parent)
+
+    local bg = frame:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.06, 0.06, 0.06, 0.9)
+
+    local header = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    header:SetPoint("TOPLEFT", 12, -10)
+    header:SetText("Overlays applied to this style:")
+
+    local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    hint:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
+    hint:SetText("Create and edit overlays in the Custom Overlays tab.")
+
+    local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 8, -44)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -28, 8)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(1, 1)
+    scrollFrame:SetScrollChild(content)
+
+    local emptyText = content:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+    emptyText:SetPoint("TOPLEFT", 4, -4)
+    emptyText:SetText("No overlays yet. Add some in the Custom Overlays tab.")
+
+    frame.rows = {}
+
+    function frame:Refresh()
+        for _, row in ipairs(self.rows) do
+            row:Hide()
+        end
+
+        local style = getStyle()
+        if not style then return end
+        style.overlays = style.overlays or {}
+
+        local names = NivUI.Overlays and NivUI.Overlays:GetNames() or {}
+        emptyText:SetShown(#names == 0)
+
+        local width = scrollFrame:GetWidth()
+        if width <= 0 then width = 300 end
+        content:SetWidth(width)
+
+        local y = 0
+        for i, name in ipairs(names) do
+            local row = self.rows[i]
+            if not row then
+                row = CreateFrame("CheckButton", nil, content, "SettingsCheckboxTemplate")
+                row.label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                row.label:SetPoint("LEFT", row, "RIGHT", 4, 0)
+                self.rows[i] = row
+            end
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", 4, -y)
+            row.label:SetText(name)
+            row.overlayName = name
+            row:SetChecked(style.overlays[name] and true or false)
+            row:SetScript("OnClick", function(self)
+                local s = getStyle()
+                if not s then return end
+                s.overlays = s.overlays or {}
+                s.overlays[self.overlayName] = self:GetChecked() or nil
+                saveStyle(s)
+                refreshPreview()
+            end)
+            row:Show()
+            y = y + 26
+        end
+
+        content:SetHeight(math.max(y, 1))
     end
 
     return frame
@@ -1686,28 +1783,47 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     bottomArea:SetPoint("TOPLEFT", previewContainer, "BOTTOMLEFT", 0, -4)
     bottomArea:SetPoint("BOTTOMRIGHT", 0, 0)
 
-    local settingsPanel
+    local refreshPreview = function()
+        NivUI.Designer:RefreshPreview(designer, NivUI.UnitFrames.currentStyleName)
+    end
+
+    local settingsPanel, overlaySelector
+
+    local function IsOverlaySubject(widgetType)
+        return widgetType == "overlays" or (type(widgetType) == "string" and widgetType:find("^overlay:") ~= nil)
+    end
+
+    local function RouteContent(widgetType)
+        if IsOverlaySubject(widgetType) then
+            settingsPanel:Hide()
+            overlaySelector:Show()
+            overlaySelector:Refresh()
+        else
+            overlaySelector:Hide()
+            settingsPanel:Show()
+            settingsPanel:BuildForWidget(widgetType)
+        end
+    end
+
     local widgetList = CreateWidgetList(bottomArea, function(widgetType)
         designer:SelectWidget(widgetType)
-        settingsPanel:BuildForWidget(widgetType)
+        RouteContent(widgetType)
     end)
     widgetList:SetPoint("TOPLEFT", 0, 0)
     widgetList:SetPoint("BOTTOMLEFT", 0, 0)
 
-    settingsPanel = CreateWidgetSettingsPanel(
-        bottomArea,
-        getStyle,
-        saveStyle,
-        function()
-            NivUI.Designer:RefreshPreview(designer, NivUI.UnitFrames.currentStyleName)
-        end
-    )
+    settingsPanel = CreateWidgetSettingsPanel(bottomArea, getStyle, saveStyle, refreshPreview)
     settingsPanel:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
     settingsPanel:SetPoint("BOTTOMRIGHT", 0, 0)
 
+    overlaySelector = CreateOverlaySelector(bottomArea, getStyle, saveStyle, refreshPreview)
+    overlaySelector:SetPoint("TOPLEFT", widgetList, "TOPRIGHT", 8, 0)
+    overlaySelector:SetPoint("BOTTOMRIGHT", 0, 0)
+    overlaySelector:Hide()
+
     designer.onSelectionChanged = function(widgetType)
-        widgetList:Select(widgetType)
-        settingsPanel:BuildForWidget(widgetType)
+        widgetList:Select(IsOverlaySubject(widgetType) and "overlays" or widgetType)
+        RouteContent(widgetType)
     end
 
     function container:RefreshAll()
@@ -1719,8 +1835,19 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         local firstWidget = NivUI.UnitFrames.WIDGET_ORDER[1]
         widgetList:Select(firstWidget)
         designer:SelectWidget(firstWidget)
-        settingsPanel:BuildForWidget(firstWidget)
+        RouteContent(firstWidget)
     end
+
+    NivUI:RegisterCallback("OverlaysChanged", function()
+        if container:IsShown() then
+            if overlaySelector:IsShown() then overlaySelector:Refresh() end
+            refreshPreview()
+        end
+    end)
+
+    NivUI:RegisterCallback("OverlayModified", function()
+        if container:IsShown() then refreshPreview() end
+    end)
 
     container:SetScript("OnShow", function()
         NivUI.UnitFrames.refreshCallback = function()

@@ -9,6 +9,7 @@
 NivUI.lua
 modules/profiles/Profiles.lua
 modules/filters/SpellFilters.lua
+modules/overlays/Overlays.lua
 modules/bars/BarBase.lua
 modules/bars/SegmentedBarBase.lua
 modules/bars/StaggerBar.lua
@@ -42,4 +43,5 @@ modules/unitframes/CustomRaidGroup.lua
 config/Bars.lua
 config/Profiles.lua
 config/Filters.lua
+config/Overlays.lua
 ConfigFrame.lua

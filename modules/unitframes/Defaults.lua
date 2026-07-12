@@ -87,6 +87,11 @@ NivUI.UnitFrames.AURA_GROWTH = {
     { value = "DOWN", name = "Down" },
 }
 
+NivUI.UnitFrames.AURA_TYPE = {
+    { value = "HELPFUL", name = "Helpful" },
+    { value = "HARMFUL", name = "Harmful" },
+}
+
 NivUI.UnitFrames.DISPEL_INDICATOR = {
     { value = "none", name = "None" },
     { value = "iconBorder", name = "Icon Border" },
@@ -338,55 +343,6 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         nonInterruptibleColor = { r = 0.7, g = 0, b = 0 },
     },
 
-    buffs = {
-        enabled = true,
-        anchor = DefaultAnchor("BOTTOMLEFT", "frame", "TOPLEFT", 0, 4),
-        strata = "MEDIUM",
-        frameLevel = 5,
-        iconSize = 20,
-        spacing = 2,
-        perRow = 8,
-        maxIcons = 16,
-        growth = "RIGHT",
-        showDuration = true,
-        showStacks = true,
-        allow = {},
-        block = {},
-    },
-
-    debuffs = {
-        enabled = true,
-        anchor = DefaultAnchor("BOTTOMLEFT", "buffs", "TOPLEFT", 0, 2),
-        strata = "MEDIUM",
-        frameLevel = 5,
-        iconSize = 22,
-        spacing = 2,
-        perRow = 8,
-        maxIcons = 16,
-        growth = "RIGHT",
-        showDuration = true,
-        showStacks = true,
-        dispelIndicator = "iconBorder",
-        allow = {},
-        block = {},
-    },
-
-    importantDebuffs = {
-        enabled = false,
-        anchor = DefaultAnchor("CENTER", "frame", "CENTER", 0, 0),
-        strata = "MEDIUM",
-        frameLevel = 6,
-        iconSize = 24,
-        spacing = 2,
-        perRow = 3,
-        maxIcons = 3,
-        growth = "RIGHT",
-        showDuration = true,
-        showStacks = true,
-        dispelIndicator = "iconBorder",
-        allow = {},
-        block = {},
-    },
 }
 
 NivUI.UnitFrames.WIDGET_ORDER = {
@@ -404,9 +360,6 @@ NivUI.UnitFrames.WIDGET_ORDER = {
     "raidMarker",
     "roleIcon",
     "castbar",
-    "buffs",
-    "debuffs",
-    "importantDebuffs",
 }
 
 NivUI.UnitFrames.WIDGET_NAMES = {
@@ -424,7 +377,4 @@ NivUI.UnitFrames.WIDGET_NAMES = {
     raidMarker = "Raid Marker",
     roleIcon = "Role Icon",
     castbar = "Castbar",
-    buffs = "Buffs",
-    debuffs = "Debuffs",
-    importantDebuffs = "Important Debuffs",
 }

@@ -751,7 +751,32 @@ end
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 NivUI.UnitFrames.DebuffColorCurve = _debuffColorCurve
 
-local function CreateAuraWidget(parent, config, widgetType, unit, options)
+--- Best-effort restyle of a Blizzard cooldown's countdown numbers. The countdown value is a
+--- combat secret, so we can't draw our own text; instead we locate and cache Blizzard's
+--- countdown FontString and reapply font/color. Blizzard may re-scale it by cooldown size.
+function NivUI.UnitFrames.ApplyCooldownFont(cooldown, cfg)
+    if not cooldown or not cfg then return end
+    local region = cooldown.nivCountdownText
+    if not region then
+        for _, r in ipairs({ cooldown:GetRegions() }) do
+            if r.GetObjectType and r:GetObjectType() == "FontString" then
+                region = r
+                break
+            end
+        end
+        cooldown.nivCountdownText = region
+    end
+    if not region then return end
+    local path = cfg.font and NivUI:GetFontPath(cfg.font)
+    if path then
+        region:SetFont(path, cfg.fontSize or 12, cfg.fontOutline or "")
+    end
+    if cfg.color then
+        region:SetTextColor(cfg.color.r, cfg.color.g, cfg.color.b, cfg.color.a or 1)
+    end
+end
+
+local function CreateAuraWidget(parent, config, unit, options)
     options = options or {}
     local forPreview = options.forPreview
     local frame = CreateFrame("Frame", nil, parent)
@@ -771,9 +796,8 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
     frame.icons = {}
     frame.config = config
     frame.unit = unit
-    frame.filter = (widgetType == "buffs") and "HELPFUL"
-        or (widgetType == "importantDebuffs") and "HARMFUL|RAID"
-        or "HARMFUL"
+    frame.isOverlay = true
+    frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
 
     local iconAnchor = (config.growth == "LEFT") and "TOPRIGHT" or "TOPLEFT"
 
@@ -797,9 +821,18 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
         icon.cooldown:SetAllPoints()
         icon.cooldown:SetDrawEdge(false)
         icon.cooldown:SetHideCountdownNumbers(not config.showDuration)
+        icon.cooldown:SetDrawSwipe(config.showSwipe and true or false)
 
-        icon.stacks = icon:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        icon.stacks = icon:CreateFontString(nil, "OVERLAY")
         icon.stacks:SetPoint("BOTTOMRIGHT", 0, 0)
+        local stacksCfg = config.stacks
+        if stacksCfg and stacksCfg.font then
+            icon.stacks:SetFont(NivUI:GetFontPath(stacksCfg.font), stacksCfg.fontSize or 12, stacksCfg.fontOutline or "")
+            local sc = stacksCfg.color
+            if sc then icon.stacks:SetTextColor(sc.r, sc.g, sc.b, sc.a or 1) end
+        else
+            icon.stacks:SetFontObject("GameFontNormal")
+        end
 
         icon.border = icon:CreateTexture(nil, "OVERLAY")
         icon.border:SetPoint("TOPLEFT", -1, 1)
@@ -815,7 +848,6 @@ local function CreateAuraWidget(parent, config, widgetType, unit, options)
         table.insert(frame.icons, icon)
     end
 
-    frame.widgetType = widgetType
     return frame
 end
 
@@ -836,9 +868,14 @@ local function PopulateTestAuras(frame, testAuras)
     for i, icon in ipairs(frame.icons) do
         if i <= #testAuras then
             icon.texture:SetTexture(testAuras[i])
-            if config.showDuration and icon.cooldown then
+            if (config.showDuration or config.showSwipe) and icon.cooldown then
                 local fakeDuration = math.random(10, 60)
                 icon.cooldown:SetCooldown(GetTime(), fakeDuration)
+                icon.cooldown:SetDrawSwipe(config.showSwipe and true or false)
+                icon.cooldown:SetHideCountdownNumbers(not config.showDuration)
+                if config.showDuration then
+                    NivUI.UnitFrames.ApplyCooldownFont(icon.cooldown, config.duration)
+                end
             elseif icon.cooldown then
                 icon.cooldown:SetCooldown(0, 0)
             end
@@ -854,26 +891,11 @@ local function PopulateTestAuras(frame, testAuras)
     end
 end
 
-function WF.buffs(parent, config, _style, unit, options)
-    local frame = CreateAuraWidget(parent, config, "buffs", unit, options)
+function WF.overlay(parent, config, _style, unit, options)
+    local frame = CreateAuraWidget(parent, config, unit, options)
     if options and options.forPreview then
-        PopulateTestAuras(frame, TEST_BUFFS)
-    end
-    return frame
-end
-
-function WF.debuffs(parent, config, _style, unit, options)
-    local frame = CreateAuraWidget(parent, config, "debuffs", unit, options)
-    if options and options.forPreview then
-        PopulateTestAuras(frame, TEST_DEBUFFS)
-    end
-    return frame
-end
-
-function WF.importantDebuffs(parent, config, _style, unit, options)
-    local frame = CreateAuraWidget(parent, config, "importantDebuffs", unit, options)
-    if options and options.forPreview then
-        PopulateTestAuras(frame, TEST_DEBUFFS)
+        local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
+        PopulateTestAuras(frame, testAuras)
     end
     return frame
 end

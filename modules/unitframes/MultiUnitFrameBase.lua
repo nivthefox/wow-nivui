@@ -452,6 +452,14 @@ function MultiUnitFrameBase.CreateModule(config)
         end
     end)
 
+    local function RefreshForOverlays()
+        if NivUI:IsFrameEnabled(config.frameType) and not InCombatLockdown() then
+            module.Refresh()
+        end
+    end
+    NivUI:RegisterCallback("OverlaysChanged", RefreshForOverlays)
+    NivUI:RegisterCallback("OverlayModified", RefreshForOverlays)
+
     NivUI:RegisterCallback("StyleChanged", function(data)
         if NivUI:IsFrameEnabled(config.frameType) then
             local assignedStyle = NivUI:GetAssignment(config.frameType)

@@ -475,7 +475,7 @@ local function IsAnchorChainVisible(widgets, style, widgetType, visited)
     if visited[widgetType] then return true end
     visited[widgetType] = true
 
-    local config = style[widgetType]
+    local config = style[widgetType] or (widgets[widgetType] and widgets[widgetType].config)
     if not config then return true end
 
     local anchorTo = config.anchor and config.anchor.relativeTo
@@ -953,8 +953,7 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateRoleIcon(state)
     UnitFrameBase.UpdateCastbar(state)
     UnitFrameBase.UpdateRangeAlpha(state)
-    UnitFrameBase.UpdateBuffs(state)
-    UnitFrameBase.UpdateDebuffs(state)
+    UnitFrameBase.UpdateOverlays(state)
     CascadeAnchorVisibility(state)
 end
 
@@ -1068,11 +1067,11 @@ local function CollectAuras(unit, filter, maxIcons, spec)
     return auras
 end
 
---- Updates an aura widget (buffs, debuffs, or importantDebuffs) for a unit frame.
+--- Updates an aura overlay widget for a unit frame.
 --- Uses instance-ID-based C APIs to avoid reading secret-protected aura fields.
 --- @param state table The unit frame state table
---- @param widgetName string The widget name ("buffs", "debuffs", or "importantDebuffs")
---- @param filter string The aura filter string
+--- @param widgetName string The overlay widget key (e.g. "overlay:Buffs")
+--- @param filter string The aura filter string ("HELPFUL" or "HARMFUL")
 local function UpdateAuraWidget(state, widgetName, filter)
     if not state.customFrame or not state.customFrame.widgets then return end
     local widget = state.customFrame.widgets[widgetName]
@@ -1089,9 +1088,9 @@ local function UpdateAuraWidget(state, widgetName, filter)
 
     local config = widget.config
     local showDuration = config.showDuration
+    local showSwipe = config.showSwipe
     local showStacks = config.showStacks
-    local isDebuffWidget = (widgetName == "debuffs" or widgetName == "importantDebuffs")
-    local showDispelBorder = isDebuffWidget and (config.dispelIndicator == "iconBorder")
+    local showDispelBorder = (config.dispelIndicator == "iconBorder")
     local debuffColorCurve = showDispelBorder and NivUI.UnitFrames.DebuffColorCurve or nil
 
     local prefix = filter:find("HELPFUL") and "HELPFUL" or "HARMFUL"
@@ -1104,9 +1103,13 @@ local function UpdateAuraWidget(state, widgetName, filter)
             icon.texture:SetTexture(aura.icon)
 
             if icon.cooldown then
-                if showDuration and aura.auraInstanceID then
+                if (showDuration or showSwipe) and aura.auraInstanceID then
                     local hadDuration = SetCooldownFromAura(icon, unit, aura.auraInstanceID)
-                    icon.cooldown:SetHideCountdownNumbers(not hadDuration)
+                    icon.cooldown:SetDrawSwipe(showSwipe and true or false)
+                    icon.cooldown:SetHideCountdownNumbers(not (showDuration and hadDuration))
+                    if showDuration and hadDuration then
+                        NivUI.UnitFrames.ApplyCooldownFont(icon.cooldown, config.duration)
+                    end
                 else
                     pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
                     icon.cooldown:SetHideCountdownNumbers(true)
@@ -1149,15 +1152,28 @@ local function UpdateAuraWidget(state, widgetName, filter)
     end
 end
 
---- Runs a separate pass over harmful auras to tint the health bar when dispelIndicator is "healthTint".
+--- Finds an active overlay widget whose dispel indicator is set to "healthTint".
+--- @param state table The unit frame state table
+--- @return table|nil The overlay widget, if any
+local function FindHealthTintOverlay(state)
+    for _, widget in pairs(state.customFrame.widgets) do
+        if widget.isOverlay and widget.config and widget.config.dispelIndicator == "healthTint" then
+            return widget
+        end
+    end
+    return nil
+end
+
+--- Runs a separate pass over harmful auras to tint the health bar when an overlay
+--- has dispelIndicator "healthTint".
 --- @param state table The unit frame state table
 local function UpdateDispelTint(state)
     if not state.customFrame or not state.customFrame.widgets then return end
-    local debuffWidget = state.customFrame.widgets.debuffs
-    if not debuffWidget then return end
-    local config = debuffWidget.config
-    if config.dispelIndicator ~= "healthTint" then
-        state.hasDispelTint = false
+    if not FindHealthTintOverlay(state) then
+        if state.hasDispelTint then
+            state.hasDispelTint = false
+            UnitFrameBase.UpdateHealthBar(state)
+        end
         return
     end
 
@@ -1194,22 +1210,15 @@ local function UpdateDispelTint(state)
     end
 end
 
---- Updates the buffs widget for a unit frame.
+--- Updates every aura overlay widget on a unit frame.
 --- @param state table The unit frame state table
-function UnitFrameBase.UpdateBuffs(state)
-    UpdateAuraWidget(state, "buffs", "HELPFUL")
-end
-
---- Updates the debuffs widget for a unit frame.
---- @param state table The unit frame state table
-function UnitFrameBase.UpdateDebuffs(state)
-    UpdateAuraWidget(state, "debuffs", "HARMFUL")
-end
-
---- Updates the important debuffs widget for a unit frame.
---- @param state table The unit frame state table
-function UnitFrameBase.UpdateImportantDebuffs(state)
-    UpdateAuraWidget(state, "importantDebuffs", "HARMFUL|RAID")
+function UnitFrameBase.UpdateOverlays(state)
+    if not state.customFrame or not state.customFrame.widgets then return end
+    for key, widget in pairs(state.customFrame.widgets) do
+        if widget.isOverlay then
+            UpdateAuraWidget(state, key, widget.filter)
+        end
+    end
 end
 
 --- Updates the dispel tint on the health bar.
@@ -1255,6 +1264,30 @@ function UnitFrameBase.CreateWidgets(parent, style, unit, options)
         end
     end
 
+    if style.overlays and NivUI.Overlays and WF.overlay then
+        for name, applied in pairs(style.overlays) do
+            local config = applied and NivUI.Overlays:Get(name)
+            if config then
+                local overlayConfig = config
+                if options.forPreview then
+                    overlayConfig = {}
+                    for k, v in pairs(config) do
+                        if k ~= "strata" and k ~= "frameLevel" then
+                            overlayConfig[k] = v
+                        end
+                    end
+                end
+
+                local success, widget = pcall(WF.overlay, parent, overlayConfig, style, unit, options)
+                if success and widget then
+                    widgets["overlay:" .. name] = widget
+                elseif not success then
+                    print("NivUI: Error creating overlay", name, "-", widget)
+                end
+            end
+        end
+    end
+
     return widgets
 end
 
@@ -1265,7 +1298,7 @@ end
 --- @param style table The style configuration table
 function UnitFrameBase.ApplyAnchors(parent, widgets, style)
     for widgetType, widget in pairs(widgets) do
-        local config = style[widgetType]
+        local config = style[widgetType] or widget.config
         local anchor = config and config.anchor
         if anchor then
             widget:ClearAllPoints()
@@ -1341,9 +1374,7 @@ function UnitFrameBase.HandleEvent(state, event)
     elseif event == "RAID_TARGET_UPDATE" then
         UnitFrameBase.UpdateRaidMarker(state)
     elseif event == "UNIT_AURA" then
-        UnitFrameBase.UpdateBuffs(state)
-        UnitFrameBase.UpdateDebuffs(state)
-        UnitFrameBase.UpdateImportantDebuffs(state)
+        UnitFrameBase.UpdateOverlays(state)
         UnitFrameBase.UpdateDispelTint(state)
     elseif CASTBAR_EVENTS[event] then
         UnitFrameBase.UpdateCastbar(state)
@@ -1711,6 +1742,14 @@ function UnitFrameBase.CreateModule(config)
             module.Refresh()
         end
     end)
+
+    local function RefreshForOverlays()
+        if NivUI:IsFrameEnabled(state.frameType) and not InCombatLockdown() then
+            module.Refresh()
+        end
+    end
+    NivUI:RegisterCallback("OverlaysChanged", RefreshForOverlays)
+    NivUI:RegisterCallback("OverlayModified", RefreshForOverlays)
 
     NivUI:RegisterCallback("StyleChanged", function(data)
         if NivUI:IsFrameEnabled(state.frameType) then
