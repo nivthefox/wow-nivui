@@ -5,6 +5,22 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.0.0) - 2026-07-12
+
+### Added
+
+- Custom Overlays: build reusable aura displays, each a named group with its own type, layout, filter, and display settings, and choose which overlays each unit-frame style shows
+- Per-overlay display controls, including fonts for stacks and duration, a duration countdown with optional swipe, and a dispel indicator
+- Aura filtering with an Allow/Block model: combine Blizzard's built-in filters (Player, Raid, Big Defensive, External Defensive, Crowd Control, and more) with your own custom spell lists, managed in a new Custom Filters tab
+
+### Removed
+
+- The fixed buffs, debuffs, and important-debuffs displays, replaced by Custom Overlays; existing buff and debuff settings are cleared on upgrade, so rebuild the displays you want in the new Custom Overlays tab
+
+### Fixed
+
+- Range fading now works correctly and applies to all frame types, not just party and raid frames.
+
 ## [1.7.0](https://github.com/nivthefox/wow-nivui/releases/tag/v1.7.0) - 2026-07-09
 
 ### Added
