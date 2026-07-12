@@ -418,13 +418,22 @@ unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
 unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
 table.insert(sidebarTabs, unitFramesTab)
 
+-- Filters tab (from config/Filters.lua)
+local filtersContainer = NivUI.Config.Filters.SetupTab(ContentArea, Components)
+table.insert(sidebarContainers, filtersContainer)
+
+local filtersTab = Components.GetSidebarTab(Sidebar, "Custom Filters")
+filtersTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
+filtersTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
+table.insert(sidebarTabs, filtersTab)
+
 -- Profiles tab (from config/Profiles.lua)
 local profilesContainer = NivUI.Config.Profiles.SetupTab(ContentArea, Components)
 table.insert(sidebarContainers, profilesContainer)
 
 local profilesTab = Components.GetSidebarTab(Sidebar, "Profiles")
-profilesTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
-profilesTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
+profilesTab:SetPoint("TOPLEFT", filtersTab, "BOTTOMLEFT", 0, -2)
+profilesTab:SetScript("OnClick", function() SelectSidebarTab(4) end)
 table.insert(sidebarTabs, profilesTab)
 
 ConfigFrame:SetScript("OnShow", function()

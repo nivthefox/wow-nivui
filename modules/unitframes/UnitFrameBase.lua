@@ -1004,32 +1004,64 @@ local function SetCooldownFromAura(icon, unit, auraInstanceID)
     return false
 end
 
+-- Cap on how many aura slots to examine per unit. Filtering discards auras after
+-- enumeration, so scan generously (Blizzard tops out around 40) rather than stopping
+-- at the icon count and missing matches further down the list.
+local AURA_SCAN_LIMIT = 40
+
+--- @return boolean True if the aura matches at least one built-in filter (combat-safe)
+local function MatchesAnyBuiltin(unit, auraInstanceID, builtinFilters)
+    for _, builtinFilter in ipairs(builtinFilters) do
+        -- issecretvalue guard degrades to "matches" if the API ever returns a secret.
+        local out = C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, builtinFilter)
+        if issecretvalue(out) or out == false then
+            return true
+        end
+    end
+    return false
+end
+
+--- @return boolean True if the readable spellId is present in one of the spell sets
+local function MatchesAnySpell(spellId, idReadable, spellSets)
+    if not idReadable then return false end
+    for _, spells in ipairs(spellSets) do
+        if spells[spellId] ~= nil then
+            return true
+        end
+    end
+    return false
+end
+
+--- Decides whether a single aura survives a widget's filter spec. Block filters veto;
+--- allow filters are an OR, and an empty allow set lets everything through.
+--- @return boolean
+local function AuraPassesFilters(unit, aura, spec)
+    local spellId = aura.spellId
+    local idReadable = not issecretvalue(spellId)
+
+    if MatchesAnyBuiltin(unit, aura.auraInstanceID, spec.blockBuiltin) then return false end
+    if MatchesAnySpell(spellId, idReadable, spec.blockSpells) then return false end
+    if not spec.hasAllow then return true end
+    if MatchesAnyBuiltin(unit, aura.auraInstanceID, spec.allowBuiltin) then return true end
+    if MatchesAnySpell(spellId, idReadable, spec.allowSpells) then return true end
+    return false
+end
+
 --- Collects auras for a unit using the secret-safe GetAuraSlots/GetAuraDataBySlot APIs.
 --- @param unit string The unit ID
---- @param filter string The aura filter string (e.g. "HELPFUL", "HARMFUL", "HARMFUL|IMPORTANT")
+--- @param filter string The enumeration filter (e.g. "HELPFUL", "HARMFUL", "HARMFUL|RAID")
 --- @param maxIcons number Maximum number of auras to collect
---- @param filterPlayer boolean If true, only include auras cast by the player
---- @param filterNoDuration boolean If true, skip auras with no/infinite duration
+--- @param spec table The filter spec from NivUI.Filters:BuildSpec
 --- @return table Array of aura data tables
-local function CollectAuras(unit, filter, maxIcons, filterPlayer, filterNoDuration)
+local function CollectAuras(unit, filter, maxIcons, spec)
     local auras = {}
     if not C_UnitAuras or not C_UnitAuras.GetAuraSlots then return auras end
 
-    local slots = { C_UnitAuras.GetAuraSlots(unit, filter, maxIcons * 2) }
+    local slots = { C_UnitAuras.GetAuraSlots(unit, filter, AURA_SCAN_LIMIT) }
     for i = 2, #slots do
         local aura = C_UnitAuras.GetAuraDataBySlot(unit, slots[i])
-        if aura and aura.auraInstanceID then
-            if filterNoDuration and aura.duration == 0 then
-                -- skip: infinite/no-duration aura
-            elseif filterPlayer then
-                local playerFilter = filter:find("HELPFUL") and "HELPFUL|PLAYER" or "HARMFUL|PLAYER"
-                local isFilteredOut = C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, playerFilter)
-                if isFilteredOut == false then
-                    auras[#auras + 1] = aura
-                end
-            else
-                auras[#auras + 1] = aura
-            end
+        if aura and aura.auraInstanceID and AuraPassesFilters(unit, aura, spec) then
+            auras[#auras + 1] = aura
             if #auras >= maxIcons then break end
         end
     end
@@ -1056,15 +1088,15 @@ local function UpdateAuraWidget(state, widgetName, filter)
     end
 
     local config = widget.config
-    local filterPlayer = config.filterPlayer
-    local filterNoDuration = config.filterNoDuration
     local showDuration = config.showDuration
     local showStacks = config.showStacks
     local isDebuffWidget = (widgetName == "debuffs" or widgetName == "importantDebuffs")
     local showDispelBorder = isDebuffWidget and (config.dispelIndicator == "iconBorder")
     local debuffColorCurve = showDispelBorder and NivUI.UnitFrames.DebuffColorCurve or nil
 
-    local auras = CollectAuras(unit, filter, config.maxIcons, filterPlayer, filterNoDuration)
+    local prefix = filter:find("HELPFUL") and "HELPFUL" or "HARMFUL"
+    local spec = NivUI.Filters:BuildSpec(config, prefix)
+    local auras = CollectAuras(unit, filter, config.maxIcons, spec)
 
     for i, icon in ipairs(widget.icons) do
         local aura = auras[i]
@@ -1668,6 +1700,14 @@ function UnitFrameBase.CreateModule(config)
 
     NivUI:RegisterCallback("AssignmentChanged", function(data)
         if data.frameType == state.frameType and NivUI:IsFrameEnabled(state.frameType) then
+            module.Refresh()
+        end
+    end)
+
+    NivUI:RegisterCallback("CustomFiltersChanged", function()
+        -- Re-apply aura filtering when a custom filter's spells change. Skipped in
+        -- combat (frames rebuild via secure APIs); UNIT_AURA re-filters live there.
+        if NivUI:IsFrameEnabled(state.frameType) and not InCombatLockdown() then
             module.Refresh()
         end
     end)

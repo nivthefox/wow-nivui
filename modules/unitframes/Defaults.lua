@@ -350,8 +350,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         growth = "RIGHT",
         showDuration = true,
         showStacks = true,
-        filterPlayer = false,
-        filterNoDuration = false,
+        allow = {},
+        block = {},
     },
 
     debuffs = {
@@ -367,8 +367,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         showDuration = true,
         showStacks = true,
         dispelIndicator = "iconBorder",
-        filterPlayer = false,
-        filterNoDuration = false,
+        allow = {},
+        block = {},
     },
 
     importantDebuffs = {
@@ -384,6 +384,8 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         showDuration = true,
         showStacks = true,
         dispelIndicator = "iconBorder",
+        allow = {},
+        block = {},
     },
 }
 

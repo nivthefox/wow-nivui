@@ -497,7 +497,7 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
         holder:SetPoint("LEFT", 10, 0)
         holder:SetPoint("RIGHT", -10, 0)
 
-        local currentValue = DeepGet(widgetData, entry.key)
+        local currentValue = entry.key and DeepGet(widgetData, entry.key) or nil
 
         if entry.kind == "checkbox" then
             local checkBox = CreateFrame("CheckButton", nil, holder, "SettingsCheckboxTemplate")
@@ -517,6 +517,61 @@ local function CreateWidgetSettingsPanel(parent, getStyle, saveStyle, refreshPre
                     refreshPreview()
                 end
             end)
+
+        elseif entry.kind == "filterMatrix" then
+            local rows = {}
+            for _, builtin in ipairs(NivUI.Filters.BUILTIN) do
+                rows[#rows + 1] = { key = builtin.token, label = builtin.label }
+            end
+            for _, name in ipairs(NivUI.Filters:GetCustomNames()) do
+                rows[#rows + 1] = { key = name, label = name }
+            end
+
+            local headerHeight = 18
+            local allowX, blockX = -84, -30
+
+            local allowHeader = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            allowHeader:SetPoint("TOP", holder, "TOPRIGHT", allowX, -2)
+            allowHeader:SetText("Allow")
+
+            local blockHeader = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            blockHeader:SetPoint("TOP", holder, "TOPRIGHT", blockX, -2)
+            blockHeader:SetText("Block")
+
+            local function CreateToggle(rowFrame, rowKey, listName, x)
+                local toggle = CreateFrame("CheckButton", nil, rowFrame, "SettingsCheckboxTemplate")
+                toggle:SetPoint("CENTER", rowFrame, "RIGHT", x, 0)
+                toggle:SetChecked(widgetData[listName] and widgetData[listName][rowKey] or false)
+                toggle:SetScript("OnClick", function()
+                    local style = getStyle()
+                    if style and style[widgetType] then
+                        local data = style[widgetType]
+                        data[listName] = data[listName] or {}
+                        data[listName][rowKey] = toggle:GetChecked() or nil
+                        saveStyle(style)
+                        refreshPreview()
+                    end
+                end)
+            end
+
+            for i, row in ipairs(rows) do
+                local y = -headerHeight - (i - 1) * ROW_HEIGHT
+                local rowFrame = CreateFrame("Frame", nil, holder)
+                rowFrame:SetHeight(rowHeight)
+                rowFrame:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, y)
+                rowFrame:SetPoint("TOPRIGHT", holder, "TOPRIGHT", 0, y)
+
+                local label = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                label:SetPoint("LEFT", 4, 0)
+                label:SetPoint("RIGHT", rowFrame, "RIGHT", -100, 0)
+                label:SetJustifyH("LEFT")
+                label:SetText(row.label)
+
+                CreateToggle(rowFrame, row.key, "allow", allowX)
+                CreateToggle(rowFrame, row.key, "block", blockX)
+            end
+
+            holder:SetHeight(headerHeight + #rows * ROW_HEIGHT + 6)
 
         elseif entry.kind == "slider" then
             local label = holder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
