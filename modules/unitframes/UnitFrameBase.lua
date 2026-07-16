@@ -971,7 +971,10 @@ function UnitFrameBase.UpdateRangeAlpha(state)
 
     local inRange, checkedRange = UnitInRange(state.unit)
     local outOfRangeAlpha = NivUI:GetOutOfRangeAlpha()
-    if checkedRange and not inRange then
+    -- UnitInRange returns secret booleans in combat; treat as in-range when tainted.
+    if issecretvalue(checkedRange) or issecretvalue(inRange) then
+        state.customFrame:SetAlpha(1)
+    elseif checkedRange and not inRange then
         state.customFrame:SetAlpha(outOfRangeAlpha)
     else
         state.customFrame:SetAlpha(1)

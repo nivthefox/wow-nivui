@@ -396,6 +396,8 @@ local function CreateMemberFrame(raidSize, unit, parentGroup)
         Base.UpdateRangeAlpha(memberState)
     end)
 
+    Base.UpdateAllWidgets(memberState)
+
     return frame
 end
 

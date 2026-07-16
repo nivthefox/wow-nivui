@@ -178,6 +178,8 @@ local function CreateMemberFrame(groupId, unit, parentContainer, styleName)
         Base.UpdateCastbar(memberState)
     end)
 
+    Base.UpdateAllWidgets(memberState)
+
     return frame
 end
 
