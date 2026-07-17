@@ -5,6 +5,13 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1](https://github.com/nivthefox/wow-nivui/releases/tag/v2.0.1) - 2026-07-17
+
+### Fixed
+
+- Raid and custom raid group frames no longer show "Player" instead of character names when members join the group before the server has sent their info
+- Range fading no longer crashes in combat due to UnitInRange returning secret boolean values (12.0 Midnight taint)
+
 ## [2.0.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.0.0) - 2026-07-12
 
 ### Added

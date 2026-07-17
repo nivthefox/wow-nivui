@@ -26,6 +26,7 @@ modules/unitframes/WidgetConfigs.lua
 modules/unitframes/WidgetFactories.lua
 modules/unitframes/ConfigTab.lua
 modules/unitframes/Designer.lua
+modules/unitframes/RangeCheck.lua
 modules/unitframes/UnitFrameBase.lua
 modules/unitframes/MultiUnitFrameBase.lua
 modules/unitframes/EditModeSettingsDialog.lua
