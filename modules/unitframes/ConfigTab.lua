@@ -458,7 +458,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         for _, tabConfig in ipairs(config) do
             local show = true
             if tabConfig.showIf then
-                show = (DeepGet(widgetData, tabConfig.showIf.key) == tabConfig.showIf.value)
+                show = NivUI.OverlayLogic.EvaluateCondition(tabConfig.showIf, DeepGet(widgetData, tabConfig.showIf.key))
             end
             if show then
                 visibleTabs[#visibleTabs + 1] = tabConfig
@@ -494,8 +494,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
             for _, entry in ipairs(tabConfig.entries) do
                 local show = true
                 if entry.showIf then
-                    local checkValue = DeepGet(widgetData, entry.showIf.key)
-                    show = (checkValue == entry.showIf.value)
+                    show = NivUI.OverlayLogic.EvaluateCondition(entry.showIf, DeepGet(widgetData, entry.showIf.key))
                 end
                 if show and entry.hideIf then
                     local checkValue = DeepGet(widgetData, entry.hideIf.key)
@@ -779,6 +778,40 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
                     info.previousValues = CopyTable(swatch.currentColor)
                     ColorPickerFrame:SetupColorPickerAndShow(info)
                 end
+            end)
+
+        elseif entry.kind == "numericInput" then
+            local label = holder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+            label:SetPoint("LEFT", 10, 0)
+            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetJustifyH("RIGHT")
+            label:SetText(entry.label)
+
+            local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
+            editBox:SetSize(50, 20)
+            editBox:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            editBox:SetAutoFocus(false)
+            editBox:SetNumeric(true)
+            editBox:SetText(tostring(currentValue or entry.min or 1))
+
+            local function CommitNumeric(self)
+                local value = math.max(entry.min or 1, math.floor(tonumber(self:GetText()) or entry.min or 1))
+                self:SetText(tostring(value))
+                panel:Commit(entry.key, value)
+            end
+
+            editBox:SetScript("OnEnterPressed", function(self)
+                CommitNumeric(self)
+                self:ClearFocus()
+            end)
+
+            editBox:SetScript("OnEditFocusLost", function(self)
+                CommitNumeric(self)
+            end)
+
+            editBox:SetScript("OnEscapePressed", function(self)
+                self:SetText(tostring(DeepGet(panel:GetData() or {}, entry.key) or entry.min or 1))
+                self:ClearFocus()
             end)
         end
 

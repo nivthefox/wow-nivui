@@ -443,7 +443,10 @@ function UnitFrameBase.UpdateHealthBar(state)
 
     local r, g, b, a, bgR, bgG, bgB, bgA = ResolveHealthBarColors(config, unit)
     widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
-    if not state.hasDispelTint then
+    local overlayColor = state.frameOverlayColors and state.frameOverlayColors.healthBar
+    if overlayColor then
+        widget:SetStatusBarColor(overlayColor.r, overlayColor.g, overlayColor.b, overlayColor.a or 1)
+    else
         widget:SetStatusBarColor(r, g, b, a)
     end
 
@@ -534,6 +537,10 @@ function UnitFrameBase.UpdatePowerBar(state)
         r, g, b = GetClassColor(unit)
     elseif config.colorMode == "custom" then
         r, g, b, a = config.customColor.r, config.customColor.g, config.customColor.b, config.customColor.a or 1
+    end
+    local overlayColor = state.frameOverlayColors and state.frameOverlayColors.powerBar
+    if overlayColor then
+        r, g, b, a = overlayColor.r, overlayColor.g, overlayColor.b, overlayColor.a or 1
     end
     widget:SetStatusBarColor(r, g, b, a)
 end
@@ -926,11 +933,16 @@ function UnitFrameBase.UpdateCastbar(state)
         widget.icon:SetTexture(texture)
     end
 
-    local cast = config.castingColor
-    local nonInt = config.nonInterruptibleColor
-    widget:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible,
-        CreateColor(nonInt.r, nonInt.g, nonInt.b),
-        CreateColor(cast.r, cast.g, cast.b))
+    local overlayColor = state.frameOverlayColors and state.frameOverlayColors.castbar
+    if overlayColor then
+        widget:GetStatusBarTexture():SetVertexColor(overlayColor.r, overlayColor.g, overlayColor.b, overlayColor.a or 1)
+    else
+        local cast = config.castingColor
+        local nonInt = config.nonInterruptibleColor
+        widget:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible,
+            CreateColor(nonInt.r, nonInt.g, nonInt.b),
+            CreateColor(cast.r, cast.g, cast.b))
+    end
 
     widget:Show()
 end
@@ -1090,8 +1102,8 @@ local function UpdateAuraWidget(state, widgetName, filter)
     local showDuration = config.showDuration
     local showSwipe = config.showSwipe
     local showStacks = config.showStacks
-    local showDispelBorder = (config.dispelIndicator == "iconBorder")
-    local debuffColorCurve = showDispelBorder and NivUI.UnitFrames.DebuffColorCurve or nil
+    local isColor = config.displayType == "COLOR"
+    local color = isColor and config.color or nil
 
     local prefix = filter:find("HELPFUL") and "HELPFUL" or "HARMFUL"
     local spec = NivUI.Filters:BuildSpec(config, prefix)
@@ -1100,7 +1112,11 @@ local function UpdateAuraWidget(state, widgetName, filter)
     for i, icon in ipairs(widget.icons) do
         local aura = auras[i]
         if aura then
-            icon.texture:SetTexture(aura.icon)
+            if isColor then
+                icon.texture:SetColorTexture(color.r, color.g, color.b, color.a or 1)
+            else
+                icon.texture:SetTexture(aura.icon)
+            end
 
             if icon.cooldown then
                 if (showDuration or showSwipe) and aura.auraInstanceID then
@@ -1127,104 +1143,162 @@ local function UpdateAuraWidget(state, widgetName, filter)
                 icon.stacks:SetText("")
             end
 
-            if debuffColorCurve and C_UnitAuras.GetAuraDispelTypeColor then
-                local color = C_UnitAuras.GetAuraDispelTypeColor(unit, aura.auraInstanceID, debuffColorCurve)
-                if color then
-                    local r, g, b = color:GetRGBA()
-                    icon.border:SetVertexColor(r, g, b, 1)
-                    icon.border:Show()
-                else
-                    icon.border:Hide()
-                end
-            else
-                icon.border:Hide()
-            end
-
             icon.auraInstanceID = aura.auraInstanceID
             icon:Show()
         else
             if icon.cooldown then
                 pcall(icon.cooldown.SetCooldown, icon.cooldown, 0, 0)
             end
-            icon.border:Hide()
             icon:Hide()
         end
     end
 end
 
---- Finds an active overlay widget whose dispel indicator is set to "healthTint".
+--- Determines whether a transformative overlay widget is currently active by
+--- counting matching auras. CRITICAL: activation reads only the collected count,
+--- never any aura field, because in combat aura fields are secret values that
+--- would taint on comparison. Preview and missing-unit paths force inactive.
 --- @param state table The unit frame state table
---- @return table|nil The overlay widget, if any
-local function FindHealthTintOverlay(state)
-    for _, widget in pairs(state.customFrame.widgets) do
-        if widget.isOverlay and widget.config and widget.config.dispelIndicator == "healthTint" then
-            return widget
-        end
-    end
-    return nil
-end
-
---- Runs a separate pass over harmful auras to tint the health bar when an overlay
---- has dispelIndicator "healthTint".
---- @param state table The unit frame state table
-local function UpdateDispelTint(state)
-    if not state.customFrame or not state.customFrame.widgets then return end
-    if not FindHealthTintOverlay(state) then
-        if state.hasDispelTint then
-            state.hasDispelTint = false
-            UnitFrameBase.UpdateHealthBar(state)
-        end
+--- @param widget table The transformative overlay widget
+local function UpdateTransformativeActivation(state, widget)
+    if state.forPreview then
+        widget.overlayActive = false
         return
     end
-
-    local healthBar = state.customFrame.widgets.healthBar
-    if not healthBar then return end
 
     local unit = state.unit
-    local curve = NivUI.UnitFrames.DebuffColorCurve
-    if not curve or not UnitExists(unit) or not C_UnitAuras.GetAuraDispelTypeColor then
-        if state.hasDispelTint then
-            state.hasDispelTint = false
-            UnitFrameBase.UpdateHealthBar(state)
+    if not UnitExists(unit) then
+        widget.overlayActive = false
+        return
+    end
+
+    local config = widget.config
+    local prefix = widget.filter:find("HELPFUL") and "HELPFUL" or "HARMFUL"
+    local spec = NivUI.Filters:BuildSpec(config, prefix)
+    widget.overlayActive = #CollectAuras(unit, widget.filter, 1, spec) > 0
+end
+
+--- Dispatch from a target widget key to the update function that recomputes its
+--- routine color. Used to refresh bars whose FRAME overlay tint changed.
+local FRAME_TARGET_REFRESH = {
+    healthBar = function(state) UnitFrameBase.UpdateHealthBar(state) end,
+    powerBar = function(state) UnitFrameBase.UpdatePowerBar(state) end,
+    castbar = function(state) UnitFrameBase.UpdateCastbar(state) end,
+}
+
+--- Resolves the border holder's target frame for a BORDER claim. "frame" targets
+--- the whole custom frame; any other key targets that named widget.
+--- @param state table The unit frame state table
+--- @param targetWidget string The target widget key
+--- @return table|nil The target frame, or nil if absent
+local function ResolveBorderTarget(state, targetWidget)
+    if targetWidget == "frame" then
+        return state.customFrame
+    end
+    return state.customFrame.widgets[targetWidget]
+end
+
+--- Resolves transformative overlay conflicts and applies the winning FRAME tints
+--- and BORDER outlines. Runs once per evaluation pass after every overlay's
+--- activation has been computed. Full re-evaluation, no stored previous state.
+--- @param state table The unit frame state table
+local function ResolveTransformativeOverlays(state)
+    if not state.customFrame or not state.customFrame.widgets then return end
+
+    local claims = {}
+    for _, widget in pairs(state.customFrame.widgets) do
+        if widget.isOverlay and NivUI.OverlayLogic.IsTransformative(widget.config.displayType) then
+            local config = widget.config
+            claims[#claims + 1] = {
+                name = widget.overlayName,
+                priority = config.priority or 1,
+                targetWidget = config.targetWidget or "healthBar",
+                kind = config.displayType,
+                active = widget.overlayActive or false,
+                widget = widget,
+                config = config,
+            }
+        end
+    end
+
+    -- No transformative overlays exist. If a prior pass left frame tints, clear
+    -- them and refresh the previously-claimed bars back to routine colors.
+    if #claims == 0 then
+        if state.frameOverlayColors then
+            local previous = state.frameOverlayColors
+            state.frameOverlayColors = nil
+            for target in pairs(previous) do
+                local refresh = FRAME_TARGET_REFRESH[target]
+                if refresh then refresh(state) end
+            end
         end
         return
     end
 
-    local slots = { C_UnitAuras.GetAuraSlots(unit, "HARMFUL", 40) }
-    for i = 2, #slots do
-        local aura = C_UnitAuras.GetAuraDataBySlot(unit, slots[i])
-        if aura and aura.auraInstanceID then
-            local color = C_UnitAuras.GetAuraDispelTypeColor(unit, aura.auraInstanceID, curve)
-            if color then
-                local r, g, b = color:GetRGBA()
-                healthBar:SetStatusBarColor(r, g, b)
-                state.hasDispelTint = true
-                return
+    local winners = NivUI.OverlayLogic.ResolveTransformative(claims)
+
+    -- FRAME: build the new tint map, then refresh every bar that was tinted last
+    -- pass or is tinted this pass so losers fall back to their routine color.
+    local newColors = {}
+    for target, winnerClaim in pairs(winners.FRAME) do
+        newColors[target] = winnerClaim.config.color
+    end
+
+    local union = {}
+    for target in pairs(newColors) do union[target] = true end
+    if state.frameOverlayColors then
+        for target in pairs(state.frameOverlayColors) do union[target] = true end
+    end
+
+    state.frameOverlayColors = next(newColors) and newColors or nil
+
+    for target in pairs(union) do
+        local refresh = FRAME_TARGET_REFRESH[target]
+        if refresh then refresh(state) end
+    end
+
+    -- BORDER: every BORDER claim's holder is re-anchored around its target and
+    -- shown when it is this pass's winner, hidden otherwise. Re-anchoring every
+    -- pass makes the outline appear as soon as a previously-absent target exists.
+    for _, claim in ipairs(claims) do
+        if claim.kind == "BORDER" then
+            local widget = claim.widget
+            local winnerClaim = winners.BORDER[claim.targetWidget]
+            if winnerClaim == claim then
+                local target = ResolveBorderTarget(state, claim.targetWidget)
+                if target and target.IsShown and target:IsShown() then
+                    local t = claim.config.borderThickness or 2
+                    widget:ClearAllPoints()
+                    widget:SetPoint("TOPLEFT", target, "TOPLEFT", -t, t)
+                    widget:SetPoint("BOTTOMRIGHT", target, "BOTTOMRIGHT", t, -t)
+                    widget:Show()
+                else
+                    widget:Hide()
+                end
+            else
+                widget:Hide()
             end
         end
     end
-
-    if state.hasDispelTint then
-        state.hasDispelTint = false
-        UnitFrameBase.UpdateHealthBar(state)
-    end
 end
 
---- Updates every aura overlay widget on a unit frame.
+--- Updates every aura overlay widget on a unit frame. Additive overlays (Icon,
+--- Color) render their grid via UpdateAuraWidget; transformative overlays (Frame,
+--- Border) only compute activation here, then a single resolution pass applies
+--- the winning tints and outlines per target widget.
 --- @param state table The unit frame state table
 function UnitFrameBase.UpdateOverlays(state)
     if not state.customFrame or not state.customFrame.widgets then return end
     for key, widget in pairs(state.customFrame.widgets) do
         if widget.isOverlay then
-            UpdateAuraWidget(state, key, widget.filter)
+            if NivUI.OverlayLogic.IsTransformative(widget.config.displayType) then
+                UpdateTransformativeActivation(state, widget)
+            else
+                UpdateAuraWidget(state, key, widget.filter)
+            end
         end
     end
-end
-
---- Updates the dispel tint on the health bar.
---- @param state table The unit frame state table
-function UnitFrameBase.UpdateDispelTint(state)
-    UpdateDispelTint(state)
+    ResolveTransformativeOverlays(state)
 end
 
 --- Creates all enabled widgets for a unit frame based on its style configuration.
@@ -1280,6 +1354,7 @@ function UnitFrameBase.CreateWidgets(parent, style, unit, options)
 
                 local success, widget = pcall(WF.overlay, parent, overlayConfig, style, unit, options)
                 if success and widget then
+                    widget.overlayName = name
                     widgets["overlay:" .. name] = widget
                 elseif not success then
                     print("NivUI: Error creating overlay", name, "-", widget)
@@ -1298,28 +1373,33 @@ end
 --- @param style table The style configuration table
 function UnitFrameBase.ApplyAnchors(parent, widgets, style)
     for widgetType, widget in pairs(widgets) do
-        local config = style[widgetType] or widget.config
-        local anchor = config and config.anchor
-        if anchor then
-            widget:ClearAllPoints()
+        -- Transformative overlays retain stale anchor data by design; the resolver
+        -- positions their holders, so ApplyAnchors must never apply their anchors
+        -- (nor let the anchor-missing Hide fallback fight the resolution pass).
+        if not widget.skipAnchor then
+            local config = style[widgetType] or widget.config
+            local anchor = config and config.anchor
+            if anchor then
+                widget:ClearAllPoints()
 
-            local anchorTarget
-            if anchor.relativeTo == "frame" or anchor.relativeTo == nil then
-                anchorTarget = parent
-            else
-                anchorTarget = widgets[anchor.relativeTo]
-                if not anchorTarget then
-                    widget:Hide()
-                    widget.anchorMissing = true
+                local anchorTarget
+                if anchor.relativeTo == "frame" or anchor.relativeTo == nil then
+                    anchorTarget = parent
+                else
+                    anchorTarget = widgets[anchor.relativeTo]
+                    if not anchorTarget then
+                        widget:Hide()
+                        widget.anchorMissing = true
+                    end
                 end
-            end
 
-            if anchorTarget then
-                widget:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
-                widget.anchorMissing = nil
+                if anchorTarget then
+                    widget:SetPoint(anchor.point, anchorTarget, anchor.relativePoint or anchor.point, anchor.x or 0, anchor.y or 0)
+                    widget.anchorMissing = nil
+                end
+            else
+                widget:SetPoint("CENTER", parent, "CENTER", 0, 0)
             end
-        else
-            widget:SetPoint("CENTER", parent, "CENTER", 0, 0)
         end
     end
 end
@@ -1375,7 +1455,6 @@ function UnitFrameBase.HandleEvent(state, event)
         UnitFrameBase.UpdateRaidMarker(state)
     elseif event == "UNIT_AURA" then
         UnitFrameBase.UpdateOverlays(state)
-        UnitFrameBase.UpdateDispelTint(state)
     elseif CASTBAR_EVENTS[event] then
         UnitFrameBase.UpdateCastbar(state)
     end
@@ -1482,6 +1561,10 @@ function UnitFrameBase.BuildCustomFrame(state)
 
     customFrame.widgets = UnitFrameBase.CreateWidgets(customFrame, style, state.unit, { frameType = state.frameType })
     UnitFrameBase.ApplyAnchors(customFrame, customFrame.widgets, style)
+
+    -- state outlives customFrame rebuilds; clear stale FRAME overlay tints so a
+    -- removed or retyped overlay never leaves a permanent color on a rebuilt bar.
+    state.frameOverlayColors = nil
 
     state.customFrame = customFrame
 

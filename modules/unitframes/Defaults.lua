@@ -14,6 +14,15 @@ function NivUI.UnitFrames:GetWidgetParentOptions(excludeWidget)
     return options
 end
 
+-- Target widget options for transformative overlays: the same widget set as the
+-- anchor-parent dropdown, but the whole-frame entry is relabeled "Unit Frame" to
+-- avoid colliding with the display type named "Frame".
+function NivUI.UnitFrames:GetOverlayTargetWidgetOptions()
+    local options = self:GetWidgetParentOptions()
+    options[1] = { value = "frame", name = "Unit Frame" }
+    return options
+end
+
 NivUI.UnitFrames.ANCHOR_POINTS = {
     { value = "TOPLEFT", name = "Top Left" },
     { value = "TOP", name = "Top" },
@@ -92,10 +101,11 @@ NivUI.UnitFrames.AURA_TYPE = {
     { value = "HARMFUL", name = "Harmful" },
 }
 
-NivUI.UnitFrames.DISPEL_INDICATOR = {
-    { value = "none", name = "None" },
-    { value = "iconBorder", name = "Icon Border" },
-    { value = "healthTint", name = "Health Bar Tint" },
+NivUI.UnitFrames.OVERLAY_DISPLAY_TYPES = {
+    { value = "ICON", name = "Icon" },
+    { value = "COLOR", name = "Color" },
+    { value = "FRAME", name = "Frame" },
+    { value = "BORDER", name = "Border" },
 }
 
 NivUI.UnitFrames.BAR_ORIENTATIONS = {

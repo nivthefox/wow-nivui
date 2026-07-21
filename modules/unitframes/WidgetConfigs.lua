@@ -424,6 +424,10 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         return self:GetWidgetParentOptions(excludeWidget)
     end
 
+    if optionName == "OVERLAY_TARGET_WIDGETS" then
+        return self:GetOverlayTargetWidgetOptions()
+    end
+
     local lists = {
         HEALTH_COLOR_MODES = self.HEALTH_COLOR_MODES,
         POWER_COLOR_MODES = self.POWER_COLOR_MODES,
@@ -433,7 +437,7 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         TEXT_FORMATS = self.TEXT_FORMATS,
         AURA_GROWTH = self.AURA_GROWTH,
         AURA_TYPE = self.AURA_TYPE,
-        DISPEL_INDICATOR = self.DISPEL_INDICATOR,
+        OVERLAY_DISPLAY_TYPES = self.OVERLAY_DISPLAY_TYPES,
         BAR_ORIENTATIONS = self.BAR_ORIENTATIONS,
         FONT_OUTLINES = self.FONT_OUTLINES,
         ANCHOR_POINTS = self.ANCHOR_POINTS,

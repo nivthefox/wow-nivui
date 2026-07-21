@@ -9,6 +9,7 @@
 NivUI.lua
 modules/profiles/Profiles.lua
 modules/filters/SpellFilters.lua
+modules/overlays/OverlayLogic.lua
 modules/overlays/Overlays.lua
 modules/bars/BarBase.lua
 modules/bars/SegmentedBarBase.lua

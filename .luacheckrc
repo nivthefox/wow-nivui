@@ -44,9 +44,6 @@ read_globals = {
 	"C_UnitAuras.GetAuraApplicationDisplayCount",
 	"C_UnitAuras.DoesAuraHaveExpirationTime",
 	"C_UnitAuras.GetAuraDuration",
-	"C_UnitAuras.GetAuraDispelTypeColor",
-	"C_CurveUtil",
-	"Enum.LuaCurveType",
 	"Enum.UnitAuraSortRule.Default",
 	"Enum.UnitAuraSortRule.Expiration",
 	"Enum.UnitAuraSortOrder.Ascending",
@@ -57176,4 +57173,20 @@ read_globals = {
 	-- Bonus Module Name to Global
 	"BONUS_OBJECTIVE_TRACKER_MODULE",
 	"WORLD_QUEST_TRACKER_MODULE",
+}
+
+-- Headless test harness (tests/) injects assert helpers as globals and stubs
+-- read-only WoW globals such as strtrim. Declare them here so luacheck is clean.
+files["tests/"] = {
+	globals = {
+		"strtrim",
+		"assertEquals",
+		"assertNear",
+		"assertTrue",
+		"assertFalse",
+		"assertNil",
+		"assertNotNil",
+		"assertTableEquals",
+		"assertError",
+	},
 }

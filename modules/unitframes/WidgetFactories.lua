@@ -720,36 +720,7 @@ function WF.castbar(parent, config, _style, _unit)
     return frame
 end
 
---- Dispel type index → Blizzard color object mapping.
---- Used to build the step-curve for C_UnitAuras.GetAuraDispelTypeColor().
-local _debuffColorByIndex = {
-    [0] = _G.DEBUFF_TYPE_NONE_COLOR,
-    [1] = _G.DEBUFF_TYPE_MAGIC_COLOR,
-    [2] = _G.DEBUFF_TYPE_CURSE_COLOR,
-    [3] = _G.DEBUFF_TYPE_DISEASE_COLOR,
-    [4] = _G.DEBUFF_TYPE_POISON_COLOR,
-    [5] = _G.DEBUFF_TYPE_BLEED_COLOR,
-}
-
---- Step-curve for GetAuraDispelTypeColor(). Built once at load time, reused for every call.
---- Returns nil if C_CurveUtil is unavailable (older clients, PTR changes).
-local _debuffColorCurve
-do
-    local ok, curve = pcall(function()
-        if not C_CurveUtil or not C_CurveUtil.CreateColorCurve then return nil end
-        if not Enum or not Enum.LuaCurveType or not Enum.LuaCurveType.Step then return nil end
-        local c = C_CurveUtil.CreateColorCurve()
-        c:SetType(Enum.LuaCurveType.Step)
-        for idx, col in pairs(_debuffColorByIndex) do
-            if col then c:AddPoint(idx, col) end
-        end
-        return c
-    end)
-    _debuffColorCurve = ok and curve or nil
-end
-
 NivUI.UnitFrames = NivUI.UnitFrames or {}
-NivUI.UnitFrames.DebuffColorCurve = _debuffColorCurve
 
 --- Best-effort restyle of a Blizzard cooldown's countdown numbers. The countdown value is a
 --- combat secret, so we can't draw our own text; instead we locate and cache Blizzard's
@@ -834,13 +805,6 @@ local function CreateAuraWidget(parent, config, unit, options)
             icon.stacks:SetFontObject("GameFontNormal")
         end
 
-        icon.border = icon:CreateTexture(nil, "OVERLAY")
-        icon.border:SetPoint("TOPLEFT", -1, 1)
-        icon.border:SetPoint("BOTTOMRIGHT", 1, -1)
-        icon.border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-        icon.border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
-        icon.border:Hide()
-
         if not forPreview then
             icon:Hide()
         end
@@ -865,9 +829,15 @@ local TEST_DEBUFFS = {
 
 local function PopulateTestAuras(frame, testAuras)
     local config = frame.config
+    local isColor = config.displayType == "COLOR"
     for i, icon in ipairs(frame.icons) do
         if i <= #testAuras then
-            icon.texture:SetTexture(testAuras[i])
+            if isColor then
+                local c = config.color or {}
+                icon.texture:SetColorTexture(c.r or 1, c.g or 0, c.b or 0, c.a or 1)
+            else
+                icon.texture:SetTexture(testAuras[i])
+            end
             if (config.showDuration or config.showSwipe) and icon.cooldown then
                 local fakeDuration = math.random(10, 60)
                 icon.cooldown:SetCooldown(GetTime(), fakeDuration)
@@ -891,7 +861,66 @@ local function PopulateTestAuras(frame, testAuras)
     end
 end
 
+--- Creates a lightweight transformative overlay widget (FRAME or BORDER display
+--- type). FRAME overlays recolor an existing widget and build no visuals of their
+--- own; BORDER overlays build four edge textures forming an outline that the
+--- resolution pass anchors around the target widget. Both are 1x1 hidden frames
+--- carrying skipAnchor so ApplyAnchors never applies their retained anchor data.
+--- @param parent Frame The parent frame
+--- @param config table The overlay config
+--- @param unit string The unit ID
+--- @return Frame The transformative overlay widget
+local function CreateTransformativeOverlayWidget(parent, config, unit)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(1, 1)
+    frame.config = config
+    frame.unit = unit
+    frame.isOverlay = true
+    frame.skipAnchor = true
+    frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    if config.displayType == "BORDER" then
+        if config.strata then frame:SetFrameStrata(config.strata) end
+        if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
+
+        local t = config.borderThickness or 2
+        local c = config.color or {}
+        local r, g, b, a = c.r or 1, c.g or 0, c.b or 0, c.a or 1
+
+        local top = frame:CreateTexture(nil, "OVERLAY")
+        top:SetColorTexture(r, g, b, a)
+        top:SetHeight(t)
+        top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+        top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+
+        local bottom = frame:CreateTexture(nil, "OVERLAY")
+        bottom:SetColorTexture(r, g, b, a)
+        bottom:SetHeight(t)
+        bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+        bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+
+        local left = frame:CreateTexture(nil, "OVERLAY")
+        left:SetColorTexture(r, g, b, a)
+        left:SetWidth(t)
+        left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+        left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+
+        local right = frame:CreateTexture(nil, "OVERLAY")
+        right:SetColorTexture(r, g, b, a)
+        right:SetWidth(t)
+        right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+        right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    end
+
+    frame:Hide()
+    return frame
+end
+
 function WF.overlay(parent, config, _style, unit, options)
+    if NivUI.OverlayLogic.IsTransformative(config.displayType) then
+        return CreateTransformativeOverlayWidget(parent, config, unit)
+    end
+
     local frame = CreateAuraWidget(parent, config, unit, options)
     if options and options.forPreview then
         local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
