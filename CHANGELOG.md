@@ -5,6 +5,21 @@ All notable changes to NivUI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Overlay display types: Icon, Color, Frame (bar tint), and Border
+- Overlay growth in all four directions, with a wrap setting for overflow
+
+### Fixed
+
+- Group member names stuck as "Player" now refresh automatically outside combat
+
+### Removed
+
+- The dispel indicator, replaced by the Frame and Border display types; existing settings are not migrated
+
 ## [2.0.1](https://github.com/nivthefox/wow-nivui/releases/tag/v2.0.1) - 2026-07-17
 
 ### Fixed
