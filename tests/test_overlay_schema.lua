@@ -101,7 +101,7 @@ local ICON_KEYS = {
     "iconSize", "spacing",
     "anchor.point", "anchor.relativeTo", "anchor.relativePoint", "anchor.x", "anchor.y",
     "strata", "frameLevel",
-    "perRow", "maxIcons", "growth",
+    "perRow", "maxIcons", "growth", "wrap",
     "showDuration", "showSwipe", "showStacks",
     "duration.font", "duration.fontSize", "duration.fontOutline", "duration.color",
     "stacks.font", "stacks.fontSize", "stacks.fontOutline", "stacks.color",
@@ -231,5 +231,56 @@ return {
         local visible = CollectVisibleKeys("BORDER")
         assertTableEquals(SortedKeys(visible), SortedKeys(ExpectedSet(BORDER_KEYS)),
             "BORDER visible keys")
+    end,
+
+    --------------------------------------------------------------------------
+    -- Wrap direction: new setting on the additive (Icon/Color) types only.
+    --------------------------------------------------------------------------
+
+    ["DEFAULTS.wrap is DOWN"] = function()
+        assertEquals(Overlays.DEFAULTS.wrap, "DOWN", "wrap default is DOWN (horizontal default growth)")
+    end,
+
+    ["Layout tab has a wrap dropdown wired to OVERLAY_WRAP"] = function()
+        local wrapEntry
+        for _, tab in ipairs(Overlays.CONFIG) do
+            if tab.label == "Layout" then
+                for _, entry in ipairs(tab.entries) do
+                    if entry.key == "wrap" then
+                        wrapEntry = entry
+                    end
+                end
+            end
+        end
+        assertNotNil(wrapEntry, "Layout tab must contain a wrap entry")
+        assertEquals(wrapEntry.kind, "dropdown", "wrap entry is a dropdown")
+        assertEquals(wrapEntry.options, "OVERLAY_WRAP", "wrap dropdown resolves the OVERLAY_WRAP option list")
+    end,
+
+    ["perRow label reads Icons Per Line"] = function()
+        local perRowEntry
+        for _, tab in ipairs(Overlays.CONFIG) do
+            for _, entry in ipairs(tab.entries) do
+                if entry.key == "perRow" then
+                    perRowEntry = entry
+                end
+            end
+        end
+        assertNotNil(perRowEntry, "CONFIG must contain a perRow entry")
+        assertEquals(perRowEntry.label, "Icons Per Line", "perRow label relabeled for either orientation")
+    end,
+
+    ["OVERLAY_WRAP_HORIZONTAL is the ordered Down/Up pair"] = function()
+        assertTableEquals(UnitFrames.OVERLAY_WRAP_HORIZONTAL, {
+            { value = "DOWN", name = "Down" },
+            { value = "UP", name = "Up" },
+        }, "OVERLAY_WRAP_HORIZONTAL contents and order (default Down first)")
+    end,
+
+    ["OVERLAY_WRAP_VERTICAL is the ordered Right/Left pair"] = function()
+        assertTableEquals(UnitFrames.OVERLAY_WRAP_VERTICAL, {
+            { value = "RIGHT", name = "Right" },
+            { value = "LEFT", name = "Left" },
+        }, "OVERLAY_WRAP_VERTICAL contents and order (default Right first)")
     end,
 }

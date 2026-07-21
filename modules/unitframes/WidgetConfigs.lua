@@ -428,6 +428,10 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
         return self:GetOverlayTargetWidgetOptions()
     end
 
+    if optionName == "OVERLAY_WRAP" then
+        return self:GetWrapOptions(context and context.data and context.data.growth)
+    end
+
     local lists = {
         HEALTH_COLOR_MODES = self.HEALTH_COLOR_MODES,
         POWER_COLOR_MODES = self.POWER_COLOR_MODES,

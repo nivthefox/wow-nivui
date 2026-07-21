@@ -61,4 +61,56 @@ return {
         assertNil(record.dispelIndicator, "legacy dispelIndicator stripped on Get")
         NivUI.current.overlays["Legacy"] = nil
     end,
+
+    --------------------------------------------------------------------------
+    -- Wrap coherence: NormalizeOverlay fills and repairs the wrap value so it
+    -- is always a valid perpendicular member of the (possibly horizontal)
+    -- growth orientation. Missing wrap -> orientation default; an out-of-
+    -- orientation wrap hard-resets to the new orientation's default; a valid
+    -- perpendicular wrap is preserved. Unknown growth is treated as horizontal
+    -- for wrap purposes but is never itself rewritten.
+    --------------------------------------------------------------------------
+
+    ["empty table gains wrap DOWN"] = function()
+        local config = Normalize({})
+        assertEquals(config.wrap, "DOWN", "missing wrap defaults to DOWN for default (RIGHT) growth")
+    end,
+
+    ["vertical growth without wrap defaults to RIGHT"] = function()
+        local config = Normalize({ growth = "UP" })
+        assertEquals(config.wrap, "RIGHT", "UP growth without wrap defaults to RIGHT")
+    end,
+
+    ["orientation flip hard-resets an incoherent wrap"] = function()
+        local config = Normalize({ growth = "UP", wrap = "DOWN" })
+        assertEquals(config.wrap, "RIGHT", "DOWN is invalid for vertical growth; resets to RIGHT")
+    end,
+
+    ["invalid horizontal wrap resets to DOWN"] = function()
+        local config = Normalize({ growth = "RIGHT", wrap = "LEFT" })
+        assertEquals(config.wrap, "DOWN", "LEFT is invalid for horizontal growth; resets to DOWN")
+    end,
+
+    ["valid perpendicular wraps are preserved"] = function()
+        local vertical = Normalize({ growth = "DOWN", wrap = "LEFT" })
+        assertEquals(vertical.wrap, "LEFT", "LEFT is valid for vertical growth; preserved")
+        local horizontal = Normalize({ growth = "RIGHT", wrap = "UP" })
+        assertEquals(horizontal.wrap, "UP", "UP is valid for horizontal growth; preserved")
+    end,
+
+    ["unknown growth gets horizontal default wrap but is not rewritten"] = function()
+        local config = Normalize({ growth = "SIDEWAYS" })
+        assertEquals(config.wrap, "DOWN", "unknown growth is treated as horizontal; wrap defaults to DOWN")
+        assertEquals(config.growth, "SIDEWAYS", "unknown growth value must not be rewritten")
+    end,
+
+    ["Overlays:Get persistently repairs an incoherent stored wrap"] = function()
+        NivUI.current.overlays["WrapReset"] = { growth = "UP", wrap = "DOWN" }
+        local record = NivUI.Overlays:Get("WrapReset")
+        assertNotNil(record, "seeded record should be retrievable")
+        assertEquals(record.wrap, "RIGHT", "returned record's incoherent wrap repaired to RIGHT")
+        assertEquals(NivUI.current.overlays["WrapReset"].wrap, "RIGHT",
+            "the stored profile table's wrap is mutated in place to RIGHT")
+        NivUI.current.overlays["WrapReset"] = nil
+    end,
 }

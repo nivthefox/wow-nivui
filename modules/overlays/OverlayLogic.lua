@@ -53,7 +53,117 @@ function OverlayLogic.NormalizeOverlay(config, defaults)
         end
     end
     config.dispelIndicator = nil
+    config.wrap = OverlayLogic.NormalizeWrap(config.growth, config.wrap)
     return config
+end
+
+--- The set of growth directions that grow along a vertical axis. Any value not
+--- in this set (including nil and unknown strings) is treated as horizontal.
+local VERTICAL_GROWTH = {
+    UP = true,
+    DOWN = true,
+}
+
+--- Valid perpendicular wrap members per orientation. Horizontal growth wraps
+--- vertically (DOWN/UP); vertical growth wraps horizontally (RIGHT/LEFT). Used
+--- by NormalizeWrap to decide whether a saved wrap is coherent with its growth.
+local VALID_WRAP = {
+    horizontal = { DOWN = true, UP = true },
+    vertical = { RIGHT = true, LEFT = true },
+}
+
+--- Origin corner per (effective growth, effective wrap) pair. All icons share
+--- this single corner; each icon's { x, y } is a signed offset from it. The
+--- corner sits opposite both the growth and wrap directions so the grid grows
+--- into the frame from that corner.
+local ORIGIN_CORNER = {
+    RIGHT = { DOWN = "TOPLEFT", UP = "BOTTOMLEFT" },
+    LEFT = { DOWN = "TOPRIGHT", UP = "BOTTOMRIGHT" },
+    UP = { RIGHT = "BOTTOMLEFT", LEFT = "BOTTOMRIGHT" },
+    DOWN = { RIGHT = "TOPLEFT", LEFT = "TOPRIGHT" },
+}
+
+--- Reports whether a growth direction grows vertically (UP or DOWN). nil and
+--- unknown strings are horizontal, hence false.
+--- @param growth string|nil The overlay's growth value
+--- @return boolean True for UP/DOWN, false otherwise
+function OverlayLogic.IsVerticalGrowth(growth)
+    return VERTICAL_GROWTH[growth] == true
+end
+
+--- Returns the default wrap for a growth direction: "RIGHT" for vertical growth,
+--- "DOWN" for horizontal (or unknown/nil) growth.
+--- @param growth string|nil The overlay's growth value
+--- @return string "RIGHT" if vertical else "DOWN"
+function OverlayLogic.DefaultWrapFor(growth)
+    if OverlayLogic.IsVerticalGrowth(growth) then
+        return "RIGHT"
+    end
+    return "DOWN"
+end
+
+--- Normalizes a wrap direction against its growth. A wrap that is a valid
+--- perpendicular member of the growth's orientation is preserved; anything else
+--- (nil, an out-of-orientation value, or garbage) falls to DefaultWrapFor.
+--- Unknown growth is treated as horizontal.
+--- @param growth string|nil The overlay's growth value
+--- @param wrap string|nil The overlay's saved wrap value
+--- @return string A wrap valid for the growth's orientation
+function OverlayLogic.NormalizeWrap(growth, wrap)
+    local orientation = OverlayLogic.IsVerticalGrowth(growth) and "vertical" or "horizontal"
+    if VALID_WRAP[orientation][wrap] then
+        return wrap
+    end
+    return OverlayLogic.DefaultWrapFor(growth)
+end
+
+--- Computes the grid layout for an additive overlay: a single origin corner plus
+--- a signed { x, y } offset per icon, with icon 1 always at { 0, 0 }. The
+--- container is sized to a SINGLE icon slot (width == height == iconSize): the
+--- user's anchor settings position the container, and because icon 1 is
+--- congruent with it, they pin icon 1 directly. Icons 2..N flow along the
+--- growth axis (wrapping in the perpendicular wrap direction every perLine
+--- icons) and extend beyond the container's rect by design. The model is total
+--- over any input (unknown growth behaves as RIGHT; invalid/nil wrap falls to
+--- the orientation default).
+--- @param params table { growth, wrap, perLine, maxIcons, iconSize, spacing }
+--- @return table { width, height, anchor, icons = { [i] = { x = n, y = n } } }
+function OverlayLogic.ComputeGridLayout(params)
+    local growth = params.growth
+    if not ORIGIN_CORNER[growth] then
+        growth = "RIGHT"
+    end
+    local wrap = OverlayLogic.NormalizeWrap(growth, params.wrap)
+
+    local perLine = params.perLine
+    local maxIcons = params.maxIcons
+    local step = params.iconSize + params.spacing
+    local vertical = OverlayLogic.IsVerticalGrowth(growth)
+
+    local anchor = ORIGIN_CORNER[growth][wrap]
+    -- x grows positive from LEFT corners, negative from RIGHT corners; y grows
+    -- positive from BOTTOM corners, negative from TOP corners.
+    local xSign = anchor:find("RIGHT") and -1 or 1
+    local ySign = anchor:find("BOTTOM") and 1 or -1
+
+    local icons = {}
+    for i = 1, maxIcons do
+        local line = math.floor((i - 1) / perLine)
+        local pos = (i - 1) % perLine
+        local along = pos * step
+        local across = line * step
+        local x, y
+        if vertical then
+            x = across
+            y = along
+        else
+            x = along
+            y = across
+        end
+        icons[i] = { x = xSign * x, y = ySign * y }
+    end
+
+    return { width = params.iconSize, height = params.iconSize, anchor = anchor, icons = icons }
 end
 
 --- Evaluates a showIf/hideIf condition against a resolved value. A nil

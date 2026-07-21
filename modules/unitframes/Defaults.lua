@@ -96,6 +96,25 @@ NivUI.UnitFrames.AURA_GROWTH = {
     { value = "DOWN", name = "Down" },
 }
 
+NivUI.UnitFrames.OVERLAY_WRAP_HORIZONTAL = {
+    { value = "DOWN", name = "Down" },
+    { value = "UP", name = "Up" },
+}
+
+NivUI.UnitFrames.OVERLAY_WRAP_VERTICAL = {
+    { value = "RIGHT", name = "Right" },
+    { value = "LEFT", name = "Left" },
+}
+
+-- Adaptive wrap options: vertical growth wraps horizontally (Right/Left), while
+-- horizontal or unknown growth wraps vertically (Down/Up).
+function NivUI.UnitFrames:GetWrapOptions(growth)
+    if NivUI.OverlayLogic.IsVerticalGrowth(growth) then
+        return self.OVERLAY_WRAP_VERTICAL
+    end
+    return self.OVERLAY_WRAP_HORIZONTAL
+end
+
 NivUI.UnitFrames.AURA_TYPE = {
     { value = "HELPFUL", name = "Helpful" },
     { value = "HARMFUL", name = "Harmful" },

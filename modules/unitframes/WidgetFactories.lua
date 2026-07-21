@@ -759,31 +759,21 @@ local function CreateAuraWidget(parent, config, unit, options)
     local perRow = config.perRow
     local maxIcons = config.maxIcons
 
-    local totalWidth = (iconSize + spacing) * math.min(maxIcons, perRow) - spacing
-    local rows = math.ceil(maxIcons / perRow)
-    local totalHeight = (iconSize + spacing) * rows - spacing
+    local layout = NivUI.OverlayLogic.ComputeGridLayout({ growth = config.growth, wrap = config.wrap, perLine = perRow, maxIcons = maxIcons, iconSize = iconSize, spacing = spacing })
 
-    frame:SetSize(totalWidth, totalHeight)
+    frame:SetSize(layout.width, layout.height)
     frame.icons = {}
     frame.config = config
     frame.unit = unit
     frame.isOverlay = true
     frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
 
-    local iconAnchor = (config.growth == "LEFT") and "TOPRIGHT" or "TOPLEFT"
-
     for i = 1, maxIcons do
         local icon = CreateFrame("Frame", nil, frame)
         icon:SetSize(iconSize, iconSize)
 
-        local row = math.floor((i - 1) / perRow)
-        local col = (i - 1) % perRow
-
-        local xOffset = (config.growth == "LEFT") and -col or col
-        xOffset = xOffset * (iconSize + spacing)
-        local yOffset = -row * (iconSize + spacing)
-
-        icon:SetPoint(iconAnchor, frame, iconAnchor, xOffset, yOffset)
+        local p = layout.icons[i]
+        icon:SetPoint(layout.anchor, frame, layout.anchor, p.x, p.y)
 
         icon.texture = icon:CreateTexture(nil, "ARTWORK")
         icon.texture:SetAllPoints()

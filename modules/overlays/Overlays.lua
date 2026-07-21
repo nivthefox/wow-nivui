@@ -17,6 +17,7 @@ Overlays.DEFAULTS = {
     perRow = 8,
     maxIcons = 16,
     growth = "RIGHT",
+    wrap = "DOWN",
     showDuration = true,
     showSwipe = true,
     showStacks = true,
@@ -69,9 +70,10 @@ Overlays.CONFIG = {
         label = "Layout",
         showIf = { key = "displayType", anyOf = ADDITIVE_TYPES },
         entries = {
-            { kind = "slider", key = "perRow", label = "Icons Per Row", min = 1, max = 16, step = 1 },
+            { kind = "slider", key = "perRow", label = "Icons Per Line", min = 1, max = 16, step = 1 },
             { kind = "slider", key = "maxIcons", label = "Max Icons", min = 1, max = 40, step = 1 },
             { kind = "dropdown", key = "growth", label = "Growth Direction", options = "AURA_GROWTH" },
+            { kind = "dropdown", key = "wrap", label = "Wrap Direction", options = "OVERLAY_WRAP" },
         },
     },
     {
