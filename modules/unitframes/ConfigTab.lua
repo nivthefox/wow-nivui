@@ -3,6 +3,7 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local ROW_HEIGHT = 32
 local WIDGET_LIST_WIDTH = 140
+local LABEL_WIDTH = 200
 
 local SelectSubTab
 
@@ -545,10 +546,10 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
 
         if entry.kind == "checkbox" then
             local checkBox = CreateFrame("CheckButton", nil, holder, "SettingsCheckboxTemplate")
-            checkBox:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            checkBox:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 15, 0)
             checkBox:SetText(entry.label)
             checkBox:SetNormalFontObject(GameFontHighlight)
-            checkBox:GetFontString():SetPoint("RIGHT", holder, "CENTER", -30, 0)
+            checkBox:GetFontString():SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 30, 0)
             checkBox:GetFontString():SetPoint("LEFT", holder, "LEFT", 10, 0)
             checkBox:GetFontString():SetJustifyH("RIGHT")
             checkBox:SetChecked(currentValue)
@@ -609,7 +610,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         elseif entry.kind == "slider" then
             local label = holder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             label:SetPoint("LEFT", 10, 0)
-            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 40, 0)
             label:SetJustifyH("RIGHT")
             label:SetText(entry.label)
 
@@ -621,7 +622,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
             editBox:SetText(tostring(currentValue or entry.min))
 
             local slider = CreateFrame("Slider", nil, holder, "MinimalSliderWithSteppersTemplate")
-            slider:SetPoint("LEFT", holder, "CENTER", -20, 0)
+            slider:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 20, 0)
             slider:SetPoint("RIGHT", editBox, "LEFT", -10, 0)
             slider:SetHeight(20)
 
@@ -655,13 +656,13 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         elseif entry.kind == "dropdown" then
             local label = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             label:SetPoint("LEFT", 10, 0)
-            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 40, 0)
             label:SetJustifyH("RIGHT")
             label:SetText(entry.label)
 
             local dropdown = CreateFrame("DropdownButton", nil, holder, "WowStyle1DropdownTemplate")
             dropdown:SetWidth(150)
-            dropdown:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            dropdown:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 15, 0)
 
             local options = type(entry.options) == "string" and NivUI.UnitFrames:GetOptionList(entry.options, { widgetType = widgetType, data = widgetData }) or entry.options or {}
 
@@ -684,13 +685,13 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         elseif entry.kind == "textureDropdown" then
             local label = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             label:SetPoint("LEFT", 10, 0)
-            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 40, 0)
             label:SetJustifyH("RIGHT")
             label:SetText(entry.label)
 
             local dropdown = CreateFrame("DropdownButton", nil, holder, "WowStyle1DropdownTemplate")
             dropdown:SetWidth(150)
-            dropdown:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            dropdown:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 15, 0)
 
             dropdown:SetupMenu(function(_, rootDescription)
                 local textures = NivUI:GetBarTextures()
@@ -713,13 +714,13 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         elseif entry.kind == "fontDropdown" then
             local label = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             label:SetPoint("LEFT", 10, 0)
-            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 40, 0)
             label:SetJustifyH("RIGHT")
             label:SetText(entry.label)
 
             local dropdown = CreateFrame("DropdownButton", nil, holder, "WowStyle1DropdownTemplate")
             dropdown:SetWidth(150)
-            dropdown:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            dropdown:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 15, 0)
 
             dropdown:SetupMenu(function(_, rootDescription)
                 local fonts = NivUI:GetFonts()
@@ -741,12 +742,12 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         elseif entry.kind == "colorPicker" then
             local label = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             label:SetPoint("LEFT", 10, 0)
-            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 40, 0)
             label:SetJustifyH("RIGHT")
             label:SetText(entry.label)
 
             local swatch = CreateFrame("Button", nil, holder, "ColorSwatchTemplate")
-            swatch:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            swatch:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 15, 0)
 
             local color = currentValue or { r = 1, g = 1, b = 1 }
             swatch.currentColor = CopyTable(color)
@@ -783,13 +784,13 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
         elseif entry.kind == "numericInput" then
             local label = holder:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             label:SetPoint("LEFT", 10, 0)
-            label:SetPoint("RIGHT", holder, "CENTER", -40, 0)
+            label:SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 40, 0)
             label:SetJustifyH("RIGHT")
             label:SetText(entry.label)
 
             local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
             editBox:SetSize(50, 20)
-            editBox:SetPoint("LEFT", holder, "CENTER", -15, 0)
+            editBox:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 15, 0)
             editBox:SetAutoFocus(false)
             editBox:SetNumeric(true)
             editBox:SetText(tostring(currentValue or entry.min or 1))
