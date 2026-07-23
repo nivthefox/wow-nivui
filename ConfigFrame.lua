@@ -3,6 +3,7 @@ local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
 local SIDEBAR_WIDTH = 125
 local LABEL_WIDTH = 200
+local CONTROL_MAX_WIDTH = 350
 
 local Components = {}
 
@@ -142,7 +143,6 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
 
     local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
     editBox:SetSize(50, 20)
-    editBox:SetPoint("RIGHT", -5, 0)
     editBox:SetAutoFocus(false)
     editBox:SetNumeric(not isDecimal)
     editBox:SetMaxLetters(6)
@@ -151,6 +151,17 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
     holder.Slider:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 20, 0)
     holder.Slider:SetPoint("RIGHT", editBox, "LEFT", -10, 0)
     holder.Slider:SetHeight(20)
+
+    do
+        local START, RIGHT_INSET = LABEL_WIDTH - 20, 5
+        local function UpdateSliderWidth(_, w)
+            w = w or holder:GetWidth()
+            local rightX = math.min(START + CONTROL_MAX_WIDTH, math.max(START + 50, w - RIGHT_INSET))
+            editBox:SetPoint("RIGHT", holder, "LEFT", rightX, 0)
+        end
+        holder:SetScript("OnSizeChanged", UpdateSliderWidth)
+        UpdateSliderWidth(holder, holder:GetWidth())
+    end
 
     local numSteps = math.floor((max - min) / step)
     holder.Slider:Init(min, min, max, numSteps, {})

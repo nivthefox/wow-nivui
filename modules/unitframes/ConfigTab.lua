@@ -4,6 +4,7 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 local ROW_HEIGHT = 32
 local WIDGET_LIST_WIDTH = 140
 local LABEL_WIDTH = 200
+local CONTROL_MAX_WIDTH = 350
 
 local SelectSubTab
 
@@ -616,7 +617,6 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
 
             local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
             editBox:SetSize(50, 20)
-            editBox:SetPoint("RIGHT", -5, 0)
             editBox:SetAutoFocus(false)
             editBox:SetMaxLetters(6)
             editBox:SetText(tostring(currentValue or entry.min))
@@ -625,6 +625,17 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
             slider:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 20, 0)
             slider:SetPoint("RIGHT", editBox, "LEFT", -10, 0)
             slider:SetHeight(20)
+
+            do
+                local START, RIGHT_INSET = LABEL_WIDTH - 20, 5
+                local function UpdateSliderWidth(_, w)
+                    w = w or holder:GetWidth()
+                    local rightX = math.min(START + CONTROL_MAX_WIDTH, math.max(START + 50, w - RIGHT_INSET))
+                    editBox:SetPoint("RIGHT", holder, "LEFT", rightX, 0)
+                end
+                holder:SetScript("OnSizeChanged", UpdateSliderWidth)
+                UpdateSliderWidth(holder, holder:GetWidth())
+            end
 
             local numSteps = math.floor((entry.max - entry.min) / entry.step)
             slider:Init(currentValue or entry.min, entry.min, entry.max, numSteps, {})
