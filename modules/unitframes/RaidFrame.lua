@@ -290,11 +290,12 @@ local function LayoutGroupFrames(raidSize)
         end
 
         local containerWidth, containerHeight
+        local maxGroups = state.maxGroups
         if groupOrientation == "VERTICAL" then
             containerWidth = groupWidth
-            containerHeight = visibleGroups * groupHeight + (visibleGroups - 1) * spacing
+            containerHeight = maxGroups * groupHeight + (maxGroups - 1) * spacing
         else
-            containerWidth = visibleGroups * groupWidth + (visibleGroups - 1) * spacing
+            containerWidth = maxGroups * groupWidth + (maxGroups - 1) * spacing
             containerHeight = groupHeight
         end
 
