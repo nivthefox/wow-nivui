@@ -2,12 +2,10 @@ NivUI = NivUI or {}
 NivUI.WidgetFactories = {}
 
 function NivUI.WidgetFactories.GetClassColor(unit)
-    local _, class = UnitClass(unit or "player")
-    if class then
-        local color = RAID_CLASS_COLORS[class]
-        if color then
-            return color.r, color.g, color.b
-        end
+    local class = NivUI.Roster:GetClass(unit or "player")
+    local color = class and RAID_CLASS_COLORS[class]
+    if color then
+        return color.r, color.g, color.b
     end
     return 1, 1, 1
 end
@@ -262,7 +260,7 @@ function WF.portrait(parent, config, _style, unit)
         frame.texture = frame:CreateTexture(nil, "ARTWORK")
         frame.texture:SetAllPoints()
 
-        local _, class = UnitClass(unit)
+        local class = NivUI.Roster:GetClass(unit)
         if class then
             local coords = CLASS_ICON_TCOORDS[class]
             if coords then
@@ -489,8 +487,8 @@ function WF.leaderIcon(parent, config, _style, unit, options)
     frame.icon:SetAllPoints()
     frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-LeaderIcon")
 
-    local isLeader = UnitIsGroupLeader(unit)
-    local isAssist = UnitIsGroupAssistant and UnitIsGroupAssistant(unit)
+    local isLeader = NivUI.Roster:IsLeader(unit)
+    local isAssist = NivUI.Roster:IsAssist(unit)
     if isLeader or isAssist then
         if isAssist and not isLeader then
             frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-AssistantIcon")
@@ -542,7 +540,7 @@ function WF.roleIcon(parent, config, _style, unit, options)
     frame.icon = frame:CreateTexture(nil, "OVERLAY")
     frame.icon:SetAllPoints()
 
-    local role = UnitGroupRolesAssigned(unit)
+    local role = NivUI.Roster:GetRole(unit)
     if role and role ~= "NONE" and GetMicroIconForRole then
         local atlas = GetMicroIconForRole(role)
         if atlas then
@@ -747,9 +745,8 @@ function NivUI.UnitFrames.ApplyCooldownFont(cooldown, cfg)
     end
 end
 
-local function CreateAuraWidget(parent, config, unit, options)
-    options = options or {}
-    local forPreview = options.forPreview
+--- Preview-only hand-built icon grid; live overlays use AuraContainers.
+local function CreateAuraWidget(parent, config, unit)
     local frame = CreateFrame("Frame", nil, parent)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
@@ -765,8 +762,6 @@ local function CreateAuraWidget(parent, config, unit, options)
     frame.icons = {}
     frame.config = config
     frame.unit = unit
-    frame.isOverlay = true
-    frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
 
     for i = 1, maxIcons do
         local icon = CreateFrame("Frame", nil, frame)
@@ -795,14 +790,271 @@ local function CreateAuraWidget(parent, config, unit, options)
             icon.stacks:SetFontObject("GameFontNormal")
         end
 
-        if not forPreview then
-            icon:Hide()
-        end
-
         table.insert(frame.icons, icon)
     end
 
     return frame
+end
+
+--- Wraps an AuraContainer in a plain table so NivUI can attach metadata
+--- (config, anchorOverride, borderTarget, fillTintTarget) without hitting
+--- Private Script Object restrictions. Frame API calls are proxied to the
+--- inner container.
+local function WrapContainer(container)
+    local wrapper = {
+        inner = container,
+    }
+    setmetatable(wrapper, {
+        __index = function(_, k)
+            local v = rawget(container, k)
+            if v ~= nil then return v end
+            v = container[k]
+            if type(v) == "function" then
+                return function(self, ...)
+                    if self == wrapper then return v(container, ...) end
+                    return v(self, ...)
+                end
+            end
+            return v
+        end,
+    })
+    return wrapper
+end
+
+--- Creates a 12.1 AuraContainer-backed additive overlay widget (ICON or COLOR).
+--- @param parent Frame The parent frame
+--- @param config table The overlay config
+--- @param unit string The unit ID
+--- @return table Wrapped AuraContainer widget
+local function CreateAuraContainerWidget(parent, config, unit)
+    local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
+    if config.strata then container:SetFrameStrata(config.strata) end
+    if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
+
+    local isColor = config.displayType == "COLOR"
+    local color = isColor and config.color or nil
+    local iconSize = config.iconSize
+    local spacing = config.spacing
+    local showDuration = config.showDuration
+    local showSwipe = config.showSwipe
+    local showStacks = config.showStacks
+    local durationCfg = config.duration
+    local stacksCfg = config.stacks
+    local auraFilter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    local layout = NivUI.OverlayLogic.ComputeContainerLayout({
+        growth = config.growth,
+        wrap = config.wrap,
+        perLine = config.perRow,
+        iconSize = iconSize,
+        spacing = spacing,
+    })
+
+    container:SetUnit(unit)
+    container:SetFlowLayoutAxis(AnchorUtil.FlowLayoutAxis[layout.axis])
+    container:SetFlowLayoutAnchorPoint(layout.anchorPoint)
+    container:SetFlowLayoutGrowthDirection(AnchorUtil.FlowDirection[layout.horizontal], AnchorUtil.FlowDirection[layout.vertical])
+    container:SetFlowLayoutMaximumLineSize(layout.maximumLineSize)
+
+    local wrapper = WrapContainer(container)
+    wrapper.config = config
+    wrapper.anchorOverride = NivUI.OverlayLogic.TranslateContainerAnchor(config.anchor, layout.anchorPoint, iconSize)
+
+    local function InitializeAuraButton(button)
+        button:SetSize(iconSize, iconSize)
+
+        local texture = button:CreateTexture(nil, "ARTWORK")
+        texture:SetAllPoints(button)
+        if isColor then
+            local c = color or {}
+            texture:SetColorTexture(c.r or 1, c.g or 0, c.b or 0, c.a or 1)
+        else
+            button:SetIcon(texture)
+        end
+
+        if showSwipe then
+            local cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+            cooldown:SetAllPoints(button)
+            cooldown:SetDrawEdge(false)
+            cooldown:SetDrawSwipe(true)
+            -- Swipe only; the cooldown's lazily-created countdown FontString
+            -- cannot be restyled from a one-shot initializer.
+            cooldown:SetHideCountdownNumbers(true)
+            button:SetDurationCooldown(cooldown)
+        end
+
+        if showDuration then
+            local duration = button:CreateFontString(nil, "OVERLAY")
+            duration:SetPoint("CENTER", button, "CENTER", 0, 0)
+            if durationCfg and durationCfg.font then
+                duration:SetFont(NivUI:GetFontPath(durationCfg.font), durationCfg.fontSize or 12, durationCfg.fontOutline or "")
+                local dc = durationCfg.color
+                if dc then duration:SetTextColor(dc.r, dc.g, dc.b, dc.a or 1) end
+            else
+                duration:SetFontObject("GameFontNormal")
+            end
+            button:SetDurationText(duration)
+        end
+
+        if showStacks then
+            local stacks = button:CreateFontString(nil, "OVERLAY")
+            stacks:SetPoint("BOTTOMRIGHT", 0, 0)
+            if stacksCfg and stacksCfg.font then
+                stacks:SetFont(NivUI:GetFontPath(stacksCfg.font), stacksCfg.fontSize or 12, stacksCfg.fontOutline or "")
+                local sc = stacksCfg.color
+                if sc then stacks:SetTextColor(sc.r, sc.g, sc.b, sc.a or 1) end
+            else
+                stacks:SetFontObject("GameFontNormal")
+            end
+            button:SetApplicationCount(stacks)
+        end
+    end
+
+    local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
+    local groupSpecs = NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+    for i, spec in ipairs(groupSpecs) do
+        local candidateFilters
+        if spec.includeSpellIDs or spec.excludeSpellIDs then
+            candidateFilters = {
+                includeSpellIDs = spec.includeSpellIDs,
+                excludeSpellIDs = spec.excludeSpellIDs,
+            }
+        end
+        container:AddAuraGroup("nivui" .. i, spec.filterString, {
+            maxFrameCount = config.maxIcons,
+            candidateFilters = candidateFilters,
+            initializeFrame = InitializeAuraButton,
+            layout = {
+                elementSpacing = spacing,
+                lineSpacing = spacing,
+                elementWidth = iconSize,
+                elementHeight = iconSize,
+            },
+        })
+    end
+
+    return wrapper
+end
+
+local function CreateBorderEdges(frame, thickness, color)
+    local c = color or {}
+    local r, g, b, a = c.r or 1, c.g or 0, c.b or 0, c.a or 1
+
+    local top = frame:CreateTexture(nil, "OVERLAY")
+    top:SetColorTexture(r, g, b, a)
+    top:SetHeight(thickness)
+    top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+
+    local bottom = frame:CreateTexture(nil, "OVERLAY")
+    bottom:SetColorTexture(r, g, b, a)
+    bottom:SetHeight(thickness)
+    bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+    bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+
+    local left = frame:CreateTexture(nil, "OVERLAY")
+    left:SetColorTexture(r, g, b, a)
+    left:SetWidth(thickness)
+    left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+
+    local right = frame:CreateTexture(nil, "OVERLAY")
+    right:SetColorTexture(r, g, b, a)
+    right:SetWidth(thickness)
+    right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+end
+
+--- One AuraSlot per filter group spec; Blizzard shows/hides each slot's button,
+--- so NivUI never observes aura state. UnitFrameBase.ApplyAnchors anchors the
+--- container around the target widget via borderTarget/borderThickness, because
+--- the widgets table does not exist yet at factory time.
+local function CreateBorderContainerWidget(parent, config, unit)
+    local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
+    if config.strata then container:SetFrameStrata(config.strata) end
+    if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
+
+    local thickness = config.borderThickness or 2
+    local color = config.color
+    local auraFilter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    container:SetUnit(unit)
+
+    local wrapper = WrapContainer(container)
+    wrapper.config = config
+    wrapper.borderTarget = config.targetWidget or "healthBar"
+    wrapper.borderThickness = thickness
+
+    local function InitializeBorderButton(button)
+        button:SetAllPoints(container)
+        CreateBorderEdges(button, thickness, color)
+    end
+
+    local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
+    local groupSpecs = NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+    for i, spec in ipairs(groupSpecs) do
+        local candidateFilters
+        if spec.includeSpellIDs or spec.excludeSpellIDs then
+            candidateFilters = {
+                includeSpellIDs = spec.includeSpellIDs,
+                excludeSpellIDs = spec.excludeSpellIDs,
+            }
+        end
+        container:AddAuraSlot("nivborder" .. i, spec.filterString, {
+            candidateFilters = candidateFilters,
+            initializeFrame = InitializeBorderButton,
+        })
+    end
+
+    return wrapper
+end
+
+--- One AuraSlot per filter group spec; Blizzard shows/hides each slot's button,
+--- so NivUI never observes aura state. Each button carries one tint texture
+--- that UnitFrameBase.ApplyAnchors pins to the target bar's fill texture, so
+--- the renderer tracks the secret fill edge with no Lua observation.
+local function CreateFrameContainerWidget(parent, config, unit)
+    local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
+    if config.strata then container:SetFrameStrata(config.strata) end
+    if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
+
+    local color = config.color or {}
+    local auraFilter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    container:SetUnit(unit)
+
+    local wrapper = WrapContainer(container)
+    wrapper.config = config
+    wrapper.fillTintTarget = config.targetWidget or "healthBar"
+    wrapper.fillTintTextures = {}
+
+    local function InitializeTintButton(button)
+        button:SetAllPoints(container)
+        local texture = button:CreateTexture(nil, "OVERLAY")
+        texture:SetColorTexture(color.r or 1, color.g or 0, color.b or 0, color.a or 1)
+        table.insert(wrapper.fillTintTextures, texture)
+    end
+
+    local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
+    local groupSpecs = NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+    for i, spec in ipairs(groupSpecs) do
+        local candidateFilters
+        if spec.includeSpellIDs or spec.excludeSpellIDs then
+            candidateFilters = {
+                includeSpellIDs = spec.includeSpellIDs,
+                excludeSpellIDs = spec.excludeSpellIDs,
+            }
+        end
+        container:AddAuraSlot("nivframe" .. i, spec.filterString, {
+            candidateFilters = candidateFilters,
+            initializeFrame = InitializeTintButton,
+        })
+    end
+
+    return wrapper
 end
 
 local TEST_BUFFS = {
@@ -851,55 +1103,19 @@ local function PopulateTestAuras(frame, testAuras)
     end
 end
 
---- Creates a lightweight transformative overlay widget (FRAME or BORDER display
---- type). FRAME overlays recolor an existing widget and build no visuals of their
---- own; BORDER overlays build four edge textures forming an outline that the
---- resolution pass anchors around the target widget. Both are 1x1 hidden frames
---- carrying skipAnchor so ApplyAnchors never applies their retained anchor data.
---- @param parent Frame The parent frame
---- @param config table The overlay config
---- @param unit string The unit ID
---- @return Frame The transformative overlay widget
+--- Preview stand-in for FRAME/BORDER overlays: previews never activate, so this
+--- builds a hidden placeholder that ApplyAnchors leaves alone.
 local function CreateTransformativeOverlayWidget(parent, config, unit)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(1, 1)
     frame.config = config
     frame.unit = unit
-    frame.isOverlay = true
     frame.skipAnchor = true
-    frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
 
     if config.displayType == "BORDER" then
         if config.strata then frame:SetFrameStrata(config.strata) end
         if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
-
-        local t = config.borderThickness or 2
-        local c = config.color or {}
-        local r, g, b, a = c.r or 1, c.g or 0, c.b or 0, c.a or 1
-
-        local top = frame:CreateTexture(nil, "OVERLAY")
-        top:SetColorTexture(r, g, b, a)
-        top:SetHeight(t)
-        top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-        top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-
-        local bottom = frame:CreateTexture(nil, "OVERLAY")
-        bottom:SetColorTexture(r, g, b, a)
-        bottom:SetHeight(t)
-        bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-        bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-
-        local left = frame:CreateTexture(nil, "OVERLAY")
-        left:SetColorTexture(r, g, b, a)
-        left:SetWidth(t)
-        left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-        left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-
-        local right = frame:CreateTexture(nil, "OVERLAY")
-        right:SetColorTexture(r, g, b, a)
-        right:SetWidth(t)
-        right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-        right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        CreateBorderEdges(frame, config.borderThickness or 2, config.color)
     end
 
     frame:Hide()
@@ -907,14 +1123,24 @@ local function CreateTransformativeOverlayWidget(parent, config, unit)
 end
 
 function WF.overlay(parent, config, _style, unit, options)
+    local forPreview = options and options.forPreview
+
     if NivUI.OverlayLogic.IsTransformative(config.displayType) then
-        return CreateTransformativeOverlayWidget(parent, config, unit)
+        if forPreview then
+            return CreateTransformativeOverlayWidget(parent, config, unit)
+        end
+        if config.displayType == "BORDER" then
+            return CreateBorderContainerWidget(parent, config, unit)
+        end
+        return CreateFrameContainerWidget(parent, config, unit)
     end
 
-    local frame = CreateAuraWidget(parent, config, unit, options)
-    if options and options.forPreview then
+    if forPreview then
+        local frame = CreateAuraWidget(parent, config, unit)
         local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
         PopulateTestAuras(frame, testAuras)
+        return frame
     end
-    return frame
+
+    return CreateAuraContainerWidget(parent, config, unit)
 end

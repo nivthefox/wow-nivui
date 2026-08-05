@@ -97,7 +97,7 @@ end
 --------------------------------------------------------------------------------
 
 local ICON_KEYS = {
-    "auraType", "priority", "displayType",
+    "auraType", "displayType",
     "iconSize", "spacing",
     "anchor.point", "anchor.relativeTo", "anchor.relativePoint", "anchor.x", "anchor.y",
     "strata", "frameLevel",
@@ -119,11 +119,11 @@ end
 local COLOR_KEYS = WithColor(ICON_KEYS)
 
 local FRAME_KEYS = {
-    "displayType", "auraType", "priority", "color", "targetWidget",
+    "displayType", "auraType", "color", "targetWidget",
 }
 
 local BORDER_KEYS = {
-    "displayType", "auraType", "priority", "color", "targetWidget",
+    "displayType", "auraType", "color", "targetWidget",
     "borderThickness", "strata", "frameLevel",
 }
 
@@ -159,9 +159,9 @@ return {
     -- New DEFAULTS fields
     --------------------------------------------------------------------------
 
-    ["DEFAULTS has the five new fields with exact values"] = function()
+    ["DEFAULTS has the new fields with exact values"] = function()
         assertEquals(Overlays.DEFAULTS.displayType, "ICON", "displayType default")
-        assertEquals(Overlays.DEFAULTS.priority, 1, "priority default")
+        assertNil(Overlays.DEFAULTS.priority, "priority removed from DEFAULTS")
         assertTableEquals(Overlays.DEFAULTS.color, { r = 1, g = 0, b = 0, a = 1 }, "color default")
         assertEquals(Overlays.DEFAULTS.targetWidget, "healthBar", "targetWidget default")
         assertEquals(Overlays.DEFAULTS.borderThickness, 2, "borderThickness default")

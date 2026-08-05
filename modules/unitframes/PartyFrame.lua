@@ -26,8 +26,8 @@ local function GetPartyUnits()
     local sortMode = NivUI:GetPartySortMode()
     if sortMode == "ROLE" then
         table.sort(units, function(a, b)
-            local roleA = UnitGroupRolesAssigned(a) or "NONE"
-            local roleB = UnitGroupRolesAssigned(b) or "NONE"
+            local roleA = NivUI.Roster:GetRole(a) or "NONE"
+            local roleB = NivUI.Roster:GetRole(b) or "NONE"
             return (ROLE_PRIORITY[roleA] or 4) < (ROLE_PRIORITY[roleB] or 4)
         end)
     end

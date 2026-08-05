@@ -446,7 +446,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
     NivUI:RegisterCallback("CustomFiltersChanged", function()
         -- Re-apply aura filtering when a custom filter's spells change. Skipped in
-        -- combat (frames rebuild via secure APIs); UNIT_AURA re-filters live there.
+        -- combat (frames rebuild via secure APIs); applied on the next refresh.
         if NivUI:IsFrameEnabled(config.frameType) and not InCombatLockdown() then
             module.Refresh()
         end
