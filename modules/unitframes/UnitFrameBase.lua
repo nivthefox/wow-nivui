@@ -1372,6 +1372,27 @@ end
 --- @param parent Frame The parent frame
 --- @param widgets table The widget table from CreateWidgets
 --- @param style table The style configuration table
+--- Pins each slot button's tint texture to the target bar's fill texture, whose
+--- rect the renderer keeps synced to the secret bar value. Anchors are the only
+--- fill-edge tracking 12.1 permits; reading the edge from Lua is forbidden.
+local function AnchorFillTintContainer(widgets, widget)
+    local target = widgets[widget.fillTintTarget]
+    if not (target and target.GetStatusBarTexture) then
+        widget:Hide()
+        return
+    end
+
+    widget:ClearAllPoints()
+    widget:SetAllPoints(target)
+
+    local fill = target:GetStatusBarTexture()
+    for _, texture in ipairs(widget.fillTintTextures) do
+        texture:ClearAllPoints()
+        texture:SetAllPoints(fill)
+    end
+    widget:Show()
+end
+
 --- Anchoring the container TO NivUI frames is the direction 12.1 permits;
 --- the reverse would trip the container's forbidden layout aspects.
 local function AnchorBorderContainer(parent, widgets, widget)
@@ -1394,6 +1415,8 @@ function UnitFrameBase.ApplyAnchors(parent, widgets, style)
         -- (nor let the anchor-missing Hide fallback fight the resolution pass).
         if widget.borderTarget then
             AnchorBorderContainer(parent, widgets, widget)
+        elseif widget.fillTintTarget then
+            AnchorFillTintContainer(widgets, widget)
         elseif not widget.skipAnchor then
             local config = style[widgetType] or widget.config
             local anchor = widget.anchorOverride or (config and config.anchor)

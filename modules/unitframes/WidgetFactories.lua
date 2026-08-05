@@ -1021,6 +1021,52 @@ local function CreateBorderContainerWidget(parent, config, unit)
     return wrapper
 end
 
+--- One AuraSlot per filter group spec; Blizzard shows/hides each slot's button,
+--- so NivUI never observes aura state. Each button carries one tint texture
+--- that UnitFrameBase.ApplyAnchors pins to the target bar's fill texture, so
+--- the renderer tracks the secret fill edge with no Lua observation.
+local function CreateFrameContainerWidget(parent, config, unit)
+    local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
+    if config.strata then container:SetFrameStrata(config.strata) end
+    if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
+
+    local color = config.color or {}
+    local auraFilter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    container:SetUnit(unit)
+
+    local wrapper = WrapContainer(container)
+    wrapper.config = config
+    wrapper.fillTintTarget = config.targetWidget or "healthBar"
+    wrapper.fillTintTextures = {}
+
+    local function InitializeTintButton(button)
+        button:SetAllPoints(container)
+        local texture = button:CreateTexture(nil, "OVERLAY")
+        texture:SetColorTexture(color.r or 1, color.g or 0, color.b or 0, color.a or 1)
+        table.insert(wrapper.fillTintTextures, texture)
+    end
+
+    local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
+    local groupSpecs = NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+    for i, spec in ipairs(groupSpecs) do
+        local candidateFilters
+        if spec.includeSpellIDs or spec.excludeSpellIDs then
+            candidateFilters = {
+                includeSpellIDs = spec.includeSpellIDs,
+                excludeSpellIDs = spec.excludeSpellIDs,
+            }
+        end
+        container:AddAuraSlot("nivframe" .. i, spec.filterString, {
+            candidateFilters = candidateFilters,
+            initializeFrame = InitializeTintButton,
+        })
+    end
+
+    return wrapper
+end
+
 local TEST_BUFFS = {
     "Interface\\Icons\\Spell_Holy_WordFortitude",
     "Interface\\Icons\\Spell_Nature_Regeneration",
@@ -1097,10 +1143,13 @@ function WF.overlay(parent, config, _style, unit, options)
     local forPreview = options and options.forPreview
 
     if NivUI.OverlayLogic.IsTransformative(config.displayType) then
-        if config.displayType == "BORDER" and not forPreview then
+        if forPreview then
+            return CreateTransformativeOverlayWidget(parent, config, unit)
+        end
+        if config.displayType == "BORDER" then
             return CreateBorderContainerWidget(parent, config, unit)
         end
-        return CreateTransformativeOverlayWidget(parent, config, unit)
+        return CreateFrameContainerWidget(parent, config, unit)
     end
 
     if forPreview then
