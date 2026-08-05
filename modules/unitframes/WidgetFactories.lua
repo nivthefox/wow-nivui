@@ -947,6 +947,80 @@ local function CreateAuraContainerWidget(parent, config, unit)
     return wrapper
 end
 
+local function CreateBorderEdges(frame, thickness, color)
+    local c = color or {}
+    local r, g, b, a = c.r or 1, c.g or 0, c.b or 0, c.a or 1
+
+    local top = frame:CreateTexture(nil, "OVERLAY")
+    top:SetColorTexture(r, g, b, a)
+    top:SetHeight(thickness)
+    top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+
+    local bottom = frame:CreateTexture(nil, "OVERLAY")
+    bottom:SetColorTexture(r, g, b, a)
+    bottom:SetHeight(thickness)
+    bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+    bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+
+    local left = frame:CreateTexture(nil, "OVERLAY")
+    left:SetColorTexture(r, g, b, a)
+    left:SetWidth(thickness)
+    left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+
+    local right = frame:CreateTexture(nil, "OVERLAY")
+    right:SetColorTexture(r, g, b, a)
+    right:SetWidth(thickness)
+    right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+end
+
+--- One AuraSlot per filter group spec; Blizzard shows/hides each slot's button,
+--- so NivUI never observes aura state. UnitFrameBase.ApplyAnchors anchors the
+--- container around the target widget via borderTarget/borderThickness, because
+--- the widgets table does not exist yet at factory time.
+local function CreateBorderContainerWidget(parent, config, unit)
+    local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
+    if config.strata then container:SetFrameStrata(config.strata) end
+    if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
+
+    local thickness = config.borderThickness or 2
+    local color = config.color
+    local auraFilter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    container:SetUnit(unit)
+
+    local wrapper = WrapContainer(container)
+    wrapper.config = config
+    wrapper.borderTarget = config.targetWidget or "healthBar"
+    wrapper.borderThickness = thickness
+
+    local function InitializeBorderButton(button)
+        button:SetAllPoints(container)
+        CreateBorderEdges(button, thickness, color)
+    end
+
+    local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
+    local groupSpecs = NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+    for i, spec in ipairs(groupSpecs) do
+        local candidateFilters
+        if spec.includeSpellIDs or spec.excludeSpellIDs then
+            candidateFilters = {
+                includeSpellIDs = spec.includeSpellIDs,
+                excludeSpellIDs = spec.excludeSpellIDs,
+            }
+        end
+        container:AddAuraSlot("nivborder" .. i, spec.filterString, {
+            candidateFilters = candidateFilters,
+            initializeFrame = InitializeBorderButton,
+        })
+    end
+
+    return wrapper
+end
+
 local TEST_BUFFS = {
     "Interface\\Icons\\Spell_Holy_WordFortitude",
     "Interface\\Icons\\Spell_Nature_Regeneration",
@@ -1012,34 +1086,7 @@ local function CreateTransformativeOverlayWidget(parent, config, unit)
     if config.displayType == "BORDER" then
         if config.strata then frame:SetFrameStrata(config.strata) end
         if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
-
-        local t = config.borderThickness or 2
-        local c = config.color or {}
-        local r, g, b, a = c.r or 1, c.g or 0, c.b or 0, c.a or 1
-
-        local top = frame:CreateTexture(nil, "OVERLAY")
-        top:SetColorTexture(r, g, b, a)
-        top:SetHeight(t)
-        top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-        top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-
-        local bottom = frame:CreateTexture(nil, "OVERLAY")
-        bottom:SetColorTexture(r, g, b, a)
-        bottom:SetHeight(t)
-        bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-        bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-
-        local left = frame:CreateTexture(nil, "OVERLAY")
-        left:SetColorTexture(r, g, b, a)
-        left:SetWidth(t)
-        left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-        left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-
-        local right = frame:CreateTexture(nil, "OVERLAY")
-        right:SetColorTexture(r, g, b, a)
-        right:SetWidth(t)
-        right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-        right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        CreateBorderEdges(frame, config.borderThickness or 2, config.color)
     end
 
     frame:Hide()
@@ -1047,11 +1094,16 @@ local function CreateTransformativeOverlayWidget(parent, config, unit)
 end
 
 function WF.overlay(parent, config, _style, unit, options)
+    local forPreview = options and options.forPreview
+
     if NivUI.OverlayLogic.IsTransformative(config.displayType) then
+        if config.displayType == "BORDER" and not forPreview then
+            return CreateBorderContainerWidget(parent, config, unit)
+        end
         return CreateTransformativeOverlayWidget(parent, config, unit)
     end
 
-    if options and options.forPreview then
+    if forPreview then
         local frame = CreateAuraWidget(parent, config, unit, options)
         local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
         PopulateTestAuras(frame, testAuras)

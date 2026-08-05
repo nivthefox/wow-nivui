@@ -1207,7 +1207,8 @@ local function ResolveTransformativeOverlays(state)
 
     local claims = {}
     for _, widget in pairs(state.customFrame.widgets) do
-        if widget.isOverlay and NivUI.OverlayLogic.IsTransformative(widget.config.displayType) then
+        local managesOwnVisibility = widget.isContainerOverlay
+        if widget.isOverlay and not managesOwnVisibility and NivUI.OverlayLogic.IsTransformative(widget.config.displayType) then
             local config = widget.config
             claims[#claims + 1] = {
                 name = widget.overlayName,
@@ -1371,12 +1372,29 @@ end
 --- @param parent Frame The parent frame
 --- @param widgets table The widget table from CreateWidgets
 --- @param style table The style configuration table
+--- Anchoring the container TO NivUI frames is the direction 12.1 permits;
+--- the reverse would trip the container's forbidden layout aspects.
+local function AnchorBorderContainer(parent, widgets, widget)
+    local target = (widget.borderTarget == "frame") and parent or widgets[widget.borderTarget]
+    if not target then
+        widget:Hide()
+        return
+    end
+    local t = widget.borderThickness
+    widget:ClearAllPoints()
+    widget:SetPoint("TOPLEFT", target, "TOPLEFT", -t, t)
+    widget:SetPoint("BOTTOMRIGHT", target, "BOTTOMRIGHT", t, -t)
+    widget:Show()
+end
+
 function UnitFrameBase.ApplyAnchors(parent, widgets, style)
     for widgetType, widget in pairs(widgets) do
         -- Transformative overlays retain stale anchor data by design; the resolver
         -- positions their holders, so ApplyAnchors must never apply their anchors
         -- (nor let the anchor-missing Hide fallback fight the resolution pass).
-        if not widget.skipAnchor then
+        if widget.borderTarget then
+            AnchorBorderContainer(parent, widgets, widget)
+        elseif not widget.skipAnchor then
             local config = style[widgetType] or widget.config
             local anchor = widget.anchorOverride or (config and config.anchor)
             if anchor then
