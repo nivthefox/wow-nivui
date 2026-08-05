@@ -24,8 +24,8 @@ local function DeepCopy(value)
     return copy
 end
 
---- The set of display types that are transformative (binary, resolved by
---- priority against a target widget) rather than additive (grid cells).
+--- The set of display types that are transformative (binary, applied against
+--- a target widget) rather than additive (grid cells).
 local TRANSFORMATIVE = {
     FRAME = true,
     BORDER = true,
@@ -41,7 +41,8 @@ end
 
 --- Fills any missing keys on an overlay config from the defaults table,
 --- deep-copying table-valued defaults so overlays never share sub-tables.
---- Existing values are preserved. The legacy dispelIndicator key is deleted.
+--- Existing values are preserved. The legacy dispelIndicator and priority keys
+--- are deleted.
 --- Mutates and returns the same config table.
 --- @param config table The overlay config to normalize (mutated in place)
 --- @param defaults table The Overlays.DEFAULTS table to fill from
@@ -53,6 +54,7 @@ function OverlayLogic.NormalizeOverlay(config, defaults)
         end
     end
     config.dispelIndicator = nil
+    config.priority = nil
     config.wrap = OverlayLogic.NormalizeWrap(config.growth, config.wrap)
     return config
 end
