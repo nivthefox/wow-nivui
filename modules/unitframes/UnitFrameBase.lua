@@ -1290,7 +1290,7 @@ end
 function UnitFrameBase.UpdateOverlays(state)
     if not state.customFrame or not state.customFrame.widgets then return end
     for key, widget in pairs(state.customFrame.widgets) do
-        if widget.isOverlay then
+        if widget.isOverlay and not widget.isContainerOverlay then
             if NivUI.OverlayLogic.IsTransformative(widget.config.displayType) then
                 UpdateTransformativeActivation(state, widget)
             else
@@ -1378,7 +1378,7 @@ function UnitFrameBase.ApplyAnchors(parent, widgets, style)
         -- (nor let the anchor-missing Hide fallback fight the resolution pass).
         if not widget.skipAnchor then
             local config = style[widgetType] or widget.config
-            local anchor = config and config.anchor
+            local anchor = widget.anchorOverride or (config and config.anchor)
             if anchor then
                 widget:ClearAllPoints()
 

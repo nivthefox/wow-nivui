@@ -166,6 +166,144 @@ function OverlayLogic.ComputeGridLayout(params)
     return { width = params.iconSize, height = params.iconSize, anchor = anchor, icons = icons }
 end
 
+--- Maps a growth direction to its flow-layout primary axis token.
+local FLOW_AXIS = {
+    RIGHT = "Horizontal",
+    LEFT = "Horizontal",
+    UP = "Vertical",
+    DOWN = "Vertical",
+}
+
+--- Computes the 12.1 AuraContainer flow-layout parameters for an additive
+--- overlay: axis, growth direction tokens, origin anchor point, and the
+--- pixel-based maximum line size that reproduces perLine wrapping. Direction
+--- values are string tokens ("Horizontal", "Right", ...) so this module stays
+--- WoW-free; the widget factory maps them onto AnchorUtil enums. Inputs are
+--- normalized exactly as ComputeGridLayout does (unknown growth behaves as
+--- RIGHT; invalid/nil wrap falls to the orientation default).
+--- @param params table { growth, wrap, perLine, iconSize, spacing }
+--- @return table { axis, horizontal, vertical, anchorPoint, maximumLineSize }
+function OverlayLogic.ComputeContainerLayout(params)
+    local growth = params.growth
+    if not ORIGIN_CORNER[growth] then
+        growth = "RIGHT"
+    end
+    local wrap = OverlayLogic.NormalizeWrap(growth, params.wrap)
+    local vertical = OverlayLogic.IsVerticalGrowth(growth)
+
+    local horizontal, verticalDir
+    if vertical then
+        horizontal = (wrap == "LEFT") and "Left" or "Right"
+        verticalDir = (growth == "UP") and "Up" or "Down"
+    else
+        horizontal = (growth == "LEFT") and "Left" or "Right"
+        verticalDir = (wrap == "UP") and "Up" or "Down"
+    end
+
+    return {
+        axis = FLOW_AXIS[growth],
+        horizontal = horizontal,
+        vertical = verticalDir,
+        anchorPoint = ORIGIN_CORNER[growth][wrap],
+        maximumLineSize = params.perLine * params.iconSize + (params.perLine - 1) * params.spacing,
+    }
+end
+
+--- Offset of a point name along one axis of a size-`s` rect, measured from the
+--- rect's center (x: LEFT/RIGHT negative/positive; y: BOTTOM/TOP negative/positive).
+local function PointOffset(point, axisA, axisB, s)
+    if point:find(axisA) then
+        return -s / 2
+    elseif point:find(axisB) then
+        return s / 2
+    end
+    return 0
+end
+
+--- Translates a user anchor config into the equivalent anchor for an
+--- AuraContainer. The legacy widget was a single-icon rect whose configured
+--- point pinned icon 1; the container instead spans the whole (secret-sized)
+--- grid growing from its flow origin corner. Anchoring the container BY that
+--- corner, shifted by the fixed point-to-corner delta on a one-icon rect,
+--- keeps icon 1 exactly where the legacy layout put it. Never mutates the
+--- input anchor table.
+--- @param anchor table The user anchor config { point, relativeTo, relativePoint, x, y }
+--- @param originCorner string The flow origin corner (e.g. "TOPLEFT")
+--- @param iconSize number The overlay's icon size
+--- @return table { point, relativeTo, relativePoint, x, y }
+function OverlayLogic.TranslateContainerAnchor(anchor, originCorner, iconSize)
+    local point = anchor.point or "CENTER"
+    local dx = PointOffset(originCorner, "LEFT", "RIGHT", iconSize) - PointOffset(point, "LEFT", "RIGHT", iconSize)
+    local dy = PointOffset(originCorner, "BOTTOM", "TOP", iconSize) - PointOffset(point, "BOTTOM", "TOP", iconSize)
+    return {
+        point = originCorner,
+        relativeTo = anchor.relativeTo,
+        relativePoint = anchor.relativePoint or point,
+        x = (anchor.x or 0) + dx,
+        y = (anchor.y or 0) + dy,
+    }
+end
+
+--- Merges an array of spellID sets into one include/exclude map, or nil when
+--- there is nothing to merge (candidateFilters distinguishes nil from empty).
+local function MergeSpellMaps(spellMaps)
+    if #spellMaps == 0 then
+        return nil
+    end
+    local merged = {}
+    for _, spells in ipairs(spellMaps) do
+        for spellID in pairs(spells) do
+            merged[spellID] = true
+        end
+    end
+    return merged
+end
+
+--- Translates a widget's allow/block filter inputs into AuraContainer group
+--- descriptors, preserving 12.0 BuildSpec semantics: block filters veto (AND
+--- NOT), allow filters are an OR, and an empty allow set shows everything.
+--- Because a single group cannot OR builtin tokens with each other or with a
+--- spell list, each allow builtin becomes its own group and all allow spell
+--- lists share one spell-ID group. Known divergences from 12.0, accepted:
+--- an aura matching several allow groups renders once per group (12.0 deduped),
+--- and maxFrameCount caps each group rather than the total.
+--- @param inputs table { prefix, allowTokens, blockTokens, allowSpellMaps, blockSpellMaps }
+--- @return table Array of { filterString, includeSpellIDs, excludeSpellIDs }
+function OverlayLogic.BuildContainerGroupSpecs(inputs)
+    local base = inputs.prefix
+    for _, token in ipairs(inputs.blockTokens) do
+        base = base .. "|!" .. token
+    end
+
+    local excludeSpellIDs = MergeSpellMaps(inputs.blockSpellMaps)
+    local specs = {}
+
+    for _, token in ipairs(inputs.allowTokens) do
+        specs[#specs + 1] = {
+            filterString = base .. "|" .. token,
+            excludeSpellIDs = excludeSpellIDs,
+        }
+    end
+
+    local includeSpellIDs = MergeSpellMaps(inputs.allowSpellMaps)
+    if includeSpellIDs then
+        specs[#specs + 1] = {
+            filterString = base,
+            includeSpellIDs = includeSpellIDs,
+            excludeSpellIDs = excludeSpellIDs,
+        }
+    end
+
+    if #specs == 0 then
+        specs[1] = {
+            filterString = base,
+            excludeSpellIDs = excludeSpellIDs,
+        }
+    end
+
+    return specs
+end
+
 --- Evaluates a showIf/hideIf condition against a resolved value. A nil
 --- condition is always true. An anyOf condition is true when value is a member
 --- of the anyOf list; otherwise the condition is an equality check against

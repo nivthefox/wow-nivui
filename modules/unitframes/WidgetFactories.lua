@@ -805,6 +805,148 @@ local function CreateAuraWidget(parent, config, unit, options)
     return frame
 end
 
+--- Wraps an AuraContainer in a plain table so NivUI can attach metadata
+--- (isOverlay, config, anchorOverride) without hitting Private Script Object
+--- restrictions. Frame API calls are proxied to the inner container.
+local function WrapContainer(container)
+    local wrapper = {
+        inner = container,
+        isOverlay = true,
+        isContainerOverlay = true,
+    }
+    setmetatable(wrapper, {
+        __index = function(_, k)
+            local v = rawget(container, k)
+            if v ~= nil then return v end
+            v = container[k]
+            if type(v) == "function" then
+                return function(self, ...)
+                    if self == wrapper then return v(container, ...) end
+                    return v(self, ...)
+                end
+            end
+            return v
+        end,
+    })
+    return wrapper
+end
+
+--- Creates a 12.1 AuraContainer-backed additive overlay widget (ICON or COLOR).
+--- @param parent Frame The parent frame
+--- @param config table The overlay config
+--- @param unit string The unit ID
+--- @return table Wrapped AuraContainer widget
+local function CreateAuraContainerWidget(parent, config, unit)
+    local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
+    if config.strata then container:SetFrameStrata(config.strata) end
+    if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
+
+    local isColor = config.displayType == "COLOR"
+    local color = isColor and config.color or nil
+    local iconSize = config.iconSize
+    local spacing = config.spacing
+    local showDuration = config.showDuration
+    local showSwipe = config.showSwipe
+    local showStacks = config.showStacks
+    local durationCfg = config.duration
+    local stacksCfg = config.stacks
+    local auraFilter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
+
+    local layout = NivUI.OverlayLogic.ComputeContainerLayout({
+        growth = config.growth,
+        wrap = config.wrap,
+        perLine = config.perRow,
+        iconSize = iconSize,
+        spacing = spacing,
+    })
+
+    container:SetUnit(unit)
+    container:SetFlowLayoutAxis(AnchorUtil.FlowLayoutAxis[layout.axis])
+    container:SetFlowLayoutAnchorPoint(layout.anchorPoint)
+    container:SetFlowLayoutGrowthDirection(AnchorUtil.FlowDirection[layout.horizontal], AnchorUtil.FlowDirection[layout.vertical])
+    container:SetFlowLayoutMaximumLineSize(layout.maximumLineSize)
+
+    local wrapper = WrapContainer(container)
+    wrapper.config = config
+    wrapper.anchorOverride = NivUI.OverlayLogic.TranslateContainerAnchor(config.anchor, layout.anchorPoint, iconSize)
+
+    local function InitializeAuraButton(button)
+        button:SetSize(iconSize, iconSize)
+
+        local texture = button:CreateTexture(nil, "ARTWORK")
+        texture:SetAllPoints(button)
+        if isColor then
+            local c = color or {}
+            texture:SetColorTexture(c.r or 1, c.g or 0, c.b or 0, c.a or 1)
+        else
+            button:SetIcon(texture)
+        end
+
+        if showSwipe then
+            local cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+            cooldown:SetAllPoints(button)
+            cooldown:SetDrawEdge(false)
+            cooldown:SetDrawSwipe(true)
+            -- Swipe only; the cooldown's lazily-created countdown FontString
+            -- cannot be restyled from a one-shot initializer.
+            cooldown:SetHideCountdownNumbers(true)
+            button:SetDurationCooldown(cooldown)
+        end
+
+        if showDuration then
+            local duration = button:CreateFontString(nil, "OVERLAY")
+            duration:SetPoint("CENTER", button, "CENTER", 0, 0)
+            if durationCfg and durationCfg.font then
+                duration:SetFont(NivUI:GetFontPath(durationCfg.font), durationCfg.fontSize or 12, durationCfg.fontOutline or "")
+                local dc = durationCfg.color
+                if dc then duration:SetTextColor(dc.r, dc.g, dc.b, dc.a or 1) end
+            else
+                duration:SetFontObject("GameFontNormal")
+            end
+            button:SetDurationText(duration)
+        end
+
+        if showStacks then
+            local stacks = button:CreateFontString(nil, "OVERLAY")
+            stacks:SetPoint("BOTTOMRIGHT", 0, 0)
+            if stacksCfg and stacksCfg.font then
+                stacks:SetFont(NivUI:GetFontPath(stacksCfg.font), stacksCfg.fontSize or 12, stacksCfg.fontOutline or "")
+                local sc = stacksCfg.color
+                if sc then stacks:SetTextColor(sc.r, sc.g, sc.b, sc.a or 1) end
+            else
+                stacks:SetFontObject("GameFontNormal")
+            end
+            button:SetApplicationCount(stacks)
+        end
+    end
+
+    local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
+    local groupSpecs = NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+    for i, spec in ipairs(groupSpecs) do
+        local candidateFilters
+        if spec.includeSpellIDs or spec.excludeSpellIDs then
+            candidateFilters = {
+                includeSpellIDs = spec.includeSpellIDs,
+                excludeSpellIDs = spec.excludeSpellIDs,
+            }
+        end
+        container:AddAuraGroup("nivui" .. i, spec.filterString, {
+            maxFrameCount = config.maxIcons,
+            candidateFilters = candidateFilters,
+            initializeFrame = InitializeAuraButton,
+            layout = {
+                elementSpacing = spacing,
+                lineSpacing = spacing,
+                elementWidth = iconSize,
+                elementHeight = iconSize,
+            },
+        })
+    end
+
+    return wrapper
+end
+
 local TEST_BUFFS = {
     "Interface\\Icons\\Spell_Holy_WordFortitude",
     "Interface\\Icons\\Spell_Nature_Regeneration",
@@ -851,11 +993,9 @@ local function PopulateTestAuras(frame, testAuras)
     end
 end
 
---- Creates a lightweight transformative overlay widget (FRAME or BORDER display
---- type). FRAME overlays recolor an existing widget and build no visuals of their
---- own; BORDER overlays build four edge textures forming an outline that the
---- resolution pass anchors around the target widget. Both are 1x1 hidden frames
---- carrying skipAnchor so ApplyAnchors never applies their retained anchor data.
+--- Creates a legacy transformative overlay widget (FRAME display type only).
+--- FRAME overlays recolor an
+--- existing widget and build no visuals of their own.
 --- @param parent Frame The parent frame
 --- @param config table The overlay config
 --- @param unit string The unit ID
@@ -911,10 +1051,16 @@ function WF.overlay(parent, config, _style, unit, options)
         return CreateTransformativeOverlayWidget(parent, config, unit)
     end
 
-    local frame = CreateAuraWidget(parent, config, unit, options)
     if options and options.forPreview then
+        local frame = CreateAuraWidget(parent, config, unit, options)
         local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
         PopulateTestAuras(frame, testAuras)
+        return frame
     end
-    return frame
+
+    if config.displayType == "ICON" or config.displayType == "COLOR" then
+        return CreateAuraContainerWidget(parent, config, unit)
+    end
+
+    return CreateAuraWidget(parent, config, unit, options)
 end

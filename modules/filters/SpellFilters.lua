@@ -177,3 +177,39 @@ function Filters:BuildSpec(config, prefix)
     spec.hasAllow = #spec.allowBuiltin > 0 or #spec.allowSpells > 0
     return spec
 end
+
+--- Resolves a widget's allow/block config into the raw inputs for
+--- OverlayLogic.BuildContainerGroupSpecs (12.1 AuraContainer path). Unlike
+--- BuildSpec, builtin tokens are returned unprefixed and custom lists as
+--- plain spellID sets, because containers take tokens in filter strings and
+--- spell maps in candidateFilters.
+--- @param config table The aura widget config (with .allow / .block key sets)
+--- @param prefix string "HELPFUL" or "HARMFUL"
+--- @return table { prefix, allowTokens, blockTokens, allowSpellMaps, blockSpellMaps }
+function Filters:BuildContainerInputs(config, prefix)
+    local inputs = { prefix = prefix, allowTokens = {}, blockTokens = {}, allowSpellMaps = {}, blockSpellMaps = {} }
+    local allow, block = config.allow, config.block
+
+    for _, entry in ipairs(self.BUILTIN) do
+        if allow and allow[entry.token] then
+            inputs.allowTokens[#inputs.allowTokens + 1] = entry.token
+        end
+        if block and block[entry.token] then
+            inputs.blockTokens[#inputs.blockTokens + 1] = entry.token
+        end
+    end
+
+    local store = GetStore()
+    if store then
+        for name, filter in pairs(store) do
+            if allow and allow[name] then
+                inputs.allowSpellMaps[#inputs.allowSpellMaps + 1] = filter.spells
+            end
+            if block and block[name] then
+                inputs.blockSpellMaps[#inputs.blockSpellMaps + 1] = filter.spells
+            end
+        end
+    end
+
+    return inputs
+end
