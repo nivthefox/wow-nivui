@@ -1,8 +1,8 @@
 --- OverlayLogic: pure, WoW-free logic backing the Overlays system. Holds the
---- display-type classification, overlay normalization, config-condition
---- evaluation, and transformative conflict resolution. Loads with only the
---- NivUI namespace bootstrap and touches no WoW API at load or runtime, so it is
---- unit-testable in a headless Lua runner. Keep it that way.
+--- display-type classification, overlay normalization, layout computation, and
+--- config-condition evaluation. Loads with only the NivUI namespace bootstrap
+--- and touches no WoW API at load or runtime, so it is unit-testable in a
+--- headless Lua runner. Keep it that way.
 NivUI = NivUI or {}
 NivUI.OverlayLogic = NivUI.OverlayLogic or {}
 
@@ -260,7 +260,7 @@ local function MergeSpellMaps(spellMaps)
 end
 
 --- Translates a widget's allow/block filter inputs into AuraContainer group
---- descriptors, preserving 12.0 BuildSpec semantics: block filters veto (AND
+--- descriptors, preserving 12.0 filter semantics: block filters veto (AND
 --- NOT), allow filters are an OR, and an empty allow set shows everything.
 --- Because a single group cannot OR builtin tokens with each other or with a
 --- spell list, each allow builtin becomes its own group and all allow spell
@@ -324,46 +324,4 @@ function OverlayLogic.EvaluateCondition(cond, value)
         return false
     end
     return value == cond.value
-end
-
---- Reports whether claim `a` outranks claim `b` for the same kind and target.
---- Higher priority wins; missing priority is treated as 1; ties break by
---- alphabetically earlier name (string < wins, missing name treated as "").
---- @param a table A transformative claim
---- @param b table Another transformative claim
---- @return boolean True when a should win over b
-local function ClaimOutranks(a, b)
-    local pa = a.priority or 1
-    local pb = b.priority or 1
-    if pa ~= pb then
-        return pa > pb
-    end
-    return (a.name or "") < (b.name or "")
-end
-
---- Resolves transformative overlay claims into a single winner per (kind,
---- targetWidget). Only active claims with a targetWidget participate
---- (malformed claims are skipped, never errored on). FRAME and BORDER resolve
---- independently. Higher priority wins; missing priority counts as 1; ties
---- break alphabetically by claim name. The result is order-independent, and
---- each winner is the exact claim table that was passed in (passthrough fields
---- intact).
---- @param claims table Array of claims: { name, priority, targetWidget, kind, active, ... }
---- @return table { FRAME = { [targetWidget] = winnerClaim }, BORDER = { ... } }
-function OverlayLogic.ResolveTransformative(claims)
-    local result = { FRAME = {}, BORDER = {} }
-    for _, claim in ipairs(claims) do
-        -- A claim without a targetWidget is malformed; skip it rather than
-        -- writing to a nil table key in the per-frame hot path.
-        if claim.active and claim.targetWidget ~= nil then
-            local byTarget = result[claim.kind]
-            if byTarget then
-                local current = byTarget[claim.targetWidget]
-                if current == nil or ClaimOutranks(claim, current) then
-                    byTarget[claim.targetWidget] = claim
-                end
-            end
-        end
-    end
-    return result
 end

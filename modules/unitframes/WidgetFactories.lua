@@ -747,9 +747,8 @@ function NivUI.UnitFrames.ApplyCooldownFont(cooldown, cfg)
     end
 end
 
-local function CreateAuraWidget(parent, config, unit, options)
-    options = options or {}
-    local forPreview = options.forPreview
+--- Preview-only hand-built icon grid; live overlays use AuraContainers.
+local function CreateAuraWidget(parent, config, unit)
     local frame = CreateFrame("Frame", nil, parent)
     if config.strata then frame:SetFrameStrata(config.strata) end
     if config.frameLevel then frame:SetFrameLevel(config.frameLevel) end
@@ -765,8 +764,6 @@ local function CreateAuraWidget(parent, config, unit, options)
     frame.icons = {}
     frame.config = config
     frame.unit = unit
-    frame.isOverlay = true
-    frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
 
     for i = 1, maxIcons do
         local icon = CreateFrame("Frame", nil, frame)
@@ -795,10 +792,6 @@ local function CreateAuraWidget(parent, config, unit, options)
             icon.stacks:SetFontObject("GameFontNormal")
         end
 
-        if not forPreview then
-            icon:Hide()
-        end
-
         table.insert(frame.icons, icon)
     end
 
@@ -806,13 +799,12 @@ local function CreateAuraWidget(parent, config, unit, options)
 end
 
 --- Wraps an AuraContainer in a plain table so NivUI can attach metadata
---- (isOverlay, config, anchorOverride) without hitting Private Script Object
---- restrictions. Frame API calls are proxied to the inner container.
+--- (config, anchorOverride, borderTarget, fillTintTarget) without hitting
+--- Private Script Object restrictions. Frame API calls are proxied to the
+--- inner container.
 local function WrapContainer(container)
     local wrapper = {
         inner = container,
-        isOverlay = true,
-        isContainerOverlay = true,
     }
     setmetatable(wrapper, {
         __index = function(_, k)
@@ -1113,21 +1105,14 @@ local function PopulateTestAuras(frame, testAuras)
     end
 end
 
---- Creates a legacy transformative overlay widget (FRAME display type only).
---- FRAME overlays recolor an
---- existing widget and build no visuals of their own.
---- @param parent Frame The parent frame
---- @param config table The overlay config
---- @param unit string The unit ID
---- @return Frame The transformative overlay widget
+--- Preview stand-in for FRAME/BORDER overlays: previews never activate, so this
+--- builds a hidden placeholder that ApplyAnchors leaves alone.
 local function CreateTransformativeOverlayWidget(parent, config, unit)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(1, 1)
     frame.config = config
     frame.unit = unit
-    frame.isOverlay = true
     frame.skipAnchor = true
-    frame.filter = (config.auraType == "HELPFUL") and "HELPFUL" or "HARMFUL"
 
     if config.displayType == "BORDER" then
         if config.strata then frame:SetFrameStrata(config.strata) end
@@ -1153,15 +1138,11 @@ function WF.overlay(parent, config, _style, unit, options)
     end
 
     if forPreview then
-        local frame = CreateAuraWidget(parent, config, unit, options)
+        local frame = CreateAuraWidget(parent, config, unit)
         local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
         PopulateTestAuras(frame, testAuras)
         return frame
     end
 
-    if config.displayType == "ICON" or config.displayType == "COLOR" then
-        return CreateAuraContainerWidget(parent, config, unit)
-    end
-
-    return CreateAuraWidget(parent, config, unit, options)
+    return CreateAuraContainerWidget(parent, config, unit)
 end
