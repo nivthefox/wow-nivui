@@ -462,7 +462,7 @@ local function ShouldShowPowerBar(unit, visibility)
     if visibility == "self" then
         return UnitIsUnit(unit, "player")
     elseif visibility == "healers" then
-        local role = UnitGroupRolesAssigned(unit)
+        local role = NivUI.Roster:GetRole(unit)
         return role == "HEALER"
     end
     return true
@@ -643,7 +643,7 @@ function UnitFrameBase.UpdatePortrait(state)
         end
     elseif config.mode == "class" then
         if widget.texture then
-            local _, class = UnitClass(unit)
+            local class = NivUI.Roster:GetClass(unit)
             if class then
                 local coords = CLASS_ICON_TCOORDS[class]
                 if coords then
@@ -748,8 +748,8 @@ function UnitFrameBase.UpdateLeaderIcon(state)
     local widget = state.customFrame.widgets.leaderIcon
     local unit = state.unit
 
-    local isLeader = UnitIsGroupLeader(unit)
-    local isAssist = UnitIsGroupAssistant and UnitIsGroupAssistant(unit)
+    local isLeader = NivUI.Roster:IsLeader(unit)
+    local isAssist = NivUI.Roster:IsAssist(unit)
 
     if isLeader then
         widget.icon:SetTexture("Interface\\GroupFrame\\UI-Group-LeaderIcon")
@@ -771,7 +771,7 @@ function UnitFrameBase.UpdateRoleIcon(state)
     local widget = state.customFrame.widgets.roleIcon
     local unit = state.unit
 
-    local role = UnitGroupRolesAssigned(unit)
+    local role = NivUI.Roster:GetRole(unit)
     if role and role ~= "NONE" and GetMicroIconForRole then
         local atlas = GetMicroIconForRole(role)
         if atlas then

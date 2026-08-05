@@ -2,12 +2,10 @@ NivUI = NivUI or {}
 NivUI.WidgetFactories = {}
 
 function NivUI.WidgetFactories.GetClassColor(unit)
-    local _, class = UnitClass(unit or "player")
-    if class then
-        local color = RAID_CLASS_COLORS[class]
-        if color then
-            return color.r, color.g, color.b
-        end
+    local class = NivUI.Roster:GetClass(unit or "player")
+    local color = class and RAID_CLASS_COLORS[class]
+    if color then
+        return color.r, color.g, color.b
     end
     return 1, 1, 1
 end
@@ -262,7 +260,7 @@ function WF.portrait(parent, config, _style, unit)
         frame.texture = frame:CreateTexture(nil, "ARTWORK")
         frame.texture:SetAllPoints()
 
-        local _, class = UnitClass(unit)
+        local class = NivUI.Roster:GetClass(unit)
         if class then
             local coords = CLASS_ICON_TCOORDS[class]
             if coords then
@@ -489,8 +487,8 @@ function WF.leaderIcon(parent, config, _style, unit, options)
     frame.icon:SetAllPoints()
     frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-LeaderIcon")
 
-    local isLeader = UnitIsGroupLeader(unit)
-    local isAssist = UnitIsGroupAssistant and UnitIsGroupAssistant(unit)
+    local isLeader = NivUI.Roster:IsLeader(unit)
+    local isAssist = NivUI.Roster:IsAssist(unit)
     if isLeader or isAssist then
         if isAssist and not isLeader then
             frame.icon:SetTexture("Interface\\GroupFrame\\UI-Group-AssistantIcon")
@@ -542,7 +540,7 @@ function WF.roleIcon(parent, config, _style, unit, options)
     frame.icon = frame:CreateTexture(nil, "OVERLAY")
     frame.icon:SetAllPoints()
 
-    local role = UnitGroupRolesAssigned(unit)
+    local role = NivUI.Roster:GetRole(unit)
     if role and role ~= "NONE" and GetMicroIconForRole then
         local atlas = GetMicroIconForRole(role)
         if atlas then
