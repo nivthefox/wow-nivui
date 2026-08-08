@@ -9,6 +9,7 @@
 NivUI.lua
 modules/ReferenceIntegrity.lua
 ConfigLifecycle.lua
+modules/TabLayout.lua
 modules/profiles/Profiles.lua
 modules/filters/SpellFilters.lua
 modules/overlays/OverlayLogic.lua

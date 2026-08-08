@@ -7,6 +7,7 @@ NivUI.Config = NivUI.Config or {}
 NivUI.Config.Overlays = {}
 
 local Overlays = NivUI.Overlays
+local TAB_HEIGHT = 24
 
 StaticPopupDialogs["NIVUI_NEW_OVERLAY"] = {
     text = "Enter name for new overlay:",
@@ -87,6 +88,20 @@ function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
         StaticPopup_Show("NIVUI_NEW_OVERLAY")
     end)
 
+    local function LayoutTabs()
+        local buttons = {}
+        for _, button in ipairs(tabButtons) do
+            buttons[#buttons + 1] = button
+        end
+        buttons[#buttons + 1] = addButton
+
+        local rows = NivUI.TabLayout.LayoutRows(tabHolder, buttons, {
+            startX = 4,
+            rightInset = 4,
+        })
+        tabHolder:SetHeight(rows * TAB_HEIGHT + 6)
+    end
+
     local function SelectOverlay(name)
         container.currentOverlay = name
         for _, btn in ipairs(tabButtons) do
@@ -110,27 +125,15 @@ function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
         local names = Overlays:GetNames()
         emptyLabel:SetShown(#names == 0)
 
-        local previous
         for i, name in ipairs(names) do
             local btn = Components.GetTab(tabHolder, name)
             btn:SetID(i)
             btn.overlayName = name
             btn:SetScript("OnClick", function() SelectOverlay(name) end)
-            if previous then
-                btn:SetPoint("LEFT", previous, "RIGHT", 0, 0)
-            else
-                btn:SetPoint("BOTTOMLEFT", tabHolder, "BOTTOMLEFT", 4, 0)
-            end
             tabButtons[i] = btn
-            previous = btn
         end
 
-        addButton:ClearAllPoints()
-        if previous then
-            addButton:SetPoint("LEFT", previous, "RIGHT", 0, 0)
-        else
-            addButton:SetPoint("BOTTOMLEFT", tabHolder, "BOTTOMLEFT", 4, 0)
-        end
+        LayoutTabs()
 
         local selection = container.currentOverlay
         local stillExists = false
@@ -148,6 +151,7 @@ function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
     end)
 
     container:SetScript("OnShow", RebuildTabs)
+    container:SetScript("OnSizeChanged", LayoutTabs)
 
     NivUI:RegisterCallback("OverlaysChanged", function(data)
         if data and data.name and not data.deleted then

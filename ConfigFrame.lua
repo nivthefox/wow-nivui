@@ -326,6 +326,9 @@ function Components.GetTab(parent, text)
     tab:SetText(text)
     tab:SetScript("OnShow", function(self)
         PanelTemplates_TabResize(self, 15, nil, 70)
+        if self.nivuiTabMaxWidth and self:GetWidth() > self.nivuiTabMaxWidth then
+            self:SetWidth(self.nivuiTabMaxWidth)
+        end
         PanelTemplates_DeselectTab(self)
     end)
     tab:GetScript("OnShow")(tab)

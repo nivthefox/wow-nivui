@@ -9,6 +9,7 @@ local Filters = NivUI.Filters
 
 local ROW_HEIGHT = 26
 local ICON_SIZE = 18
+local TAB_HEIGHT = 24
 
 StaticPopupDialogs["NIVUI_NEW_CUSTOM_FILTER"] = {
     text = "Enter name for new custom filter:",
@@ -208,6 +209,20 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
         StaticPopup_Show("NIVUI_NEW_CUSTOM_FILTER")
     end)
 
+    local function LayoutTabs()
+        local buttons = {}
+        for _, button in ipairs(tabButtons) do
+            buttons[#buttons + 1] = button
+        end
+        buttons[#buttons + 1] = addButton
+
+        local rows = NivUI.TabLayout.LayoutRows(tabHolder, buttons, {
+            startX = 4,
+            rightInset = 4,
+        })
+        tabHolder:SetHeight(rows * TAB_HEIGHT + 6)
+    end
+
     local function SelectFilter(name)
         container.currentFilter = name
         for _, btn in ipairs(tabButtons) do
@@ -230,27 +245,15 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
         emptyLabel:SetShown(#names == 0)
         spellPanel:SetShown(#names > 0)
 
-        local previous
         for i, name in ipairs(names) do
             local btn = Components.GetTab(tabHolder, name)
             btn:SetID(i)
             btn.filterName = name
             btn:SetScript("OnClick", function() SelectFilter(name) end)
-            if previous then
-                btn:SetPoint("LEFT", previous, "RIGHT", 0, 0)
-            else
-                btn:SetPoint("BOTTOMLEFT", tabHolder, "BOTTOMLEFT", 4, 0)
-            end
             tabButtons[i] = btn
-            previous = btn
         end
 
-        addButton:ClearAllPoints()
-        if previous then
-            addButton:SetPoint("LEFT", previous, "RIGHT", 0, 0)
-        else
-            addButton:SetPoint("BOTTOMLEFT", tabHolder, "BOTTOMLEFT", 4, 0)
-        end
+        LayoutTabs()
 
         local selection = container.currentFilter
         local stillExists = false
@@ -267,6 +270,7 @@ function NivUI.Config.Filters.SetupTab(ContentArea, Components)
     end
 
     container:SetScript("OnShow", RebuildTabs)
+    container:SetScript("OnSizeChanged", LayoutTabs)
 
     NivUI:RegisterCallback("CustomFiltersChanged", function(data)
         if data and data.name and not data.deleted then

@@ -613,27 +613,11 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
     end
 
     local function LayoutTabs()
-        local containerWidth = container:GetWidth()
-        if containerWidth == 0 then
-            containerWidth = 600
-        end
-
-        local x, y = 0, 0
-        local numRows = 1
-
+        local tabButtons = {}
         for _, tabData in ipairs(allTabs) do
-            local tabWidth = tabData.tab:GetWidth()
-
-            if x + tabWidth > containerWidth and x > 0 then
-                x = 0
-                y = y - TAB_HEIGHT
-                numRows = numRows + 1
-            end
-
-            tabData.tab:ClearAllPoints()
-            tabData.tab:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
-            x = x + tabWidth
+            tabButtons[#tabButtons + 1] = tabData.tab
         end
+        local numRows = NivUI.TabLayout.LayoutRows(container, tabButtons)
 
         local contentOffset = -(numRows * TAB_HEIGHT) - 10
         for _, tabData in ipairs(allTabs) do

@@ -372,8 +372,6 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
 
     local TAB_HEIGHT = 24
     local TAB_CONTENT_GAP = 14
-    local FALLBACK_TAB_HOLDER_WIDTH = 600
-
     local tabHolder = CreateFrame("Frame", nil, frame)
     tabHolder:SetHeight(28)
     tabHolder:SetPoint("TOPLEFT", 0, 0)
@@ -388,23 +386,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
     local function LayoutTabRows(self)
         if #self.tabButtons == 0 then return end
 
-        local containerWidth = self.tabHolder:GetWidth()
-        if containerWidth == 0 then containerWidth = FALLBACK_TAB_HOLDER_WIDTH end
-
-        local x, y = 0, 0
-        local numRows = 1
-
-        for _, tab in ipairs(self.tabButtons) do
-            local tabWidth = tab:GetWidth()
-            if x + tabWidth > containerWidth and x > 0 then
-                x = 0
-                y = y - TAB_HEIGHT
-                numRows = numRows + 1
-            end
-            tab:ClearAllPoints()
-            tab:SetPoint("TOPLEFT", self.tabHolder, "TOPLEFT", x, y)
-            x = x + tabWidth
-        end
+        local numRows = NivUI.TabLayout.LayoutRows(self.tabHolder, self.tabButtons)
 
         self.tabHolder:SetHeight(numRows * TAB_HEIGHT + 4)
         self.contentArea:ClearAllPoints()
@@ -1652,45 +1634,21 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
     end
 
     local function LayoutTabs()
-        local containerWidth = container:GetWidth()
-        if containerWidth == 0 then
-            containerWidth = 600  -- Fallback width
-        end
-
-        local x, y = 0, 0
-        local numRows = 1
+        local visibleTabs = {}
 
         for _, tabData in ipairs(allTabs) do
             local shouldShow = tabData.frameType == nil or NivUI:IsFrameEnabled(tabData.frameType)
 
             if shouldShow then
                 tabData.tab:Show()
-
-                local tabWidth = tabData.tab:GetWidth()
-
-                if x + tabWidth > containerWidth and x > 0 then
-                    x = 0
-                    y = y - TAB_HEIGHT
-                    numRows = numRows + 1
-                end
-
-                tabData.tab:ClearAllPoints()
-                tabData.tab:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
-
-                x = x + tabWidth
+                visibleTabs[#visibleTabs + 1] = tabData.tab
             else
                 tabData.tab:Hide()
             end
         end
 
-        local addBtnWidth = addButton:GetWidth()
-        if x + addBtnWidth > containerWidth and x > 0 then
-            x = 0
-            y = y - TAB_HEIGHT
-            numRows = numRows + 1
-        end
-        addButton:ClearAllPoints()
-        addButton:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+        visibleTabs[#visibleTabs + 1] = addButton
+        local numRows = NivUI.TabLayout.LayoutRows(container, visibleTabs)
 
         local contentOffset = -(numRows * TAB_HEIGHT) - 10
         for _, tabData in ipairs(allTabs) do
