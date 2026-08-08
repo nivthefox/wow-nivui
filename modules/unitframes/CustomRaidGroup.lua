@@ -3,6 +3,7 @@ local _, NivUI = ...
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
+local Lifecycle = NivUI.UnitFrames.Lifecycle
 
 local groupStates = {}
 
@@ -408,17 +409,6 @@ NivUI:RegisterCallback("CustomRaidGroupChanged", function(data)
     end
 end)
 
-NivUI:RegisterCallback("StyleChanged", function(data)
-    for groupId, state in pairs(groupStates) do
-        if state.enabled then
-            local groupConfig = NivUI:GetCustomRaidGroup(groupId)
-            if groupConfig and groupConfig.styleName == data.styleName then
-                CustomRaidGroup.Refresh(groupId)
-            end
-        end
-    end
-end)
-
 NivUI:RegisterProfileApplyCallback("unitFrame:customRaid", function()
     local activeGroups = NivUI:GetCustomRaidGroups()
     local removedGroupIds = {}
@@ -446,3 +436,29 @@ NivUI:RegisterProfileApplyCallback("unitFrame:customRaid", function()
         end
     end
 end)
+
+Lifecycle.Register({
+    isEnabled = function()
+        for _, groupConfig in pairs(NivUI:GetCustomRaidGroups()) do
+            if groupConfig.enabled then
+                return true
+            end
+        end
+        return false
+    end,
+    refresh = function()
+        for groupId, groupConfig in pairs(NivUI:GetCustomRaidGroups()) do
+            if groupConfig.enabled then
+                CustomRaidGroup.Refresh(groupId)
+            end
+        end
+    end,
+    usesStyle = function(styleName)
+        for _, groupConfig in pairs(NivUI:GetCustomRaidGroups()) do
+            if groupConfig.enabled and groupConfig.styleName == styleName then
+                return true
+            end
+        end
+        return false
+    end,
+})

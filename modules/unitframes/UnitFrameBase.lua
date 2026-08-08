@@ -5,6 +5,8 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 local UnitFrameBase = {}
 NivUI.UnitFrames.Base = UnitFrameBase
 
+local Lifecycle = NivUI.UnitFrames.Lifecycle
+
 local function GetClassColor(unit)
     return NivUI.WidgetFactories.GetClassColor(unit)
 end
@@ -1792,6 +1794,18 @@ function UnitFrameBase.CreateModule(config)
         end
     end)
 
+    Lifecycle.Register({
+        isEnabled = function()
+            return NivUI:IsFrameEnabled(state.frameType)
+        end,
+        refresh = function()
+            module.Refresh()
+        end,
+        usesStyle = function(styleName)
+            return NivUI:GetAssignment(state.frameType) == styleName
+        end,
+    })
+
     NivUI:RegisterCallback("FrameEnabledChanged", function(data)
         if data.frameType == state.frameType then
             if data.enabled then
@@ -1805,31 +1819,6 @@ function UnitFrameBase.CreateModule(config)
     NivUI:RegisterCallback("AssignmentChanged", function(data)
         if data.frameType == state.frameType and NivUI:IsFrameEnabled(state.frameType) then
             module.Refresh()
-        end
-    end)
-
-    NivUI:RegisterCallback("CustomFiltersChanged", function()
-        -- Re-apply aura filtering when a custom filter's spells change. Skipped in
-        -- combat (frames rebuild via secure APIs); UNIT_AURA re-filters live there.
-        if NivUI:IsFrameEnabled(state.frameType) and not InCombatLockdown() then
-            module.Refresh()
-        end
-    end)
-
-    local function RefreshForOverlays()
-        if NivUI:IsFrameEnabled(state.frameType) and not InCombatLockdown() then
-            module.Refresh()
-        end
-    end
-    NivUI:RegisterCallback("OverlaysChanged", RefreshForOverlays)
-    NivUI:RegisterCallback("OverlayModified", RefreshForOverlays)
-
-    NivUI:RegisterCallback("StyleChanged", function(data)
-        if NivUI:IsFrameEnabled(state.frameType) then
-            local assignedStyle = NivUI:GetAssignment(state.frameType)
-            if data.styleName == assignedStyle then
-                module.Refresh()
-            end
         end
     end)
 

@@ -3,6 +3,7 @@ local _, NivUI = ...
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
+local Lifecycle = NivUI.UnitFrames.Lifecycle
 
 local states = {
     raid10 = {
@@ -689,6 +690,32 @@ NivUI:RegisterProfileApplyCallback("unitFrame:raid", function()
     end
 end)
 
+Lifecycle.Register({
+    isEnabled = function()
+        for raidSize in pairs(states) do
+            if NivUI:IsFrameEnabled(raidSize) then
+                return true
+            end
+        end
+        return false
+    end,
+    refresh = function()
+        for raidSize in pairs(states) do
+            if NivUI:IsFrameEnabled(raidSize) then
+                RaidFrame.Refresh(raidSize)
+            end
+        end
+    end,
+    usesStyle = function(styleName)
+        for raidSize in pairs(states) do
+            if NivUI:IsFrameEnabled(raidSize) and NivUI:GetAssignment(raidSize) == styleName then
+                return true
+            end
+        end
+        return false
+    end,
+})
+
 NivUI:RegisterCallback("FrameEnabledChanged", function(data)
     if states[data.frameType] then
         if data.enabled then
@@ -702,17 +729,6 @@ end)
 NivUI:RegisterCallback("AssignmentChanged", function(data)
     if states[data.frameType] and NivUI:IsFrameEnabled(data.frameType) then
         RaidFrame.Refresh(data.frameType)
-    end
-end)
-
-NivUI:RegisterCallback("StyleChanged", function(data)
-    for raidSize, _state in pairs(states) do
-        if NivUI:IsFrameEnabled(raidSize) then
-            local assignedStyle = NivUI:GetAssignment(raidSize)
-            if data.styleName == assignedStyle then
-                RaidFrame.Refresh(raidSize)
-            end
-        end
     end
 end)
 

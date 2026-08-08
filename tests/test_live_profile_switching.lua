@@ -637,6 +637,7 @@ return {
                 return 1, 1, 1
             end,
         }
+        harness:load("modules/unitframes/UnitFrameLifecycle.lua")
         harness:load("modules/unitframes/UnitFrameBase.lua")
         harness:load("modules/profiles/Profiles.lua")
         harness:initialize()
@@ -749,6 +750,7 @@ return {
             Base = {},
         }
 
+        harness:load("modules/unitframes/UnitFrameLifecycle.lua")
         harness:load("modules/unitframes/MultiUnitFrameBase.lua")
         harness:load("modules/unitframes/PartyFrame.lua")
         harness:load("modules/unitframes/BossFrame.lua")
@@ -805,6 +807,7 @@ return {
             return self:GetActiveProfile().unitFrameEnabled[frameType] == true
         end
 
+        harness:load("modules/unitframes/UnitFrameLifecycle.lua")
         harness:load("modules/unitframes/MultiUnitFrameBase.lua")
         harness:load("modules/profiles/Profiles.lua")
         local module = NivUI.UnitFrames.MultiUnitFrameBase.CreateModule({

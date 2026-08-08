@@ -6,6 +6,7 @@ local MultiUnitFrameBase = {}
 NivUI.UnitFrames.MultiUnitFrameBase = MultiUnitFrameBase
 
 local Base = NivUI.UnitFrames.Base
+local Lifecycle = NivUI.UnitFrames.Lifecycle
 
 --- Creates a multi-unit frame module from configuration.
 ---@param config table Module configuration
@@ -453,6 +454,18 @@ function MultiUnitFrameBase.CreateModule(config)
         end
     end)
 
+    Lifecycle.Register({
+        isEnabled = function()
+            return NivUI:IsFrameEnabled(config.frameType)
+        end,
+        refresh = function()
+            module.Refresh()
+        end,
+        usesStyle = function(styleName)
+            return NivUI:GetAssignment(config.frameType) == styleName
+        end,
+    })
+
     NivUI:RegisterCallback("FrameEnabledChanged", function(data)
         if data.frameType == config.frameType then
             if data.enabled then
@@ -466,31 +479,6 @@ function MultiUnitFrameBase.CreateModule(config)
     NivUI:RegisterCallback("AssignmentChanged", function(data)
         if data.frameType == config.frameType and NivUI:IsFrameEnabled(config.frameType) then
             module.Refresh()
-        end
-    end)
-
-    NivUI:RegisterCallback("CustomFiltersChanged", function()
-        -- Re-apply aura filtering when a custom filter's spells change. Skipped in
-        -- combat (frames rebuild via secure APIs); UNIT_AURA re-filters live there.
-        if NivUI:IsFrameEnabled(config.frameType) and not InCombatLockdown() then
-            module.Refresh()
-        end
-    end)
-
-    local function RefreshForOverlays()
-        if NivUI:IsFrameEnabled(config.frameType) and not InCombatLockdown() then
-            module.Refresh()
-        end
-    end
-    NivUI:RegisterCallback("OverlaysChanged", RefreshForOverlays)
-    NivUI:RegisterCallback("OverlayModified", RefreshForOverlays)
-
-    NivUI:RegisterCallback("StyleChanged", function(data)
-        if NivUI:IsFrameEnabled(config.frameType) then
-            local assignedStyle = NivUI:GetAssignment(config.frameType)
-            if data.styleName == assignedStyle then
-                module.Refresh()
-            end
         end
     end)
 
