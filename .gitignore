@@ -5,6 +5,11 @@
 *.swo
 *~
 
+# Project-local tooling and documentation
+/.agents/
+/.claude/
+/docs/
+
 # OS
 .DS_Store
 Thumbs.db
