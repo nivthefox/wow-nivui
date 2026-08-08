@@ -1568,7 +1568,8 @@ function NivUI.UnitFrames:SetupConfigTabWithSubtabs(parent, Components)
         end
 
         local customGroups = NivUI:GetCustomRaidGroups()
-        for groupId, groupData in pairs(customGroups) do
+        for _, groupId in ipairs(NivUI:GetCustomRaidGroupIds()) do
+            local groupData = customGroups[groupId]
             local tabData = CreateCustomGroupTab(groupId, groupData)
             table.insert(allTabs, tabData)
             table.insert(customGroupTabs, tabData)

@@ -606,6 +606,25 @@ function NivUI:GetCustomRaidGroups()
     return NivUI:GetActiveProfile().customRaidGroups or {}
 end
 
+--- Returns custom raid group IDs sorted by display name and then ID.
+--- @return string[] ids The sorted custom raid group IDs
+function NivUI:GetCustomRaidGroupIds()
+    local groups = self:GetCustomRaidGroups()
+    local ids = {}
+    for id in pairs(groups) do
+        ids[#ids + 1] = id
+    end
+    table.sort(ids, function(left, right)
+        local leftName = tostring(groups[left].name or "")
+        local rightName = tostring(groups[right].name or "")
+        if leftName == rightName then
+            return tostring(left) < tostring(right)
+        end
+        return leftName < rightName
+    end)
+    return ids
+end
+
 --- Returns a specific custom raid group by ID.
 --- @param id string The custom raid group ID
 --- @return table|nil group The group configuration, or nil if not found

@@ -200,6 +200,23 @@ return {
         assertEquals(profile.customRaidGroups.first.styleName, "Alpha")
     end,
 
+    ["custom raid group IDs are ordered by display name with stable duplicate ties"] = function()
+        local profile = styleProfile()
+        profile.customRaidGroups = {}
+        profile.customRaidGroups.zulu = { name = "Zulu", styleName = "Alpha" }
+        profile.customRaidGroups.alpha_second = { name = "Alpha", styleName = "Alpha" }
+        profile.customRaidGroups.bravo = { name = "Bravo", styleName = "Alpha" }
+        profile.customRaidGroups.alpha_first = { name = "Alpha", styleName = "Alpha" }
+        local harness = createHarness({ profiles = { Default = profile } })
+
+        assertTableEquals(harness.NivUI:GetCustomRaidGroupIds(), {
+            "alpha_first",
+            "alpha_second",
+            "bravo",
+            "zulu",
+        })
+    end,
+
     ["profile rename and deletion maintain every character specialization mapping"] = function()
         local database = {
             profiles = {
