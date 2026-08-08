@@ -194,11 +194,19 @@ local function createRegion()
     end
 
     function region:Show()
+        local wasShown = self.shown
         self.shown = true
+        if not wasShown and self.scripts.OnShow then
+            self.scripts.OnShow(self)
+        end
     end
 
     function region:Hide()
+        local wasShown = self.shown
         self.shown = false
+        if wasShown and self.scripts.OnHide then
+            self.scripts.OnHide(self)
+        end
     end
 
     function region:IsShown()
@@ -344,6 +352,7 @@ local function createAddon(profileData)
     end
 
     harness:load("NivUI.lua")
+    harness:load("ConfigLifecycle.lua")
     namespace.activeProfileName = "Alpha"
     harness.providedGetActiveProfile = type(namespace.GetActiveProfile) == "function"
     if not harness.providedGetActiveProfile then
@@ -387,6 +396,39 @@ local function unitFrameProfiles()
             unitFrameVisibilityOverrides = { player = "show" },
         },
     }
+end
+
+local function createConfigHarness()
+    local harness = createAddon(unitFrameProfiles())
+    local NivUI = harness.namespace
+    local environment = harness.environment
+
+    local function setupTab()
+        return environment.CreateFrame()
+    end
+
+    NivUI.Config = {
+        Bars = {
+            SetupTab = function()
+                return setupTab(), {}
+            end,
+            SetupOnBarMoved = function() end,
+        },
+        Filters = { SetupTab = setupTab },
+        Overlays = { SetupTab = setupTab },
+        Profiles = { SetupTab = setupTab },
+    }
+    NivUI.UnitFrames = { SetupConfigTabWithSubtabs = setupTab }
+    environment.UISpecialFrames = {}
+    environment.ButtonFrameTemplate_HidePortrait = function() end
+    environment.ButtonFrameTemplate_HideButtonBar = function() end
+    environment.PanelTemplates_TabResize = function() end
+    environment.PanelTemplates_DeselectTab = function() end
+
+    local frameCountBeforeConfigLoad = #harness.frames
+    harness:load("ConfigFrame.lua")
+
+    return harness, NivUI, environment, frameCountBeforeConfigLoad
 end
 
 local alphaBar = {
@@ -500,34 +542,7 @@ return {
     end,
 
     ["the config frame is constructed only on the first slash command after initialization"] = function()
-        local harness = createAddon(unitFrameProfiles())
-        local NivUI = harness.namespace
-        local environment = harness.environment
-
-        local function setupTab()
-            return environment.CreateFrame()
-        end
-
-        NivUI.Config = {
-            Bars = {
-                SetupTab = function()
-                    return setupTab(), {}
-                end,
-                SetupOnBarMoved = function() end,
-            },
-            Filters = { SetupTab = setupTab },
-            Overlays = { SetupTab = setupTab },
-            Profiles = { SetupTab = setupTab },
-        }
-        NivUI.UnitFrames = { SetupConfigTabWithSubtabs = setupTab }
-        environment.UISpecialFrames = {}
-        environment.ButtonFrameTemplate_HidePortrait = function() end
-        environment.ButtonFrameTemplate_HideButtonBar = function() end
-        environment.PanelTemplates_TabResize = function() end
-        environment.PanelTemplates_DeselectTab = function() end
-
-        local frameCountBeforeConfigLoad = #harness.frames
-        harness:load("ConfigFrame.lua")
+        local harness, NivUI, environment, frameCountBeforeConfigLoad = createConfigHarness()
 
         assertEquals(#harness.frames, frameCountBeforeConfigLoad,
             "loading ConfigFrame.lua should not construct UI")
@@ -549,6 +564,116 @@ return {
         assertFalse(configFrame:IsShown(), "second slash command hides the existing frame")
         assertEquals(#harness.frames, frameCountAfterConstruction,
             "second slash command should not reconstruct UI")
+    end,
+
+    ["a config open requested during combat waits without constructing UI"] = function()
+        local harness, NivUI, environment, frameCountBeforeConfigLoad = createConfigHarness()
+        harness:initialize()
+        harness:setCombatLocked(true)
+
+        environment.SlashCmdList.NIVUI("")
+        environment.SlashCmdList.NIVUI("")
+
+        assertEquals(NivUI.ConfigFrame, nil, "config frame during combat")
+        assertEquals(#harness.frames, frameCountBeforeConfigLoad,
+            "combat request should not construct UI")
+
+        harness:setCombatLocked(false)
+        harness:fire("PLAYER_REGEN_ENABLED")
+
+        assertNotNil(NivUI.ConfigFrame, "config frame after combat")
+        assertTrue(NivUI.ConfigFrame:IsShown(), "config frame opens after combat")
+        local frameCountAfterConstruction = #harness.frames
+
+        harness:fire("PLAYER_REGEN_ENABLED")
+        assertEquals(#harness.frames, frameCountAfterConstruction,
+            "repeated combat end should not reconstruct UI")
+        assertTrue(NivUI.ConfigFrame:IsShown(), "repeated combat end keeps config open")
+    end,
+
+    ["combat force-closes visible config without reopening it"] = function()
+        local harness, NivUI, environment = createConfigHarness()
+        harness:initialize()
+        environment.SlashCmdList.NIVUI("")
+
+        assertTrue(NivUI.ConfigFrame:IsShown(), "config frame before combat")
+
+        harness:setCombatLocked(true)
+        harness:fire("PLAYER_REGEN_DISABLED")
+        assertFalse(NivUI.ConfigFrame:IsShown(), "config frame during combat")
+
+        harness:setCombatLocked(false)
+        harness:fire("PLAYER_REGEN_ENABLED")
+        assertFalse(NivUI.ConfigFrame:IsShown(), "force-closed config frame after combat")
+    end,
+
+    ["combat closes every registered config surface"] = function()
+        local harness = createAddon(unitFrameProfiles())
+        local NivUI = harness.namespace
+        local environment = harness.environment
+        local hiddenPopups = {}
+        local closedMenus = 0
+        local firstWindow = environment.CreateFrame()
+        local secondWindow = environment.CreateFrame()
+        local colorPicker = environment.CreateFrame()
+
+        environment.StaticPopup_Hide = function(popupName)
+            hiddenPopups[popupName] = true
+        end
+        environment.Menu = {
+            GetManager = function()
+                return {
+                    CloseMenus = function()
+                        closedMenus = closedMenus + 1
+                    end,
+                }
+            end,
+        }
+        function colorPicker:SetupColorPickerAndShow()
+            self:Show()
+        end
+        environment.ColorPickerFrame = colorPicker
+
+        NivUI:RegisterConfigWindow(firstWindow)
+        NivUI:RegisterConfigWindow(secondWindow)
+        NivUI:RegisterConfigPopup("NIVUI_TEST_POPUP")
+        NivUI:ShowConfigColorPicker({})
+        firstWindow:Show()
+        secondWindow:Show()
+
+        harness:setCombatLocked(true)
+        harness:fire("PLAYER_REGEN_DISABLED")
+
+        assertFalse(firstWindow:IsShown(), "first registered window")
+        assertFalse(secondWindow:IsShown(), "second registered window")
+        assertFalse(colorPicker:IsShown(), "registered color picker")
+        assertTrue(hiddenPopups.NIVUI_TEST_POPUP, "registered static popup")
+        assertEquals(closedMenus, 1, "config menu close count")
+    end,
+
+    ["a direct config show during combat is hidden and deferred"] = function()
+        local harness, NivUI, environment = createConfigHarness()
+        harness:initialize()
+        environment.SlashCmdList.NIVUI("")
+        environment.SlashCmdList.NIVUI("")
+        local configFrame = NivUI.ConfigFrame
+
+        harness:setCombatLocked(true)
+        configFrame:Show()
+        assertFalse(configFrame:IsShown(), "direct config show during combat")
+
+        harness:setCombatLocked(false)
+        harness:fire("PLAYER_REGEN_ENABLED")
+        assertTrue(configFrame:IsShown(), "direct config show after combat")
+    end,
+
+    ["config changes are permitted only outside combat"] = function()
+        local harness = createAddon(unitFrameProfiles())
+        local NivUI = harness.namespace
+
+        assertTrue(NivUI:CanChangeConfig(), "config changes outside combat")
+        harness:setCombatLocked(true)
+        assertFalse(NivUI:CanChangeConfig(), "config changes during combat")
     end,
 
     ["loading the lazy config module does not preempt legacy database migration"] = function()

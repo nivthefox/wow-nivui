@@ -34,6 +34,8 @@ StaticPopupDialogs["NIVUI_NEW_CUSTOM_FILTER"] = {
     hideOnEscape = 1,
 }
 
+NivUI:RegisterConfigPopup("NIVUI_NEW_CUSTOM_FILTER")
+
 local function BuildSpellRow(content)
     local row = CreateFrame("Button", nil, content)
     row:SetHeight(ROW_HEIGHT)

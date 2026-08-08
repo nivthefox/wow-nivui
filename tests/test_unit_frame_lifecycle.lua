@@ -123,24 +123,15 @@ local function createHarness()
         loadChunk(addonRoot .. "/" .. relativePath, environment, "NivUI", NivUI)
     end
 
-    function harness:fire(event)
-        for _, frame in ipairs(frames) do
-            local callback = frame.events[event] and frame.scripts.OnEvent
-            if callback then
-                callback(frame, event)
-            end
-        end
-    end
-
-    function harness:setCombatLocked(locked)
-        combatLocked = locked
-    end
-
     function harness:setEnabled(value)
         enabled.single = value
         enabled.multi = value
         enabled.raid10 = value
         customGroups.group.enabled = value
+    end
+
+    function harness:setCombatLocked(locked)
+        combatLocked = locked
     end
 
     harness:load("modules/unitframes/UnitFrameLifecycle.lua")
@@ -200,7 +191,7 @@ return {
         assertRefreshCounts(harness, 0, "unassigned style refresh count")
     end,
 
-    ["all unit frame families refresh for each structural invalidation outside combat"] = function()
+    ["all unit frame families refresh for each structural invalidation"] = function()
         local harness = createHarness()
 
         harness.NivUI:TriggerEvent("CustomFiltersChanged", { name = "Test Filter" })
@@ -216,33 +207,20 @@ return {
         assertRefreshCounts(harness, 4, "style refresh count")
     end,
 
-    ["structural invalidations during combat coalesce until combat ends"] = function()
+    ["disabled unit frame families ignore structural invalidations"] = function()
         local harness = createHarness()
-        harness:setCombatLocked(true)
-
-        harness.NivUI:TriggerEvent("CustomFiltersChanged", { name = "Test Filter" })
-        harness.NivUI:TriggerEvent("OverlaysChanged", { name = "Test Overlay" })
-        harness.NivUI:TriggerEvent("OverlayModified", { name = "Test Overlay" })
-        harness.NivUI:TriggerEvent("StyleChanged", { styleName = "Shared Style" })
-        assertRefreshCounts(harness, 0, "combat refresh count")
-
-        harness:setCombatLocked(false)
-        harness:fire("PLAYER_REGEN_ENABLED")
-        assertRefreshCounts(harness, 1, "deferred refresh count")
-
-        harness:fire("PLAYER_REGEN_ENABLED")
-        assertRefreshCounts(harness, 1, "repeated combat-end refresh count")
-    end,
-
-    ["a pending structural refresh is discarded when its family is disabled"] = function()
-        local harness = createHarness()
-        harness:setCombatLocked(true)
-        harness.NivUI:TriggerEvent("CustomFiltersChanged", { name = "Test Filter" })
-
         harness:setEnabled(false)
-        harness:setCombatLocked(false)
-        harness:fire("PLAYER_REGEN_ENABLED")
+        harness.NivUI:TriggerEvent("CustomFiltersChanged", { name = "Test Filter" })
 
         assertRefreshCounts(harness, 0, "disabled refresh count")
+    end,
+
+    ["structural invalidations are never deferred by combat"] = function()
+        local harness = createHarness()
+        harness:setCombatLocked(true)
+
+        harness.NivUI:TriggerEvent("CustomFiltersChanged", { name = "Test Filter" })
+
+        assertRefreshCounts(harness, 1, "combat refresh count")
     end,
 }

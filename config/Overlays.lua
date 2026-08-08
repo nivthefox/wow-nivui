@@ -32,6 +32,8 @@ StaticPopupDialogs["NIVUI_NEW_OVERLAY"] = {
     hideOnEscape = 1,
 }
 
+NivUI:RegisterConfigPopup("NIVUI_NEW_OVERLAY")
+
 function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()

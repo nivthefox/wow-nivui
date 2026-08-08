@@ -216,6 +216,14 @@ StaticPopupDialogs["NIVUI_DELETE_CUSTOM_RAID_GROUP"] = {
     showAlert = 1,
 }
 
+NivUI:RegisterConfigPopup("NIVUI_NEW_STYLE")
+NivUI:RegisterConfigPopup("NIVUI_DUPLICATE_STYLE")
+NivUI:RegisterConfigPopup("NIVUI_RENAME_STYLE")
+NivUI:RegisterConfigPopup("NIVUI_DELETE_STYLE")
+NivUI:RegisterConfigPopup("NIVUI_CONFIRM_RELOAD")
+NivUI:RegisterConfigPopup("NIVUI_NEW_CUSTOM_RAID_GROUP")
+NivUI:RegisterConfigPopup("NIVUI_DELETE_CUSTOM_RAID_GROUP")
+
 local function DeepGet(tbl, key)
     local parts = { strsplit(".", key) }
     local current = tbl
@@ -776,6 +784,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
                     info.hasOpacity = entry.hasAlpha
 
                     info.swatchFunc = function()
+                        if not NivUI:CanChangeConfig() then return end
                         local r, g, b = ColorPickerFrame:GetColorRGB()
                         local a = entry.hasAlpha and ColorPickerFrame:GetColorAlpha() or nil
                         swatch.currentColor = { r = r, g = g, b = b, a = a }
@@ -789,7 +798,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
                     end
 
                     info.previousValues = CopyTable(swatch.currentColor)
-                    ColorPickerFrame:SetupColorPickerAndShow(info)
+                    NivUI:ShowConfigColorPicker(info)
                 end
             end)
 
@@ -808,6 +817,7 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
             editBox:SetText(tostring(currentValue or entry.min or 1))
 
             local function CommitNumeric(self)
+                if not NivUI:CanChangeConfig() then return end
                 local value = math.max(entry.min or 1, math.floor(tonumber(self:GetText()) or entry.min or 1))
                 self:SetText(tostring(value))
                 panel:Commit(entry.key, value)

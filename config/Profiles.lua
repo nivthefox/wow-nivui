@@ -152,6 +152,9 @@ do
     end)
 end
 
+NivUI:RegisterConfigWindow(exportDialog)
+NivUI:RegisterConfigWindow(importDialog)
+
 --- Sets up the Profiles tab.
 --- @param ContentArea Frame The content area frame
 --- @param Components table The Components table from ConfigFrame
@@ -511,3 +514,8 @@ StaticPopupDialogs["NIVUI_DELETE_PROFILE"] = {
     hideOnEscape = true,
     preferredIndex = 3,
 }
+
+NivUI:RegisterConfigPopup("NIVUI_NEW_PROFILE")
+NivUI:RegisterConfigPopup("NIVUI_COPY_PROFILE")
+NivUI:RegisterConfigPopup("NIVUI_RENAME_PROFILE")
+NivUI:RegisterConfigPopup("NIVUI_DELETE_PROFILE")

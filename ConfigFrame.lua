@@ -185,6 +185,7 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
 
     local function ApplyInputValue()
         if updatingFromSlider then return end
+        if not NivUI:CanChangeConfig() then return end
         local text = editBox:GetText()
         local value = tonumber(text)
         if value then
@@ -266,6 +267,7 @@ function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
             info.hasOpacity = hasAlpha
 
             info.swatchFunc = function()
+                if not NivUI:CanChangeConfig() then return end
                 local r, g, b = ColorPickerFrame:GetColorRGB()
                 local a = hasAlpha and ColorPickerFrame:GetColorAlpha() or nil
                 swatch.currentColor = { r = r, g = g, b = b, a = a }
@@ -274,6 +276,7 @@ function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
             end
 
             info.cancelFunc = function(previousValues)
+                if not NivUI:CanChangeConfig() then return end
                 swatch.currentColor = previousValues
                 swatch:SetColor(CreateColor(previousValues.r, previousValues.g, previousValues.b))
                 if callback then callback(previousValues) end
@@ -281,8 +284,9 @@ function Components.GetColorPicker(parent, labelText, hasAlpha, callback)
 
             info.previousValues = CopyTable(swatch.currentColor)
 
-            ColorPickerFrame:SetupColorPickerAndShow(info)
+            NivUI:ShowConfigColorPicker(info)
         else
+            if not NivUI:CanChangeConfig() then return end
             swatch.currentColor = { r = 1, g = 1, b = 1, a = hasAlpha and 1 or nil }
             swatch:SetColor(CreateColor(1, 1, 1))
             if callback then callback(swatch.currentColor) end
@@ -464,10 +468,16 @@ function NivUI:CreateConfigFrame()
     profilesTab:SetScript("OnClick", function() SelectSidebarTab(5) end)
     table.insert(sidebarTabs, profilesTab)
 
-    ConfigFrame:SetScript("OnShow", function()
+    ConfigFrame:SetScript("OnShow", function(self)
+        if InCombatLockdown() then
+            self:Hide()
+            NivUI:RequestConfigOpenAfterCombat()
+            return
+        end
         SelectSidebarTab(currentSidebarTab)
     end)
 
     self.ConfigFrame = ConfigFrame
+    self:RegisterConfigWindow(ConfigFrame)
     return ConfigFrame
 end

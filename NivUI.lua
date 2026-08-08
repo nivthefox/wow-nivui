@@ -411,31 +411,3 @@ initFrame:SetScript("OnEvent", function(self, _, addon)
 
     self:UnregisterEvent("ADDON_LOADED")
 end)
-
-local function ToggleConfigFrame()
-    if not NivUI.isInitialized then
-        print("NivUI: Configuration is not ready yet")
-        return
-    end
-    if not NivUI.ConfigFrame and NivUI.CreateConfigFrame then
-        NivUI:CreateConfigFrame()
-    end
-    if not NivUI.ConfigFrame then
-        print("NivUI: Config frame not loaded")
-        return
-    end
-    if NivUI.ConfigFrame:IsShown() then
-        NivUI.ConfigFrame:Hide()
-        return
-    end
-    NivUI.ConfigFrame:Show()
-end
-
-SLASH_NIVUI1 = "/nivui"
-SlashCmdList["NIVUI"] = function(msg)
-    if msg and msg ~= "" then
-        print("NivUI: Use /nivui to open the config panel")
-        return
-    end
-    ToggleConfigFrame()
-end

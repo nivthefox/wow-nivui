@@ -6,19 +6,9 @@ local UnitFrameLifecycle = {}
 NivUI.UnitFrames.Lifecycle = UnitFrameLifecycle
 
 local adapters = {}
-local pendingAdapters = {}
-
-local function IsCombatLocked()
-    return InCombatLockdown and InCombatLockdown()
-end
 
 local function RequestRefresh(adapter)
     if not adapter.isEnabled() then
-        pendingAdapters[adapter] = nil
-        return
-    end
-    if IsCombatLocked() then
-        pendingAdapters[adapter] = true
         return
     end
 
@@ -40,15 +30,6 @@ local function RefreshStyle(data)
         if adapter.usesStyle(data.styleName) then
             RequestRefresh(adapter)
         end
-    end
-end
-
-local function FlushPendingRefreshes()
-    local adaptersToRefresh = pendingAdapters
-    pendingAdapters = {}
-
-    for adapter in pairs(adaptersToRefresh) do
-        RequestRefresh(adapter)
     end
 end
 
@@ -74,7 +55,3 @@ NivUI:RegisterCallback("CustomFiltersChanged", RefreshAll)
 NivUI:RegisterCallback("OverlaysChanged", RefreshAll)
 NivUI:RegisterCallback("OverlayModified", RefreshAll)
 NivUI:RegisterCallback("StyleChanged", RefreshStyle)
-
-local eventFrame = CreateFrame("Frame")
-eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-eventFrame:SetScript("OnEvent", FlushPendingRefreshes)
