@@ -286,10 +286,6 @@ function NivUI.Config.Profiles.SetupTab(ContentArea, Components)
         for _, row in ipairs(specDropdowns) do
             row.DropDown:SetEnabled(enabled)
             local specID = row.specID
-            local cur = NivUI.Profiles:GetSpecProfile(specID)
-            if cur and not NivUI.Profiles:ProfileExists(cur) then
-                NivUI.Profiles:SetSpecProfile(specID, nil)
-            end
             row:SetValue()
         end
     end

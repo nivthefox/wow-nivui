@@ -205,6 +205,12 @@ return {
 
         harness.NivUI:TriggerEvent("StyleChanged", { styleName = "Shared Style" })
         assertRefreshCounts(harness, 4, "style refresh count")
+
+        harness.NivUI:TriggerEvent("StyleRenamed", { oldName = "Old Style", newName = "Shared Style" })
+        assertRefreshCounts(harness, 5, "style rename refresh count")
+
+        harness.NivUI:TriggerEvent("StyleDeleted", { styleName = "Old Style", fallback = "Shared Style" })
+        assertRefreshCounts(harness, 6, "style deletion refresh count")
     end,
 
     ["disabled unit frame families ignore structural invalidations"] = function()

@@ -86,6 +86,8 @@ function NivUI.Profiles:CreateProfile(name, copyFrom)
         source = NivUI.DeepCopy(NivUI_DB.profiles[copyFrom])
     end
 
+    NivUI:RepairProfileReferences(source)
+
     NivUI_DB.profiles[name] = source
     print(string.format("|cff00ff00NivUI:|r Created profile '%s'", name))
     return true
@@ -108,6 +110,7 @@ function NivUI.Profiles:SwitchProfile(name)
     NivUI.activeProfileName = name
 
     NivUI:InitializeDB()
+    NivUI:RepairProfileReferences(NivUI:GetActiveProfile())
     NivUI:ApplyActiveProfile()
 
     NivUI:TriggerEvent("ProfileSwitched", { profileName = name })
@@ -137,11 +140,23 @@ function NivUI.Profiles:DeleteProfile(name)
         return false, "Cannot delete the last profile"
     end
 
-    if self:GetCurrentProfileName() == name then
-        self:SwitchProfile("Default")
+    if self:GetCurrentProfileName() == name and InCombatLockdown() then
+        return false, "Cannot delete the active profile during combat"
     end
 
+    if self:GetCurrentProfileName() == name then
+        local switched, switchError = self:SwitchProfile("Default")
+        if not switched then
+            return false, switchError
+        end
+    end
+
+    local specializationMappings = NivUI.ReferenceIntegrity.ReplaceProfileReferences(NivUI_DB, name, nil)
     NivUI_DB.profiles[name] = nil
+    NivUI:TriggerEvent("ProfileDeleted", {
+        profileName = name,
+        specializationMappings = specializationMappings,
+    })
     print(string.format("|cff00ff00NivUI:|r Deleted profile '%s'", name))
     return true
 end
@@ -157,6 +172,7 @@ function NivUI.Profiles:ResetProfile(name)
     end
 
     NivUI_DB.profiles[name] = {}
+    NivUI:RepairProfileReferences(NivUI_DB.profiles[name])
 
     if name == self:GetCurrentProfileName() then
         NivUI:InitializeDB()
@@ -216,21 +232,13 @@ function NivUI.Profiles:RenameProfile(oldName, newName)
         NivUI.activeProfileName = newName
     end
 
-    local charMeta = NivUI_DB.charMeta
-    if type(charMeta) == "table" then
-        for _, charData in pairs(charMeta) do
-            local specProfileMap = type(charData) == "table" and charData.specProfileMap
-            if type(specProfileMap) == "table" then
-                for specID, profileName in pairs(specProfileMap) do
-                    if profileName == oldName then
-                        specProfileMap[specID] = newName
-                    end
-                end
-            end
-        end
-    end
+    local specializationMappings = NivUI.ReferenceIntegrity.ReplaceProfileReferences(NivUI_DB, oldName, newName)
 
-    NivUI:TriggerEvent("ProfileRenamed", { oldName = oldName, newName = newName })
+    NivUI:TriggerEvent("ProfileRenamed", {
+        oldName = oldName,
+        newName = newName,
+        specializationMappings = specializationMappings,
+    })
     print(string.format("|cff00ff00NivUI:|r Renamed profile '%s' to '%s'", oldName, newName))
     return true
 end
@@ -386,7 +394,9 @@ function NivUI.Profiles:CreateFromImport(name, payload)
         return false, err
     end
 
-    NivUI_DB.profiles[name] = NivUI.DeepCopy(payload)
+    local importedProfile = NivUI.DeepCopy(payload)
+    NivUI:RepairProfileReferences(importedProfile)
+    NivUI_DB.profiles[name] = importedProfile
     print(string.format("|cff00ff00NivUI:|r Imported profile '%s'", name))
     return true
 end
@@ -451,13 +461,16 @@ end
 --- @param profileName string|nil Pass nil or empty to clear the mapping
 function NivUI.Profiles:SetSpecProfile(specID, profileName)
     if type(specID) ~= "number" then
-        return
+        return false, "Specialization ID must be a number"
     end
     local char = GetCharMeta()
 
     if type(profileName) ~= "string" or profileName == "" then
         char.specProfileMap[specID] = nil
     else
+        if not self:ProfileExists(profileName) then
+            return false, "Profile does not exist"
+        end
         char.specProfileMap[specID] = profileName
     end
 
@@ -467,6 +480,7 @@ function NivUI.Profiles:SetSpecProfile(specID, profileName)
             self:ApplySpecProfileIfEnabled("MAP_CHANGED")
         end
     end
+    return true
 end
 
 --- Returns the current player's spec ID.

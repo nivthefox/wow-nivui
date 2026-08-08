@@ -352,6 +352,7 @@ local function createAddon(profileData)
     end
 
     harness:load("NivUI.lua")
+    harness:load("modules/ReferenceIntegrity.lua")
     harness:load("ConfigLifecycle.lua")
     namespace.activeProfileName = "Alpha"
     harness.providedGetActiveProfile = type(namespace.GetActiveProfile) == "function"
@@ -516,6 +517,30 @@ local function assertStaggerBar(frame, expected, message)
 end
 
 return {
+    ["database initialization repairs references before config is opened"] = function()
+        local profiles = {
+            Alpha = {
+                unitFrameStyles = { Valid = {} },
+                unitFrameAssignments = { player = "Missing" },
+                customRaidGroups = { group = { styleName = "Missing" } },
+            },
+        }
+        local harness = createAddon(profiles)
+        local database = harness.environment.NivUI_DB
+        database.charMeta = {
+            ["Tester-Test Realm"] = {
+                specProfileMap = { [268] = "Missing" },
+            },
+        }
+
+        harness:initialize()
+
+        assertEquals(database.profiles.Alpha.unitFrameAssignments.player, "Valid")
+        assertEquals(database.profiles.Alpha.customRaidGroups.group.styleName, "Valid")
+        assertEquals(database.charMeta["Tester-Test Realm"].specProfileMap[268], nil)
+        assertEquals(harness.namespace.ConfigFrame, nil, "config remains unconstructed")
+    end,
+
     ["active profile API tracks direct switches in both directions"] = function()
         local profiles = unitFrameProfiles()
         local harness = createAddon(profiles)
@@ -895,14 +920,17 @@ return {
             Alpha = {
                 unitFrameEnabled = { group = true },
                 unitFrameAssignments = { group = "Alpha Style" },
+                unitFrameStyles = { ["Alpha Style"] = {} },
             },
             Beta = {
                 unitFrameEnabled = { group = true },
                 unitFrameAssignments = { group = "Beta Style" },
+                unitFrameStyles = { ["Beta Style"] = {} },
             },
             Disabled = {
                 unitFrameEnabled = { group = false },
                 unitFrameAssignments = { group = "Beta Style" },
+                unitFrameStyles = { ["Beta Style"] = {} },
             },
         }
         local harness = createAddon(profiles)

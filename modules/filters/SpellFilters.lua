@@ -71,11 +71,18 @@ end
 function Filters:DeleteCustom(name)
     local store = GetStore()
     if not store or not store[name] then
-        return
+        return false, "Unknown filter"
     end
 
+    local profile = NivUI:GetActiveProfile()
+    local overlays = NivUI.ReferenceIntegrity.RemoveFilterReferences(profile, name)
     store[name] = nil
-    NivUI:TriggerEvent("CustomFiltersChanged", { name = name, deleted = true })
+    NivUI:TriggerEvent("CustomFiltersChanged", {
+        name = name,
+        deleted = true,
+        overlays = overlays,
+    })
+    return true
 end
 
 --- @return table The spellID -> saved name table for a custom filter (empty if missing)

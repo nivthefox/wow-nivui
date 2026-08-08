@@ -155,9 +155,16 @@ end
 function Overlays:Delete(name)
     local store = GetStore()
     if not store or not store[name] then
-        return
+        return false, "Unknown overlay"
     end
 
+    local profile = NivUI:GetActiveProfile()
+    local styles = NivUI.ReferenceIntegrity.RemoveOverlayReferences(profile, name)
     store[name] = nil
-    NivUI:TriggerEvent("OverlaysChanged", { name = name, deleted = true })
+    NivUI:TriggerEvent("OverlaysChanged", {
+        name = name,
+        deleted = true,
+        styles = styles,
+    })
+    return true
 end

@@ -92,30 +92,17 @@ function NivUI:DeleteStyle(name)
         return false, "Cannot delete the last style"
     end
 
-    local fallbackStyle = nil
-    for styleName in pairs(NivUI:GetActiveProfile().unitFrameStyles) do
-        if styleName ~= name then
-            fallbackStyle = styleName
-            break
-        end
-    end
+    local profile = NivUI:GetActiveProfile()
+    local fallbackStyle = NivUI.ReferenceIntegrity.GetFallbackStyle(profile, name)
+    local references = NivUI.ReferenceIntegrity.ReplaceStyleReferences(profile, name, fallbackStyle)
+    profile.unitFrameStyles[name] = nil
 
-    local inUse = {}
-    if NivUI:GetActiveProfile().unitFrameAssignments then
-        for frameType, styleName in pairs(NivUI:GetActiveProfile().unitFrameAssignments) do
-            if styleName == name then
-                table.insert(inUse, frameType)
-            end
-        end
-    end
-
-    for _, frameType in ipairs(inUse) do
-        NivUI:GetActiveProfile().unitFrameAssignments[frameType] = fallbackStyle
-    end
-
-    NivUI:GetActiveProfile().unitFrameStyles[name] = nil
-
-    self:TriggerEvent("StyleDeleted", { styleName = name, reassigned = inUse, fallback = fallbackStyle })
+    self:TriggerEvent("StyleDeleted", {
+        styleName = name,
+        reassigned = references.assignments,
+        customRaidGroups = references.customRaidGroups,
+        fallback = fallbackStyle,
+    })
 
     return true
 end
@@ -169,18 +156,17 @@ function NivUI:RenameStyle(oldName, newName)
         return false, "Style '" .. oldName .. "' does not exist"
     end
 
-    NivUI:GetActiveProfile().unitFrameStyles[newName] = NivUI:GetActiveProfile().unitFrameStyles[oldName]
-    NivUI:GetActiveProfile().unitFrameStyles[oldName] = nil
+    local profile = NivUI:GetActiveProfile()
+    local references = NivUI.ReferenceIntegrity.ReplaceStyleReferences(profile, oldName, newName)
+    profile.unitFrameStyles[newName] = profile.unitFrameStyles[oldName]
+    profile.unitFrameStyles[oldName] = nil
 
-    if NivUI:GetActiveProfile().unitFrameAssignments then
-        for frameType, styleName in pairs(NivUI:GetActiveProfile().unitFrameAssignments) do
-            if styleName == oldName then
-                NivUI:GetActiveProfile().unitFrameAssignments[frameType] = newName
-            end
-        end
-    end
-
-    self:TriggerEvent("StyleRenamed", { oldName = oldName, newName = newName })
+    self:TriggerEvent("StyleRenamed", {
+        oldName = oldName,
+        newName = newName,
+        reassigned = references.assignments,
+        customRaidGroups = references.customRaidGroups,
+    })
 
     return true
 end
@@ -199,6 +185,10 @@ end
 --- @param frameType string The frame type (e.g., "player", "target")
 --- @param styleName string The style name to assign
 function NivUI:SetAssignment(frameType, styleName)
+    if not self:StyleExists(styleName) then
+        return false, "Style '" .. tostring(styleName) .. "' does not exist"
+    end
+
     if not NivUI:GetActiveProfile().unitFrameAssignments then
         NivUI:GetActiveProfile().unitFrameAssignments = {}
     end
@@ -206,6 +196,7 @@ function NivUI:SetAssignment(frameType, styleName)
     NivUI:GetActiveProfile().unitFrameAssignments[frameType] = styleName
 
     self:TriggerEvent("AssignmentChanged", { frameType = frameType, styleName = styleName })
+    return true
 end
 
 --- Checks if a frame type is enabled.
@@ -664,12 +655,16 @@ end
 --- @return boolean success Whether the save succeeded
 --- @return string|nil errorMessage Error message if save failed
 function NivUI:SaveCustomRaidGroup(id, data)
-    if not id or not data then
+    if not id or type(data) ~= "table" then
         return false, "Invalid parameters"
     end
 
     if not NivUI:GetActiveProfile().customRaidGroups or not NivUI:GetActiveProfile().customRaidGroups[id] then
         return false, "Custom raid group does not exist"
+    end
+
+    if not self:StyleExists(data.styleName) then
+        return false, "Style '" .. tostring(data.styleName) .. "' does not exist"
     end
 
     NivUI:GetActiveProfile().customRaidGroups[id] = NivUI.DeepCopy(data)
@@ -727,12 +722,4 @@ function NivUI:GetStyleWithDefaults(name)
 
     MergeTable(merged, style)
     return merged
-end
-
---- Initializes the default style if no styles exist.
-function NivUI:InitializeDefaultStyle()
-    local names = self:GetStyleNames()
-    if #names == 0 then
-        self:SaveStyle("Default", NivUI.UnitFrames.DEFAULT_STYLE)
-    end
 end

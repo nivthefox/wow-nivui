@@ -408,6 +408,7 @@ initFrame:SetScript("OnEvent", function(self, _, addon)
     NivUI.activeProfileName = NivUI_CurrentProfile
 
     NivUI.isInitialized = NivUI:InitializeDB()
+    NivUI:RepairReferenceIntegrity()
 
     self:UnregisterEvent("ADDON_LOADED")
 end)

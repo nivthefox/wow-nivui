@@ -1060,8 +1060,6 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
         NivUI:SaveStyle(NivUI.UnitFrames.currentStyleName, style)
     end
 
-    NivUI:InitializeDefaultStyle()
-
     local topBar = CreateFrame("Frame", nil, container)
     topBar:SetHeight(36)
     topBar:SetPoint("TOPLEFT", 0, 0)
@@ -1761,8 +1759,6 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
         currentStyle = style
         NivUI:SaveStyle(NivUI.UnitFrames.currentStyleName, style)
     end
-
-    NivUI:InitializeDefaultStyle()
 
     local topBar = CreateFrame("Frame", nil, container)
     topBar:SetHeight(36)
