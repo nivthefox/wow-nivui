@@ -15,7 +15,7 @@ local isBrewmaster = false
 local inCombat = false
 
 local function GetSetting(key)
-    local db = NivUI.current and NivUI.current.staggerBar
+    local db = NivUI:GetActiveProfile() and NivUI:GetActiveProfile().staggerBar
     if db and db[key] ~= nil then
         return db[key]
     end
@@ -23,7 +23,7 @@ local function GetSetting(key)
 end
 
 local function GetColors()
-    local db = NivUI.current and NivUI.current.staggerBar
+    local db = NivUI:GetActiveProfile() and NivUI:GetActiveProfile().staggerBar
     if db and db.colors then
         return db.colors
     end
@@ -168,7 +168,7 @@ local function OnUpdate(self, elapsed)
 end
 
 local function LoadPosition(frame)
-    local db = NivUI.current.staggerBar
+    local db = NivUI:GetActiveProfile().staggerBar
     local defaults = NivUI.staggerBarDefaults
 
     frame:ClearAllPoints()
@@ -221,7 +221,7 @@ local function ApplyBorder(frame)
 end
 
 local function ApplyFontSettings(frame)
-    local db = NivUI.current.staggerBar
+    local db = NivUI:GetActiveProfile().staggerBar
     local defaults = NivUI.staggerBarDefaults
 
     local fontName = db.font or defaults.font
@@ -353,6 +353,16 @@ local function OnDisable()
     NivUI.StaggerBar = nil
 end
 
+local function OnRefresh(frame)
+    LoadPosition(frame)
+    ApplyBarTexture(frame)
+    ApplyBackground(frame)
+    ApplyBorder(frame)
+    ApplyFontSettings(frame)
+    CheckSpec()
+    UpdateBar()
+end
+
 NivUI:RegisterClassBar("stagger", {
     displayName = "Stagger Bar",
     tabName = "Stagger",
@@ -420,6 +430,7 @@ NivUI:RegisterClassBar("stagger", {
             onUpdate = OnUpdate,
             onEnable = OnEnable,
             onDisable = OnDisable,
+            onRefresh = OnRefresh,
         })
     end,
 })

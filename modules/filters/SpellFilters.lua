@@ -1,6 +1,6 @@
 --- Aura filtering model: Blizzard's built-in filter modifiers plus user-defined
 --- custom spell lists. Each aura widget independently toggles Allow/Block per filter.
---- Custom lists are profile-scoped under NivUI.current.customFilters.
+--- Custom lists are profile-scoped under NivUI:GetActiveProfile().customFilters.
 local _, NivUI = ...
 
 NivUI.Filters = NivUI.Filters or {}
@@ -26,7 +26,7 @@ for _, entry in ipairs(Filters.BUILTIN) do
 end
 
 local function GetStore()
-    local profile = NivUI.current
+    local profile = NivUI:GetActiveProfile()
     if not profile then return nil end
     profile.customFilters = profile.customFilters or {}
     return profile.customFilters

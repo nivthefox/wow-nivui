@@ -59,7 +59,7 @@ function NivUI.EditMode:SavePosition(frameType, customFrame)
     if barType then
         local barConfig = NivUI.classBarRegistry[barType]
         if barConfig then
-            local db = NivUI.current[barConfig.dbKey]
+            local db = NivUI:GetActiveProfile()[barConfig.dbKey]
             if db then
                 local point, _, _, x, y = customFrame:GetPoint(1)
                 db.point = point
@@ -73,10 +73,10 @@ function NivUI.EditMode:SavePosition(frameType, customFrame)
         return
     end
 
-    NivUI.current.unitFramePositions = NivUI.current.unitFramePositions or {}
+    NivUI:GetActiveProfile().unitFramePositions = NivUI:GetActiveProfile().unitFramePositions or {}
 
     local point, relativeTo, relativePoint, offsetX, offsetY = customFrame:GetPoint(1)
-    NivUI.current.unitFramePositions[frameType] = {
+    NivUI:GetActiveProfile().unitFramePositions[frameType] = {
         point = point,
         relativeTo = relativeTo and relativeTo:GetName() or "UIParent",
         relativePoint = relativePoint,
@@ -86,7 +86,7 @@ function NivUI.EditMode:SavePosition(frameType, customFrame)
 end
 
 function NivUI.EditMode:ApplyPosition(frameType, customFrame)
-    local pos = NivUI.current.unitFramePositions and NivUI.current.unitFramePositions[frameType]
+    local pos = NivUI:GetActiveProfile().unitFramePositions and NivUI:GetActiveProfile().unitFramePositions[frameType]
     if not pos then return false end
 
     customFrame:ClearAllPoints()

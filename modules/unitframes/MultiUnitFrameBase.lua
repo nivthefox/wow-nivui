@@ -355,7 +355,9 @@ function MultiUnitFrameBase.CreateModule(config)
     function module.Disable()
         state.enabled = false
         DestroyFrames()
-        NivUI:RequestReload()
+        if config.restoreBlizzardFrames then
+            config.restoreBlizzardFrames(state)
+        end
     end
 
     function module.Refresh()
@@ -418,6 +420,9 @@ function MultiUnitFrameBase.CreateModule(config)
             if event == "PLAYER_REGEN_ENABLED" and state.pendingHide then
                 config.hideBlizzardFrames(state)
             end
+            if event == "PLAYER_REGEN_ENABLED" and state.pendingRestore and config.restoreBlizzardFrames then
+                config.restoreBlizzardFrames(state)
+            end
             if state.enabled and state.memberStates then
                 for _, memberState in pairs(state.memberStates) do
                     Base.UpdateStatusIndicators(memberState)
@@ -430,6 +435,21 @@ function MultiUnitFrameBase.CreateModule(config)
             else
                 OnContainerEventTriggered()
             end
+        end
+    end)
+
+    NivUI:RegisterProfileApplyCallback("unitFrame:" .. config.frameType, function()
+        local shouldEnable = NivUI:IsFrameEnabled(config.frameType)
+        if shouldEnable and not state.enabled then
+            module.Enable()
+            return
+        end
+        if not shouldEnable and state.enabled then
+            module.Disable()
+            return
+        end
+        if shouldEnable then
+            module.Refresh()
         end
     end)
 

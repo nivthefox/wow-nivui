@@ -23,7 +23,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     local inCombat = false
 
     local function GetSetting(key)
-        local db = NivUI.current and NivUI.current[dbKey]
+        local db = NivUI:GetActiveProfile() and NivUI:GetActiveProfile()[dbKey]
         if db and db[key] ~= nil then
             return db[key]
         end
@@ -109,7 +109,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     end
 
     local function LoadPosition(frame)
-        local db = NivUI.current[dbKey] or {}
+        local db = NivUI:GetActiveProfile()[dbKey] or {}
         local defaults = NivUI[defaultsKey]
 
         frame:ClearAllPoints()
@@ -323,6 +323,14 @@ function NivUI.SegmentedBarBase.CreateModule(config)
         NivUI[globalRef] = nil
     end
 
+    local function OnRefresh(frame)
+        LoadPosition(frame)
+        ApplyBorder(frame)
+        CheckResource()
+        frame:RebuildSegments()
+        UpdateVisibility()
+    end
+
     local module = NivUI.BarBase.CreateModule({
         barType = barType,
         createUI = CreateSegmentedBarUI,
@@ -330,6 +338,7 @@ function NivUI.SegmentedBarBase.CreateModule(config)
         onUpdate = OnUpdate,
         onEnable = OnEnable,
         onDisable = OnDisable,
+        onRefresh = OnRefresh,
     })
 
     NivUI[globalRef] = nil

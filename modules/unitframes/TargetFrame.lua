@@ -4,12 +4,7 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
-local hideBlizzard = Base.CreateHideBlizzardFrame(TargetFrame, {
-    childPrefix = "^TargetFrame",
-    hasAuras = true,
-    containerKey = "TargetFrameContainer",
-    contentKey = "TargetFrameContent",
-})
+local hideBlizzard, restoreBlizzard = Base.CreateHideBlizzardFrame(TargetFrame)
 
 local function GetDisplayUnit()
     if UnitExists("target") then
@@ -30,6 +25,7 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
     anchorOffsetX = 24,
     anchorOffsetY = 0,
     hideBlizzard = hideBlizzard,
+    restoreBlizzard = restoreBlizzard,
     visibilityDriver = "[@target,exists] show; [@softenemy,exists] show; [@softfriend,exists] show; hide",
 
     registerEvents = function(frame)

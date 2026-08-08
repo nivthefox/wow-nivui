@@ -4,54 +4,7 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
-local function HideBlizzardPetFrame(state)
-    if not PetFrame then return end
-
-    if InCombatLockdown and InCombatLockdown() then
-        state.pendingHide = true
-        return
-    end
-
-    state.pendingHide = false
-
-    -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
-    if PetFrame.EnableMouse then
-        PetFrame:EnableMouse(false)
-    end
-    if PetFrame.SetMouseClickEnabled then
-        PetFrame:SetMouseClickEnabled(false)
-    end
-    if PetFrame.SetMouseMotionEnabled then
-        PetFrame:SetMouseMotionEnabled(false)
-    end
-    if PetFrame.SetHitRectInsets then
-        PetFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
-    end
-
-    Base.HideRegions(PetFrame)
-
-    local children = { PetFrame:GetChildren() }
-    for _, child in ipairs(children) do
-        local name = child:GetName()
-        if name and name:find("^PetFrame") then
-            Base.KillVisual(child)
-        end
-    end
-
-    state.blizzardHidden = true
-
-    if not state.softHideHooked then
-        state.softHideHooked = true
-        PetFrame:HookScript("OnShow", function(self)
-            if state.blizzardHidden then
-                self:SetAlpha(0)
-                if not InCombatLockdown() then
-                    HideBlizzardPetFrame(state)
-                end
-            end
-        end)
-    end
-end
+local hideBlizzard, restoreBlizzard = Base.CreateHideBlizzardFrame(PetFrame)
 
 NivUI.UnitFrames.PetFrame = Base.CreateModule({
     unit = "pet",
@@ -60,7 +13,8 @@ NivUI.UnitFrames.PetFrame = Base.CreateModule({
     anchorFrame = PetFrame,
     anchorOffsetX = 0,
     anchorOffsetY = 0,
-    hideBlizzard = HideBlizzardPetFrame,
+    hideBlizzard = hideBlizzard,
+    restoreBlizzard = restoreBlizzard,
     visibilityDriver = "[@pet,exists] show; hide",
 
     registerEvents = function(frame)

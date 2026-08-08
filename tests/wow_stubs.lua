@@ -19,7 +19,13 @@ end
 function NivUI:TriggerEvent()
 end
 
-NivUI.current = { overlays = {} }
+local activeProfile = { overlays = {} }
+
+function NivUI:GetActiveProfile()
+    return activeProfile
+end
+
+NivUI.current = activeProfile
 
 return {
     strtrim = strtrim,

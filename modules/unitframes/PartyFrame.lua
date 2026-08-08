@@ -94,6 +94,25 @@ local function HideBlizzardPartyFrames(state)
     state.blizzardHidden = true
 end
 
+local function RestoreBlizzardPartyFrames(state)
+    if InCombatLockdown and InCombatLockdown() then
+        state.pendingRestore = true
+        return
+    end
+
+    state.pendingRestore = false
+    if CompactPartyFrame then
+        UnregisterStateDriver(CompactPartyFrame, "visibility")
+    end
+    for i = 1, 4 do
+        local frame = _G["PartyMemberFrame" .. i]
+        if frame then
+            UnregisterStateDriver(frame, "visibility")
+        end
+    end
+    state.blizzardHidden = false
+end
+
 local function OnPartySettingsChanged(state, data)
     local PartyFrame = NivUI.UnitFrames.PartyFrame
 
@@ -131,6 +150,7 @@ NivUI.UnitFrames.PartyFrame = MultiUnitFrameBase.CreateModule({
     shouldShowUnit = ShouldShowPartyUnit,
 
     hideBlizzardFrames = HideBlizzardPartyFrames,
+    restoreBlizzardFrames = RestoreBlizzardPartyFrames,
 
     events = {
         "GROUP_ROSTER_UPDATE",

@@ -2,7 +2,6 @@ local _, NivUI = ...
 
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
-local Base = NivUI.UnitFrames.Base
 local MultiUnitFrameBase = NivUI.UnitFrames.MultiUnitFrameBase
 
 local MAX_BOSS_FRAMES = 5
@@ -24,19 +23,36 @@ local function HideBlizzardBossFrames(state)
     state.pendingHide = false
 
     if BossTargetFrameContainer then
-        BossTargetFrameContainer:UnregisterAllEvents()
-        BossTargetFrameContainer:Hide()
-        BossTargetFrameContainer:SetScript("OnShow", function(self) self:Hide() end)
+        RegisterStateDriver(BossTargetFrameContainer, "visibility", "hide")
     end
 
     for i = 1, MAX_BOSS_FRAMES do
         local frame = _G["Boss" .. i .. "TargetFrame"]
         if frame then
-            Base.KillVisual(frame)
+            RegisterStateDriver(frame, "visibility", "hide")
         end
     end
 
     state.blizzardHidden = true
+end
+
+local function RestoreBlizzardBossFrames(state)
+    if InCombatLockdown and InCombatLockdown() then
+        state.pendingRestore = true
+        return
+    end
+
+    state.pendingRestore = false
+    if BossTargetFrameContainer then
+        UnregisterStateDriver(BossTargetFrameContainer, "visibility")
+    end
+    for i = 1, MAX_BOSS_FRAMES do
+        local frame = _G["Boss" .. i .. "TargetFrame"]
+        if frame then
+            UnregisterStateDriver(frame, "visibility")
+        end
+    end
+    state.blizzardHidden = false
 end
 
 local BossFrame = MultiUnitFrameBase.CreateModule({
@@ -57,6 +73,7 @@ local BossFrame = MultiUnitFrameBase.CreateModule({
     shouldShowUnit = nil,
 
     hideBlizzardFrames = HideBlizzardBossFrames,
+    restoreBlizzardFrames = RestoreBlizzardBossFrames,
 
     events = {
         "INSTANCE_ENCOUNTER_ENGAGE_UNIT",

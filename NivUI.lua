@@ -1,7 +1,8 @@
 local addonName, NivUI = ...
 
 NivUI_DB = NivUI_DB or {}
-NivUI.current = NivUI.current or {}
+NivUI.activeProfileName = NivUI.activeProfileName or NivUI_CurrentProfile or "Default"
+NivUI.isInitialized = false
 
 NivUI.UPDATE_INTERVAL = 0.1
 
@@ -35,24 +36,6 @@ function NivUI:GetRegisteredClassBars()
         return (a.sortOrder or 999) < (b.sortOrder or 999)
     end)
     return ordered
-end
-
-local pendingReload = false
-local reloadTimer = nil
-
-function NivUI:RequestReload()
-    if pendingReload then
-        return
-    end
-    pendingReload = true
-
-    if reloadTimer then
-        reloadTimer:Cancel()
-    end
-    reloadTimer = C_Timer.NewTimer(0.5, function()
-        pendingReload = false
-        ReloadUI()
-    end)
 end
 
 local BUILTIN_TEXTURES = {
@@ -165,6 +148,33 @@ function NivUI:GetFontPath(nameOrPath)
 end
 
 NivUI.applyCallbacks = NivUI.applyCallbacks or {}
+NivUI.profileApplyCallbacks = NivUI.profileApplyCallbacks or {}
+
+function NivUI:GetActiveProfile()
+    if type(NivUI_DB) ~= "table" or type(NivUI_DB.profiles) ~= "table" then
+        return nil
+    end
+    return NivUI_DB.profiles[self.activeProfileName]
+end
+
+function NivUI:RegisterProfileApplyCallback(name, callback)
+    if type(name) ~= "string" or name == "" or type(callback) ~= "function" then
+        return false
+    end
+    self.profileApplyCallbacks[name] = callback
+    return true
+end
+
+function NivUI:ApplyActiveProfile()
+    local names = {}
+    for name in pairs(self.profileApplyCallbacks) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    for _, name in ipairs(names) do
+        self.profileApplyCallbacks[name]()
+    end
+end
 
 function NivUI:RegisterApplyCallback(name, callback)
     if type(name) ~= "string" or type(callback) ~= "function" then
@@ -200,28 +210,33 @@ function NivUI.DeepCopy(src)
 end
 
 function NivUI:InitializeDB()
+    local profile = self:GetActiveProfile()
+    if not profile then
+        return false
+    end
+
     for _, config in pairs(self.classBarRegistry) do
         local dbKey = config.dbKey
-        if not NivUI.current[dbKey] then
-            NivUI.current[dbKey] = {}
+        if not profile[dbKey] then
+            profile[dbKey] = {}
         end
         for k, v in pairs(config.defaults) do
-            if NivUI.current[dbKey][k] == nil then
-                NivUI.current[dbKey][k] = NivUI.DeepCopy(v)
+            if profile[dbKey][k] == nil then
+                profile[dbKey][k] = NivUI.DeepCopy(v)
             end
         end
     end
 
-    if not NivUI.current.classBarEnabled then
-        NivUI.current.classBarEnabled = {}
+    if not profile.classBarEnabled then
+        profile.classBarEnabled = {}
     end
 
-    if not NivUI.current.unitFrameStyles then
-        NivUI.current.unitFrameStyles = {}
+    if not profile.unitFrameStyles then
+        profile.unitFrameStyles = {}
     end
 
-    if not NivUI.current.unitFrameAssignments then
-        NivUI.current.unitFrameAssignments = {
+    if not profile.unitFrameAssignments then
+        profile.unitFrameAssignments = {
             player = "Default",
             target = "Default",
             focus = "Default",
@@ -232,6 +247,7 @@ function NivUI:InitializeDB()
             targettarget = "Default",
         }
     end
+    return true
 end
 
 function NivUI:RegisterCallback(event, callback)
@@ -267,18 +283,23 @@ function NivUI:TriggerEvent(event, data)
 end
 
 function NivUI:IsClassBarEnabled(barType)
-    if not NivUI.current.classBarEnabled then
+    local profile = self:GetActiveProfile()
+    if not profile or not profile.classBarEnabled then
         return false
     end
-    return NivUI.current.classBarEnabled[barType] == true
+    return profile.classBarEnabled[barType] == true
 end
 
 function NivUI:SetClassBarEnabled(barType, enabled)
-    if not NivUI.current.classBarEnabled then
-        NivUI.current.classBarEnabled = {}
+    local profile = self:GetActiveProfile()
+    if not profile then
+        return
+    end
+    if not profile.classBarEnabled then
+        profile.classBarEnabled = {}
     end
 
-    NivUI.current.classBarEnabled[barType] = enabled
+    profile.classBarEnabled[barType] = enabled
 
     self:TriggerEvent("ClassBarEnabledChanged", { barType = barType, enabled = enabled })
 end
@@ -384,14 +405,21 @@ initFrame:SetScript("OnEvent", function(self, _, addon)
         NivUI_DB.profiles["Default"] = {}
     end
 
-    NivUI.current = NivUI_DB.profiles[NivUI_CurrentProfile]
+    NivUI.activeProfileName = NivUI_CurrentProfile
 
-    NivUI:InitializeDB()
+    NivUI.isInitialized = NivUI:InitializeDB()
 
     self:UnregisterEvent("ADDON_LOADED")
 end)
 
 local function ToggleConfigFrame()
+    if not NivUI.isInitialized then
+        print("NivUI: Configuration is not ready yet")
+        return
+    end
+    if not NivUI.ConfigFrame and NivUI.CreateConfigFrame then
+        NivUI:CreateConfigFrame()
+    end
     if not NivUI.ConfigFrame then
         print("NivUI: Config frame not loaded")
         return

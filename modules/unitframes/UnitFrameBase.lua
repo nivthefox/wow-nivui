@@ -32,132 +32,40 @@ local CASTBAR_EVENTS = {
     UNIT_SPELLCAST_CHANNEL_UPDATE = true,
 }
 
---- Hides all regions attached to a frame by setting alpha to 0 and hiding them.
---- @param frame Frame|nil The frame whose regions should be hidden
-function UnitFrameBase.HideRegions(frame)
-    if not frame then return end
-    local regions = { frame:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region then
-            region:SetAlpha(0)
-            region:Hide()
-        end
-    end
-end
-
---- Kills a frame's visual elements and input handling without destroying it.
---- Unregisters events, disables mouse, hides the frame, and hooks OnShow to keep it hidden.
---- @param frame Frame|nil The frame to kill visually
-function UnitFrameBase.KillVisual(frame)
-    if not frame then return end
-    if frame.UnregisterAllEvents then frame:UnregisterAllEvents() end
-    if frame.EnableMouse then frame:EnableMouse(false) end
-    if frame.SetAlpha then frame:SetAlpha(0) end
-    if not InCombatLockdown() then
-        if frame.Hide then frame:Hide() end
-        if frame.SetScript then
-            frame:SetScript("OnShow", function(self)
-                self:SetAlpha(0)
-                if not InCombatLockdown() then
-                    self:Hide()
-                end
-            end)
-            frame:SetScript("OnEnter", nil)
-            frame:SetScript("OnLeave", nil)
-        end
-    end
-end
-
---- Creates a function that hides a Blizzard unit frame with configurable options.
+--- Creates reversible visibility controls for a Blizzard unit frame.
 --- @param blizzardFrame Frame The Blizzard frame to hide
---- @param options table|nil Options: childPrefix, hasAuras, extraKills, containerKey, contentKey
---- @return function hideFunction A function that takes state and hides the Blizzard frame
-function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame, options)
-    options = options or {}
-    local childPrefix = options.childPrefix
-    local hasAuras = options.hasAuras
-    local extraKills = options.extraKills or {}
-    local containerKey = options.containerKey
-    local contentKey = options.contentKey
-
+--- @return function hideFunction
+--- @return function restoreFunction
+function UnitFrameBase.CreateHideBlizzardFrame(blizzardFrame)
     local function HideBlizzardFrame(state)
-        if not blizzardFrame then return end
-
+        if not blizzardFrame then
+            return
+        end
         if InCombatLockdown and InCombatLockdown() then
             state.pendingHide = true
             return
         end
 
         state.pendingHide = false
-
-        -- NOTE: Do NOT call UnregisterAllEvents - it breaks Edit Mode
-        if blizzardFrame.EnableMouse then
-            blizzardFrame:EnableMouse(false)
-        end
-        if blizzardFrame.SetMouseClickEnabled then
-            blizzardFrame:SetMouseClickEnabled(false)
-        end
-        if blizzardFrame.SetMouseMotionEnabled then
-            blizzardFrame:SetMouseMotionEnabled(false)
-        end
-        if blizzardFrame.SetHitRectInsets then
-            blizzardFrame:SetHitRectInsets(10000, 10000, 10000, 10000)
-        end
-
-        UnitFrameBase.HideRegions(blizzardFrame)
-
-        if containerKey then
-            UnitFrameBase.KillVisual(blizzardFrame[containerKey])
-        end
-        if contentKey then
-            UnitFrameBase.KillVisual(blizzardFrame[contentKey])
-        end
-        UnitFrameBase.KillVisual(blizzardFrame.healthbar)
-        UnitFrameBase.KillVisual(blizzardFrame.manabar)
-
-        for _, key in ipairs(extraKills) do
-            UnitFrameBase.KillVisual(blizzardFrame[key])
-        end
-
-        if hasAuras and blizzardFrame.auraPools then
-            blizzardFrame.auraPools:ReleaseAll()
-            if not state.aurasHooked and blizzardFrame.UpdateAuras then
-                state.aurasHooked = true
-                hooksecurefunc(blizzardFrame, "UpdateAuras", function(f)
-                    if f ~= blizzardFrame then return end
-                    if f.auraPools and f.auraPools.ReleaseAll then
-                        f.auraPools:ReleaseAll()
-                    end
-                end)
-            end
-        end
-
-        if childPrefix then
-            local children = { blizzardFrame:GetChildren() }
-            for _, child in ipairs(children) do
-                local name = child:GetName()
-                if name and name:find(childPrefix) then
-                    UnitFrameBase.KillVisual(child)
-                end
-            end
-        end
-
+        RegisterStateDriver(blizzardFrame, "visibility", "hide")
         state.blizzardHidden = true
-
-        if not state.softHideHooked then
-            state.softHideHooked = true
-            blizzardFrame:HookScript("OnShow", function(self)
-                if state.blizzardHidden then
-                    self:SetAlpha(0)
-                    if not InCombatLockdown() then
-                        HideBlizzardFrame(state)
-                    end
-                end
-            end)
-        end
     end
 
-    return HideBlizzardFrame
+    local function RestoreBlizzardFrame(state)
+        if not blizzardFrame then
+            return
+        end
+        if InCombatLockdown and InCombatLockdown() then
+            state.pendingRestore = true
+            return
+        end
+
+        state.pendingRestore = false
+        UnregisterStateDriver(blizzardFrame, "visibility")
+        state.blizzardHidden = false
+    end
+
+    return HideBlizzardFrame, RestoreBlizzardFrame
 end
 
 --- Pending visibility changes to apply when combat ends.
@@ -1825,6 +1733,7 @@ function UnitFrameBase.CreateModule(config)
         onEvent = config.onEvent,
         preUpdate = config.preUpdate,
         hideBlizzard = config.hideBlizzard,
+        restoreBlizzard = config.restoreBlizzard,
     }
 
     local module = {}
@@ -1839,7 +1748,9 @@ function UnitFrameBase.CreateModule(config)
 
     function module.Disable()
         UnitFrameBase.DestroyCustomFrame(state)
-        NivUI:RequestReload()
+        if state.restoreBlizzard then
+            state.restoreBlizzard(state)
+        end
     end
 
     function module.Refresh()
@@ -1864,7 +1775,20 @@ function UnitFrameBase.CreateModule(config)
             if state.pendingHide and state.hideBlizzard then
                 state.hideBlizzard(state)
             end
+            if state.pendingRestore and state.restoreBlizzard then
+                state.restoreBlizzard(state)
+            end
             UnitFrameBase.ApplyPendingVisibility(state)
+        end
+    end)
+
+    NivUI:RegisterProfileApplyCallback("unitFrame:" .. state.frameType, function()
+        if NivUI:IsFrameEnabled(state.frameType) then
+            module.Refresh()
+            return
+        end
+        if state.customFrame then
+            module.Disable()
         end
     end)
 

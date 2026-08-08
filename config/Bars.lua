@@ -38,11 +38,11 @@ function SectionHandlers.visibility(content, section, config, Components)
             section.label or "Bar Visible:",
             function() return NivUI:GetVisibilityOptions() end,
             function(value)
-                local db = NivUI.current[config.dbKey] or {}
+                local db = NivUI:GetActiveProfile()[config.dbKey] or {}
                 return (db.visibility or config.defaults.visibility) == value
             end,
             function(value)
-                NivUI.current[config.dbKey].visibility = value
+                NivUI:GetActiveProfile()[config.dbKey].visibility = value
                 NivUI:ApplySettings(section.applySetting)
             end
         )
@@ -52,12 +52,12 @@ function SectionHandlers.visibility(content, section, config, Components)
             section.label or "Bar Visible:",
             function() return NivUI:GetVisibilityOptions() end,
             function(value)
-                local db = NivUI.current[config.dbKey] or {}
+                local db = NivUI:GetActiveProfile()[config.dbKey] or {}
                 return (db.visibility or config.defaults.visibility) == value
             end,
             function(value)
-                NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                NivUI.current[config.dbKey].visibility = value
+                NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+                NivUI:GetActiveProfile()[config.dbKey].visibility = value
                 if section.applyFunc then section.applyFunc() end
             end
         )
@@ -74,11 +74,11 @@ function SectionHandlers.fgTexture(content, section, config, Components)
         section.label or "Foreground:",
         function() return NivUI:GetBarTextures() end,
         function()
-            local db = NivUI.current[config.dbKey] or {}
+            local db = NivUI:GetActiveProfile()[config.dbKey] or {}
             return db.foregroundTexture or config.defaults.foregroundTexture
         end,
         function(value)
-            NivUI.current[config.dbKey].foregroundTexture = value
+            NivUI:GetActiveProfile()[config.dbKey].foregroundTexture = value
             NivUI:ApplySettings(section.applySetting or "barTexture")
         end
     )
@@ -94,11 +94,11 @@ function SectionHandlers.bgTexture(content, section, config, Components)
         section.label or "Background:",
         function() return NivUI:GetBarTextures() end,
         function()
-            local db = NivUI.current[config.dbKey] or {}
+            local db = NivUI:GetActiveProfile()[config.dbKey] or {}
             return db.backgroundTexture or config.defaults.backgroundTexture
         end,
         function(value)
-            NivUI.current[config.dbKey].backgroundTexture = value
+            NivUI:GetActiveProfile()[config.dbKey].backgroundTexture = value
             NivUI:ApplySettings(section.applySetting or "background")
         end
     )
@@ -114,12 +114,12 @@ function SectionHandlers.bgColor(content, section, config, Components)
         section.label or "Background Color:",
         true,
         function(color)
-            NivUI.current[config.dbKey].backgroundColor = color
+            NivUI:GetActiveProfile()[config.dbKey].backgroundColor = color
             NivUI:ApplySettings(section.applySetting or "background")
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey]
+        local db = NivUI:GetActiveProfile()[config.dbKey]
         widget:SetValue(db.backgroundColor or config.defaults.backgroundColor)
     end
     return widget, onShow
@@ -131,11 +131,11 @@ function SectionHandlers.borderDropdown(content, section, config, Components)
         section.label or "Border Style:",
         function() return NivUI:GetBorders() end,
         function(value)
-            local db = NivUI.current[config.dbKey] or {}
+            local db = NivUI:GetActiveProfile()[config.dbKey] or {}
             return (db.borderStyle or config.defaults.borderStyle) == value
         end,
         function(value)
-            NivUI.current[config.dbKey].borderStyle = value
+            NivUI:GetActiveProfile()[config.dbKey].borderStyle = value
             NivUI:ApplySettings(section.applySetting or "border")
         end
     )
@@ -156,7 +156,7 @@ function SectionHandlers.borderColor(content, section, config, Components)
             section.label or "Border Color:",
             hasAlpha,
             function(color)
-                NivUI.current[config.dbKey].borderColor = color
+                NivUI:GetActiveProfile()[config.dbKey].borderColor = color
                 NivUI:ApplySettings(section.applySetting)
             end
         )
@@ -166,14 +166,14 @@ function SectionHandlers.borderColor(content, section, config, Components)
             section.label or "Border Color:",
             hasAlpha,
             function(color)
-                NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                NivUI.current[config.dbKey].borderColor = color
+                NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+                NivUI:GetActiveProfile()[config.dbKey].borderColor = color
                 if section.applyFunc then section.applyFunc() end
             end
         )
     end
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.borderColor or config.defaults.borderColor)
     end
     return widget, onShow
@@ -190,13 +190,13 @@ function SectionHandlers.color(content, section, config, Components)
             section.label,
             hasAlpha,
             function(color)
-                NivUI.current[config.dbKey][section.nestedKey] = NivUI.current[config.dbKey][section.nestedKey] or {}
-                NivUI.current[config.dbKey][section.nestedKey][section.key] = color
+                NivUI:GetActiveProfile()[config.dbKey][section.nestedKey] = NivUI:GetActiveProfile()[config.dbKey][section.nestedKey] or {}
+                NivUI:GetActiveProfile()[config.dbKey][section.nestedKey][section.key] = color
                 if section.applyFunc then section.applyFunc() end
             end
         )
         local function onShow()
-            local db = NivUI.current[config.dbKey]
+            local db = NivUI:GetActiveProfile()[config.dbKey]
             local nested = db[section.nestedKey] or config.defaults[section.nestedKey] or {}
             widget:SetValue(nested[section.key])
         end
@@ -208,7 +208,7 @@ function SectionHandlers.color(content, section, config, Components)
                 section.label,
                 hasAlpha,
                 function(color)
-                    NivUI.current[config.dbKey][section.key] = color
+                    NivUI:GetActiveProfile()[config.dbKey][section.key] = color
                     NivUI:ApplySettings(section.applySetting)
                 end
             )
@@ -218,14 +218,14 @@ function SectionHandlers.color(content, section, config, Components)
                 section.label,
                 hasAlpha,
                 function(color)
-                    NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                    NivUI.current[config.dbKey][section.key] = color
+                    NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+                    NivUI:GetActiveProfile()[config.dbKey][section.key] = color
                     if section.applyFunc then section.applyFunc() end
                 end
             )
         end
         local function onShow()
-            local db = NivUI.current[config.dbKey] or {}
+            local db = NivUI:GetActiveProfile()[config.dbKey] or {}
             widget:SetValue(db[section.key] or config.defaults[section.key])
         end
         return widget, onShow
@@ -238,11 +238,11 @@ function SectionHandlers.fontDropdown(content, section, config, Components)
         section.label or "Font:",
         function() return NivUI:GetFonts() end,
         function(value)
-            local db = NivUI.current[config.dbKey] or {}
+            local db = NivUI:GetActiveProfile()[config.dbKey] or {}
             return (db.font or config.defaults.font) == value
         end,
         function(value)
-            NivUI.current[config.dbKey].font = value
+            NivUI:GetActiveProfile()[config.dbKey].font = value
             NivUI:ApplySettings(section.applySetting or "font")
         end
     )
@@ -261,12 +261,12 @@ function SectionHandlers.fontSizeSlider(content, section, config, Components)
         section.step or 1,
         false,
         function(value)
-            NivUI.current[config.dbKey].fontSize = value
+            NivUI:GetActiveProfile()[config.dbKey].fontSize = value
             NivUI:ApplySettings(section.applySetting or "font")
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey]
+        local db = NivUI:GetActiveProfile()[config.dbKey]
         widget:SetValue(db.fontSize or config.defaults.fontSize)
     end
     return widget, onShow
@@ -278,12 +278,12 @@ function SectionHandlers.fontColor(content, section, config, Components)
         section.label or "Font Color:",
         false,
         function(color)
-            NivUI.current[config.dbKey].fontColor = color
+            NivUI:GetActiveProfile()[config.dbKey].fontColor = color
             NivUI:ApplySettings(section.applySetting or "font")
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey]
+        local db = NivUI:GetActiveProfile()[config.dbKey]
         widget:SetValue(db.fontColor or config.defaults.fontColor)
     end
     return widget, onShow
@@ -294,12 +294,12 @@ function SectionHandlers.fontShadow(content, section, config, Components)
         content,
         section.label or "Text Shadow",
         function(checked)
-            NivUI.current[config.dbKey].fontShadow = checked
+            NivUI:GetActiveProfile()[config.dbKey].fontShadow = checked
             NivUI:ApplySettings(section.applySetting or "font")
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey]
+        local db = NivUI:GetActiveProfile()[config.dbKey]
         local shadow = db.fontShadow
         if shadow == nil then shadow = config.defaults.fontShadow end
         widget:SetValue(shadow)
@@ -318,7 +318,7 @@ function SectionHandlers.widthSlider(content, section, config, Components)
             section.step or 10,
             false,
             function(value)
-                NivUI.current[config.dbKey].width = value
+                NivUI:GetActiveProfile()[config.dbKey].width = value
                 NivUI:ApplySettings(section.applySetting)
             end
         )
@@ -331,15 +331,15 @@ function SectionHandlers.widthSlider(content, section, config, Components)
             section.step or 10,
             false,
             function(value)
-                NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                NivUI.current[config.dbKey].width = value
+                NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+                NivUI:GetActiveProfile()[config.dbKey].width = value
                 if section.applyFunc then section.applyFunc() end
                 if section.rebuildFunc then section.rebuildFunc() end
             end
         )
     end
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.width or config.defaults.width)
     end
     return widget, onShow, "widthSlider"
@@ -356,7 +356,7 @@ function SectionHandlers.heightSlider(content, section, config, Components)
             section.step or 1,
             false,
             function(value)
-                NivUI.current[config.dbKey].height = value
+                NivUI:GetActiveProfile()[config.dbKey].height = value
                 NivUI:ApplySettings(section.applySetting)
             end
         )
@@ -369,15 +369,15 @@ function SectionHandlers.heightSlider(content, section, config, Components)
             section.step or 1,
             false,
             function(value)
-                NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                NivUI.current[config.dbKey].height = value
+                NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+                NivUI:GetActiveProfile()[config.dbKey].height = value
                 if section.applyFunc then section.applyFunc() end
                 if section.rebuildFunc then section.rebuildFunc() end
             end
         )
     end
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.height or config.defaults.height)
     end
     return widget, onShow, "heightSlider"
@@ -394,7 +394,7 @@ function SectionHandlers.intervalSlider(content, section, config, Components)
             section.step or 0.05,
             true,
             function(value)
-                NivUI.current[config.dbKey].updateInterval = value
+                NivUI:GetActiveProfile()[config.dbKey].updateInterval = value
                 NivUI:ApplySettings(section.applySetting)
             end
         )
@@ -407,13 +407,13 @@ function SectionHandlers.intervalSlider(content, section, config, Components)
             section.step or 0.05,
             true,
             function(value)
-                NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-                NivUI.current[config.dbKey].updateInterval = value
+                NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+                NivUI:GetActiveProfile()[config.dbKey].updateInterval = value
             end
         )
     end
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.updateInterval or config.defaults.updateInterval)
     end
     return widget, onShow
@@ -428,13 +428,13 @@ function SectionHandlers.spacingSlider(content, section, config, Components)
         section.step or 1,
         false,
         function(value)
-            NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-            NivUI.current[config.dbKey].spacing = value
+            NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+            NivUI:GetActiveProfile()[config.dbKey].spacing = value
             if section.rebuildFunc then section.rebuildFunc() end
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.spacing or config.defaults.spacing)
     end
     return widget, onShow
@@ -446,13 +446,13 @@ function SectionHandlers.emptyColor(content, section, config, Components)
         section.label or "Empty Color:",
         true,
         function(color)
-            NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-            NivUI.current[config.dbKey].emptyColor = color
+            NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+            NivUI:GetActiveProfile()[config.dbKey].emptyColor = color
             if section.applyFunc then section.applyFunc() end
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.emptyColor or config.defaults.emptyColor)
     end
     return widget, onShow
@@ -464,13 +464,13 @@ function SectionHandlers.filledColor(content, section, config, Components)
         section.label or "Filled Color:",
         true,
         function(color)
-            NivUI.current[config.dbKey] = NivUI.current[config.dbKey] or {}
-            NivUI.current[config.dbKey].filledColor = color
+            NivUI:GetActiveProfile()[config.dbKey] = NivUI:GetActiveProfile()[config.dbKey] or {}
+            NivUI:GetActiveProfile()[config.dbKey].filledColor = color
             if section.applyFunc then section.applyFunc() end
         end
     )
     local function onShow()
-        local db = NivUI.current[config.dbKey] or {}
+        local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.filledColor or config.defaults.filledColor)
     end
     return widget, onShow
@@ -697,7 +697,7 @@ end
 function NivUI.Config.Bars.SetupOnBarMoved(results)
     NivUI.OnBarMoved = function()
         for barType, regConfig in pairs(NivUI.classBarRegistry) do
-            local db = NivUI.current[regConfig.dbKey] or {}
+            local db = NivUI:GetActiveProfile()[regConfig.dbKey] or {}
             local defaults = regConfig.defaults
             local result = results[barType]
             if result then

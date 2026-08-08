@@ -551,16 +551,33 @@ local function HideBlizzardRaidFrames()
     end
 
     if CompactRaidFrameContainer then
-        CompactRaidFrameContainer:UnregisterAllEvents()
-        CompactRaidFrameContainer:Hide()
-        CompactRaidFrameContainer:SetScript("OnShow", function(self) self:Hide() end)
+        RegisterStateDriver(CompactRaidFrameContainer, "visibility", "hide")
     end
 
     if CompactRaidFrameManager then
-        CompactRaidFrameManager:UnregisterAllEvents()
-        CompactRaidFrameManager:Hide()
-        CompactRaidFrameManager:SetScript("OnShow", function(self) self:Hide() end)
+        RegisterStateDriver(CompactRaidFrameManager, "visibility", "hide")
     end
+end
+
+local function RestoreBlizzardRaidFrames()
+    if InCombatLockdown and InCombatLockdown() then
+        return
+    end
+    if CompactRaidFrameContainer then
+        UnregisterStateDriver(CompactRaidFrameContainer, "visibility")
+    end
+    if CompactRaidFrameManager then
+        UnregisterStateDriver(CompactRaidFrameManager, "visibility")
+    end
+end
+
+local function HasEnabledRaidFrame()
+    for _, state in pairs(states) do
+        if state.enabled then
+            return true
+        end
+    end
+    return false
 end
 
 local RaidFrame = {}
@@ -579,13 +596,15 @@ function RaidFrame.Enable(raidSize)
     end
 end
 
-function RaidFrame.Disable(raidSize)
+function RaidFrame.Disable(raidSize, skipRestore)
     local state = states[raidSize]
     if not state then return end
 
     state.enabled = false
     DestroyRaidFrames(raidSize)
-    NivUI:RequestReload()
+    if not skipRestore and not HasEnabledRaidFrame() then
+        RestoreBlizzardRaidFrames()
+    end
 end
 
 function RaidFrame.Refresh(raidSize)
@@ -637,7 +656,7 @@ eventFrame:SetScript("OnEvent", function(self, event)
         or event == "ZONE_CHANGED_NEW_AREA" then
         OnGroupRosterUpdate()
     elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
-        if event == "PLAYER_REGEN_ENABLED" then
+        if event == "PLAYER_REGEN_ENABLED" and HasEnabledRaidFrame() then
             HideBlizzardRaidFrames()
         end
         for _, state in pairs(states) do
@@ -648,6 +667,25 @@ eventFrame:SetScript("OnEvent", function(self, event)
                 end
             end
         end
+    end
+end)
+
+NivUI:RegisterProfileApplyCallback("unitFrame:raid", function()
+    for raidSize, state in pairs(states) do
+        local shouldEnable = NivUI:IsFrameEnabled(raidSize)
+        if shouldEnable and not state.enabled then
+            RaidFrame.Enable(raidSize)
+        elseif not shouldEnable and state.enabled then
+            RaidFrame.Disable(raidSize, true)
+        elseif shouldEnable then
+            RaidFrame.Refresh(raidSize)
+        end
+    end
+
+    if HasEnabledRaidFrame() then
+        HideBlizzardRaidFrames()
+    else
+        RestoreBlizzardRaidFrames()
     end
 end)
 

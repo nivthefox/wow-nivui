@@ -418,3 +418,31 @@ NivUI:RegisterCallback("StyleChanged", function(data)
         end
     end
 end)
+
+NivUI:RegisterProfileApplyCallback("unitFrame:customRaid", function()
+    local activeGroups = NivUI:GetCustomRaidGroups()
+    local removedGroupIds = {}
+
+    for groupId in pairs(groupStates) do
+        local groupConfig = activeGroups[groupId]
+        if not groupConfig then
+            removedGroupIds[#removedGroupIds + 1] = groupId
+        elseif not groupConfig.enabled then
+            CustomRaidGroup.Disable(groupId)
+        end
+    end
+
+    for _, groupId in ipairs(removedGroupIds) do
+        DestroyCustomGroupFrames(groupId)
+    end
+
+    for groupId, groupConfig in pairs(activeGroups) do
+        if groupConfig.enabled then
+            if groupStates[groupId] then
+                CustomRaidGroup.Refresh(groupId)
+            else
+                CustomRaidGroup.Enable(groupId)
+            end
+        end
+    end
+end)

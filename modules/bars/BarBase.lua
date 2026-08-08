@@ -105,6 +105,23 @@ function NivUI.BarBase.CreateModule(config)
         end
     end
 
+    local function ApplyProfile()
+        local shouldEnable = NivUI:IsClassBarEnabled(state.barType)
+        if shouldEnable and not state.enabled then
+            module.Enable()
+            return
+        end
+        if not shouldEnable and state.enabled then
+            module.Disable()
+            return
+        end
+        if shouldEnable then
+            module.Refresh()
+        end
+    end
+
+    NivUI:RegisterProfileApplyCallback("classBar:" .. state.barType, ApplyProfile)
+
     NivUI:RegisterCallback("ClassBarEnabledChanged", function(data)
         if data.barType == state.barType then
             if data.enabled then

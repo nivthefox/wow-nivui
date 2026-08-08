@@ -358,110 +358,116 @@ function Components.GetSidebarTab(parent, text)
     return btn
 end
 
-local ConfigFrame = CreateFrame("Frame", "NivUIConfigFrame", UIParent, "ButtonFrameTemplate")
-ConfigFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-ConfigFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-ConfigFrame:SetToplevel(true)
-ConfigFrame:Hide()
-
-ButtonFrameTemplate_HidePortrait(ConfigFrame)
-ButtonFrameTemplate_HideButtonBar(ConfigFrame)
-ConfigFrame.Inset:Hide()
-ConfigFrame:SetTitle("NivUI")
-
-ConfigFrame:SetMovable(true)
-ConfigFrame:SetClampedToScreen(true)
-ConfigFrame:EnableMouse(true)
-ConfigFrame:RegisterForDrag("LeftButton")
-ConfigFrame:SetScript("OnDragStart", ConfigFrame.StartMoving)
-ConfigFrame:SetScript("OnDragStop", function(self)
-    self:StopMovingOrSizing()
-    self:SetUserPlaced(false)
-end)
-
-ConfigFrame:SetScript("OnMouseWheel", function() end)
-
-table.insert(UISpecialFrames, "NivUIConfigFrame")
-
-local Sidebar = CreateFrame("Frame", nil, ConfigFrame)
-Sidebar:SetWidth(SIDEBAR_WIDTH)
-Sidebar:SetPoint("TOPLEFT", 8, -28)
-Sidebar:SetPoint("BOTTOMLEFT", 8, 8)
-
-local sidebarBg = Sidebar:CreateTexture(nil, "BACKGROUND")
-sidebarBg:SetAllPoints()
-sidebarBg:SetColorTexture(0.05, 0.05, 0.05, 0.8)
-
-local ContentArea = CreateFrame("Frame", nil, ConfigFrame)
-ContentArea:SetPoint("TOPLEFT", Sidebar, "TOPRIGHT", 4, 0)
-ContentArea:SetPoint("BOTTOMRIGHT", -8, 8)
-
-local sidebarTabs = {}
-local sidebarContainers = {}
-local currentSidebarTab = 1
-
-local function SelectSidebarTab(index)
-    for i, tab in ipairs(sidebarTabs) do
-        if i == index then
-            tab:SetSelected(true)
-            sidebarContainers[i]:Show()
-        else
-            tab:SetSelected(false)
-            sidebarContainers[i]:Hide()
-        end
-    end
-    currentSidebarTab = index
-end
-
--- Class Bars tab (from config/Bars.lua)
-local classBarsContainer, barResults = NivUI.Config.Bars.SetupTab(ContentArea, Components)
-table.insert(sidebarContainers, classBarsContainer)
-NivUI.Config.Bars.SetupOnBarMoved(barResults)
-
-local classBarsTab = Components.GetSidebarTab(Sidebar, "Class Bars")
-classBarsTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)
-classBarsTab:SetScript("OnClick", function() SelectSidebarTab(1) end)
-table.insert(sidebarTabs, classBarsTab)
-
--- Unit Frames tab (from modules/unitframes/ConfigTab.lua)
-local unitFramesContainer = NivUI.UnitFrames:SetupConfigTabWithSubtabs(ContentArea, Components)
-table.insert(sidebarContainers, unitFramesContainer)
-
-local unitFramesTab = Components.GetSidebarTab(Sidebar, "Unit Frames")
-unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
-unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
-table.insert(sidebarTabs, unitFramesTab)
-
--- Filters tab (from config/Filters.lua)
-local filtersContainer = NivUI.Config.Filters.SetupTab(ContentArea, Components)
-table.insert(sidebarContainers, filtersContainer)
-
-local filtersTab = Components.GetSidebarTab(Sidebar, "Custom Filters")
-filtersTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
-filtersTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
-table.insert(sidebarTabs, filtersTab)
-
--- Overlays tab (from config/Overlays.lua)
-local overlaysContainer = NivUI.Config.Overlays.SetupTab(ContentArea, Components)
-table.insert(sidebarContainers, overlaysContainer)
-
-local overlaysTab = Components.GetSidebarTab(Sidebar, "Custom Overlays")
-overlaysTab:SetPoint("TOPLEFT", filtersTab, "BOTTOMLEFT", 0, -2)
-overlaysTab:SetScript("OnClick", function() SelectSidebarTab(4) end)
-table.insert(sidebarTabs, overlaysTab)
-
--- Profiles tab (from config/Profiles.lua)
-local profilesContainer = NivUI.Config.Profiles.SetupTab(ContentArea, Components)
-table.insert(sidebarContainers, profilesContainer)
-
-local profilesTab = Components.GetSidebarTab(Sidebar, "Profiles")
-profilesTab:SetPoint("TOPLEFT", overlaysTab, "BOTTOMLEFT", 0, -2)
-profilesTab:SetScript("OnClick", function() SelectSidebarTab(5) end)
-table.insert(sidebarTabs, profilesTab)
-
-ConfigFrame:SetScript("OnShow", function()
-    SelectSidebarTab(currentSidebarTab)
-end)
-
 NivUI.Components = Components
-NivUI.ConfigFrame = ConfigFrame
+
+function NivUI:CreateConfigFrame()
+    if self.ConfigFrame then
+        return self.ConfigFrame
+    end
+    if not self.isInitialized then
+        return nil
+    end
+
+    local ConfigFrame = CreateFrame("Frame", "NivUIConfigFrame", UIParent, "ButtonFrameTemplate")
+    ConfigFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
+    ConfigFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    ConfigFrame:SetToplevel(true)
+    ConfigFrame:Hide()
+
+    ButtonFrameTemplate_HidePortrait(ConfigFrame)
+    ButtonFrameTemplate_HideButtonBar(ConfigFrame)
+    ConfigFrame.Inset:Hide()
+    ConfigFrame:SetTitle("NivUI")
+
+    ConfigFrame:SetMovable(true)
+    ConfigFrame:SetClampedToScreen(true)
+    ConfigFrame:EnableMouse(true)
+    ConfigFrame:RegisterForDrag("LeftButton")
+    ConfigFrame:SetScript("OnDragStart", ConfigFrame.StartMoving)
+    ConfigFrame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        self:SetUserPlaced(false)
+    end)
+
+    ConfigFrame:SetScript("OnMouseWheel", function() end)
+
+    table.insert(UISpecialFrames, "NivUIConfigFrame")
+
+    local Sidebar = CreateFrame("Frame", nil, ConfigFrame)
+    Sidebar:SetWidth(SIDEBAR_WIDTH)
+    Sidebar:SetPoint("TOPLEFT", 8, -28)
+    Sidebar:SetPoint("BOTTOMLEFT", 8, 8)
+
+    local sidebarBg = Sidebar:CreateTexture(nil, "BACKGROUND")
+    sidebarBg:SetAllPoints()
+    sidebarBg:SetColorTexture(0.05, 0.05, 0.05, 0.8)
+
+    local ContentArea = CreateFrame("Frame", nil, ConfigFrame)
+    ContentArea:SetPoint("TOPLEFT", Sidebar, "TOPRIGHT", 4, 0)
+    ContentArea:SetPoint("BOTTOMRIGHT", -8, 8)
+
+    local sidebarTabs = {}
+    local sidebarContainers = {}
+    local currentSidebarTab = 1
+
+    local function SelectSidebarTab(index)
+        for i, tab in ipairs(sidebarTabs) do
+            if i == index then
+                tab:SetSelected(true)
+                sidebarContainers[i]:Show()
+            else
+                tab:SetSelected(false)
+                sidebarContainers[i]:Hide()
+            end
+        end
+        currentSidebarTab = index
+    end
+
+    local classBarsContainer, barResults = NivUI.Config.Bars.SetupTab(ContentArea, Components)
+    table.insert(sidebarContainers, classBarsContainer)
+    NivUI.Config.Bars.SetupOnBarMoved(barResults)
+
+    local classBarsTab = Components.GetSidebarTab(Sidebar, "Class Bars")
+    classBarsTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)
+    classBarsTab:SetScript("OnClick", function() SelectSidebarTab(1) end)
+    table.insert(sidebarTabs, classBarsTab)
+
+    local unitFramesContainer = NivUI.UnitFrames:SetupConfigTabWithSubtabs(ContentArea, Components)
+    table.insert(sidebarContainers, unitFramesContainer)
+
+    local unitFramesTab = Components.GetSidebarTab(Sidebar, "Unit Frames")
+    unitFramesTab:SetPoint("TOPLEFT", classBarsTab, "BOTTOMLEFT", 0, -2)
+    unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
+    table.insert(sidebarTabs, unitFramesTab)
+
+    local filtersContainer = NivUI.Config.Filters.SetupTab(ContentArea, Components)
+    table.insert(sidebarContainers, filtersContainer)
+
+    local filtersTab = Components.GetSidebarTab(Sidebar, "Custom Filters")
+    filtersTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
+    filtersTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
+    table.insert(sidebarTabs, filtersTab)
+
+    local overlaysContainer = NivUI.Config.Overlays.SetupTab(ContentArea, Components)
+    table.insert(sidebarContainers, overlaysContainer)
+
+    local overlaysTab = Components.GetSidebarTab(Sidebar, "Custom Overlays")
+    overlaysTab:SetPoint("TOPLEFT", filtersTab, "BOTTOMLEFT", 0, -2)
+    overlaysTab:SetScript("OnClick", function() SelectSidebarTab(4) end)
+    table.insert(sidebarTabs, overlaysTab)
+
+    local profilesContainer = NivUI.Config.Profiles.SetupTab(ContentArea, Components)
+    table.insert(sidebarContainers, profilesContainer)
+
+    local profilesTab = Components.GetSidebarTab(Sidebar, "Profiles")
+    profilesTab:SetPoint("TOPLEFT", overlaysTab, "BOTTOMLEFT", 0, -2)
+    profilesTab:SetScript("OnClick", function() SelectSidebarTab(5) end)
+    table.insert(sidebarTabs, profilesTab)
+
+    ConfigFrame:SetScript("OnShow", function()
+        SelectSidebarTab(currentSidebarTab)
+    end)
+
+    self.ConfigFrame = ConfigFrame
+    return ConfigFrame
+end

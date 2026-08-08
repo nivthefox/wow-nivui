@@ -2,6 +2,29 @@ local _, NivUI = ...
 
 NivUI.Profiles = {}
 
+local pendingProfileName = nil
+local profileDeferFrame = nil
+
+local function DeferProfileSwitch(name)
+    if not InCombatLockdown() then
+        return false
+    end
+
+    pendingProfileName = name
+    if not profileDeferFrame then
+        profileDeferFrame = CreateFrame("Frame")
+        profileDeferFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        profileDeferFrame:SetScript("OnEvent", function()
+            local deferredName = pendingProfileName
+            pendingProfileName = nil
+            if deferredName then
+                NivUI.Profiles:SwitchProfile(deferredName)
+            end
+        end)
+    end
+    return true
+end
+
 --- Returns the character key for per-character profile selection.
 --- Format: "CharacterName-RealmName"
 --- @return string
@@ -12,7 +35,7 @@ end
 --- Returns the name of the currently active profile.
 --- @return string
 function NivUI.Profiles:GetCurrentProfileName()
-    return NivUI_CurrentProfile or "Default"
+    return NivUI.activeProfileName or "Default"
 end
 
 --- Returns a sorted list of all profile names.
@@ -77,11 +100,15 @@ function NivUI.Profiles:SwitchProfile(name)
         return false, string.format("Profile '%s' does not exist", name)
     end
 
+    if DeferProfileSwitch(name) then
+        return true
+    end
+
     NivUI_CurrentProfile = name
-    NivUI.current = NivUI_DB.profiles[name]
+    NivUI.activeProfileName = name
 
     NivUI:InitializeDB()
-    NivUI:ApplySettings()
+    NivUI:ApplyActiveProfile()
 
     NivUI:TriggerEvent("ProfileSwitched", { profileName = name })
 
@@ -110,7 +137,7 @@ function NivUI.Profiles:DeleteProfile(name)
         return false, "Cannot delete the last profile"
     end
 
-    if NivUI_CurrentProfile == name then
+    if self:GetCurrentProfileName() == name then
         self:SwitchProfile("Default")
     end
 
@@ -124,17 +151,16 @@ end
 --- @return boolean success
 --- @return string|nil errorMessage
 function NivUI.Profiles:ResetProfile(name)
-    name = name or NivUI_CurrentProfile
+    name = name or self:GetCurrentProfileName()
     if not self:ProfileExists(name) then
         return false, "Profile does not exist"
     end
 
     NivUI_DB.profiles[name] = {}
 
-    if name == NivUI_CurrentProfile then
-        NivUI.current = NivUI_DB.profiles[name]
+    if name == self:GetCurrentProfileName() then
         NivUI:InitializeDB()
-        NivUI:ApplySettings()
+        NivUI:ApplyActiveProfile()
     end
 
     print(string.format("|cff00ff00NivUI:|r Reset profile '%s' to defaults", name))
@@ -185,9 +211,9 @@ function NivUI.Profiles:RenameProfile(oldName, newName)
     NivUI_DB.profiles[newName] = NivUI_DB.profiles[oldName]
     NivUI_DB.profiles[oldName] = nil
 
-    if NivUI_CurrentProfile == oldName then
+    if self:GetCurrentProfileName() == oldName then
         NivUI_CurrentProfile = newName
-        NivUI.current = NivUI_DB.profiles[newName]
+        NivUI.activeProfileName = newName
     end
 
     local charMeta = NivUI_DB.charMeta
@@ -280,7 +306,8 @@ end
 --- Exports the current profile as a compact encoded string.
 --- @return string
 function NivUI.Profiles:ExportCurrentProfile()
-    if type(NivUI.current) ~= "table" then
+    local profile = NivUI:GetActiveProfile()
+    if type(profile) ~= "table" then
         return nil
     end
 
@@ -288,8 +315,8 @@ function NivUI.Profiles:ExportCurrentProfile()
         addon = "NivUI",
         version = 1,
         kind = "profile",
-        profile = NivUI_CurrentProfile,
-        payload = NivUI.DeepCopy(NivUI.current),
+        profile = self:GetCurrentProfileName(),
+        payload = NivUI.DeepCopy(profile),
     }
 
     return EncodeCompact(snapshot)

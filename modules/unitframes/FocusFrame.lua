@@ -4,12 +4,7 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base
 
-local hideBlizzard = Base.CreateHideBlizzardFrame(FocusFrame, {
-    childPrefix = "^FocusFrame",
-    hasAuras = true,
-    containerKey = "TargetFrameContainer",
-    contentKey = "TargetFrameContent",
-})
+local hideBlizzard, restoreBlizzard = Base.CreateHideBlizzardFrame(FocusFrame)
 
 NivUI.UnitFrames.FocusFrame = Base.CreateModule({
     unit = "focus",
@@ -19,6 +14,7 @@ NivUI.UnitFrames.FocusFrame = Base.CreateModule({
     anchorOffsetX = 24,
     anchorOffsetY = 0,
     hideBlizzard = hideBlizzard,
+    restoreBlizzard = restoreBlizzard,
     visibilityDriver = "[@focus,exists] show; hide",
 
     registerEvents = function(frame)

@@ -2,7 +2,7 @@
 --- its display type, an overlay renders matching auras as an icon grid, a colored-cell
 --- grid, a target widget's bar tint, or a border around a target widget. Each overlay
 --- carries its own display, layout, and filter config and scans either buffs (HELPFUL)
---- or debuffs (HARMFUL). Overlays are profile-scoped under NivUI.current.overlays; a
+--- or debuffs (HARMFUL). Overlays are profile-scoped under NivUI:GetActiveProfile().overlays; a
 --- style references them by name via style.overlays. Editing an overlay lives in the
 --- Custom Overlays tab.
 local _, NivUI = ...
@@ -103,7 +103,7 @@ Overlays.CONFIG = {
 }
 
 local function GetStore()
-    local profile = NivUI.current
+    local profile = NivUI:GetActiveProfile()
     if not profile then return nil end
     profile.overlays = profile.overlays or {}
     return profile.overlays

@@ -6,8 +6,8 @@ NivUI.UnitFrames = NivUI.UnitFrames or {}
 --- @param name string The style name to retrieve
 --- @return table|nil style The style configuration, or nil if not found
 function NivUI:GetStyle(name)
-    if not NivUI.current.unitFrameStyles then return nil end
-    local style = NivUI.current.unitFrameStyles[name]
+    if not NivUI:GetActiveProfile().unitFrameStyles then return nil end
+    local style = NivUI:GetActiveProfile().unitFrameStyles[name]
     if not style then return nil end
     return style
 end
@@ -16,8 +16,8 @@ end
 --- @return string[] names The list of style names
 function NivUI:GetStyleNames()
     local names = {}
-    if NivUI.current.unitFrameStyles then
-        for name in pairs(NivUI.current.unitFrameStyles) do
+    if NivUI:GetActiveProfile().unitFrameStyles then
+        for name in pairs(NivUI:GetActiveProfile().unitFrameStyles) do
             table.insert(names, name)
         end
     end
@@ -29,7 +29,7 @@ end
 --- @param name string The style name to check
 --- @return boolean exists Whether the style exists
 function NivUI:StyleExists(name)
-    return NivUI.current.unitFrameStyles and NivUI.current.unitFrameStyles[name] ~= nil
+    return NivUI:GetActiveProfile().unitFrameStyles and NivUI:GetActiveProfile().unitFrameStyles[name] ~= nil
 end
 
 --- Saves a style with the given name, overwriting if it exists.
@@ -42,11 +42,11 @@ function NivUI:SaveStyle(name, data)
         return false, "Style name cannot be empty"
     end
 
-    if not NivUI.current.unitFrameStyles then
-        NivUI.current.unitFrameStyles = {}
+    if not NivUI:GetActiveProfile().unitFrameStyles then
+        NivUI:GetActiveProfile().unitFrameStyles = {}
     end
 
-    NivUI.current.unitFrameStyles[name] = NivUI.DeepCopy(data)
+    NivUI:GetActiveProfile().unitFrameStyles[name] = NivUI.DeepCopy(data)
 
     self:TriggerEvent("StyleChanged", { styleName = name })
 
@@ -84,7 +84,7 @@ function NivUI:DeleteStyle(name)
     end
 
     local styleCount = 0
-    for _ in pairs(NivUI.current.unitFrameStyles) do
+    for _ in pairs(NivUI:GetActiveProfile().unitFrameStyles) do
         styleCount = styleCount + 1
     end
 
@@ -93,7 +93,7 @@ function NivUI:DeleteStyle(name)
     end
 
     local fallbackStyle = nil
-    for styleName in pairs(NivUI.current.unitFrameStyles) do
+    for styleName in pairs(NivUI:GetActiveProfile().unitFrameStyles) do
         if styleName ~= name then
             fallbackStyle = styleName
             break
@@ -101,8 +101,8 @@ function NivUI:DeleteStyle(name)
     end
 
     local inUse = {}
-    if NivUI.current.unitFrameAssignments then
-        for frameType, styleName in pairs(NivUI.current.unitFrameAssignments) do
+    if NivUI:GetActiveProfile().unitFrameAssignments then
+        for frameType, styleName in pairs(NivUI:GetActiveProfile().unitFrameAssignments) do
             if styleName == name then
                 table.insert(inUse, frameType)
             end
@@ -110,10 +110,10 @@ function NivUI:DeleteStyle(name)
     end
 
     for _, frameType in ipairs(inUse) do
-        NivUI.current.unitFrameAssignments[frameType] = fallbackStyle
+        NivUI:GetActiveProfile().unitFrameAssignments[frameType] = fallbackStyle
     end
 
-    NivUI.current.unitFrameStyles[name] = nil
+    NivUI:GetActiveProfile().unitFrameStyles[name] = nil
 
     self:TriggerEvent("StyleDeleted", { styleName = name, reassigned = inUse, fallback = fallbackStyle })
 
@@ -169,13 +169,13 @@ function NivUI:RenameStyle(oldName, newName)
         return false, "Style '" .. oldName .. "' does not exist"
     end
 
-    NivUI.current.unitFrameStyles[newName] = NivUI.current.unitFrameStyles[oldName]
-    NivUI.current.unitFrameStyles[oldName] = nil
+    NivUI:GetActiveProfile().unitFrameStyles[newName] = NivUI:GetActiveProfile().unitFrameStyles[oldName]
+    NivUI:GetActiveProfile().unitFrameStyles[oldName] = nil
 
-    if NivUI.current.unitFrameAssignments then
-        for frameType, styleName in pairs(NivUI.current.unitFrameAssignments) do
+    if NivUI:GetActiveProfile().unitFrameAssignments then
+        for frameType, styleName in pairs(NivUI:GetActiveProfile().unitFrameAssignments) do
             if styleName == oldName then
-                NivUI.current.unitFrameAssignments[frameType] = newName
+                NivUI:GetActiveProfile().unitFrameAssignments[frameType] = newName
             end
         end
     end
@@ -189,21 +189,21 @@ end
 --- @param frameType string The frame type (e.g., "player", "target")
 --- @return string styleName The assigned style name, defaults to "Default"
 function NivUI:GetAssignment(frameType)
-    if not NivUI.current.unitFrameAssignments then
+    if not NivUI:GetActiveProfile().unitFrameAssignments then
         return "Default"
     end
-    return NivUI.current.unitFrameAssignments[frameType] or "Default"
+    return NivUI:GetActiveProfile().unitFrameAssignments[frameType] or "Default"
 end
 
 --- Assigns a style to a frame type.
 --- @param frameType string The frame type (e.g., "player", "target")
 --- @param styleName string The style name to assign
 function NivUI:SetAssignment(frameType, styleName)
-    if not NivUI.current.unitFrameAssignments then
-        NivUI.current.unitFrameAssignments = {}
+    if not NivUI:GetActiveProfile().unitFrameAssignments then
+        NivUI:GetActiveProfile().unitFrameAssignments = {}
     end
 
-    NivUI.current.unitFrameAssignments[frameType] = styleName
+    NivUI:GetActiveProfile().unitFrameAssignments[frameType] = styleName
 
     self:TriggerEvent("AssignmentChanged", { frameType = frameType, styleName = styleName })
 end
@@ -212,21 +212,21 @@ end
 --- @param frameType string The frame type to check
 --- @return boolean enabled Whether the frame type is enabled
 function NivUI:IsFrameEnabled(frameType)
-    if not NivUI.current.unitFrameEnabled then
+    if not NivUI:GetActiveProfile().unitFrameEnabled then
         return false
     end
-    return NivUI.current.unitFrameEnabled[frameType] == true
+    return NivUI:GetActiveProfile().unitFrameEnabled[frameType] == true
 end
 
 --- Enables or disables a frame type.
 --- @param frameType string The frame type to configure
 --- @param enabled boolean Whether to enable the frame type
 function NivUI:SetFrameEnabled(frameType, enabled)
-    if not NivUI.current.unitFrameEnabled then
-        NivUI.current.unitFrameEnabled = {}
+    if not NivUI:GetActiveProfile().unitFrameEnabled then
+        NivUI:GetActiveProfile().unitFrameEnabled = {}
     end
 
-    NivUI.current.unitFrameEnabled[frameType] = enabled
+    NivUI:GetActiveProfile().unitFrameEnabled[frameType] = enabled
 
     self:TriggerEvent("FrameEnabledChanged", { frameType = frameType, enabled = enabled })
 end
@@ -235,21 +235,21 @@ end
 --- @param frameType string The frame type to check
 --- @return boolean enabled Whether real-time updates are enabled
 function NivUI:IsRealTimeUpdates(frameType)
-    if not NivUI.current.unitFrameRealTimeUpdates then
+    if not NivUI:GetActiveProfile().unitFrameRealTimeUpdates then
         return false
     end
-    return NivUI.current.unitFrameRealTimeUpdates[frameType] == true
+    return NivUI:GetActiveProfile().unitFrameRealTimeUpdates[frameType] == true
 end
 
 --- Enables or disables real-time updates for a frame type.
 --- @param frameType string The frame type to configure
 --- @param enabled boolean Whether to enable real-time updates
 function NivUI:SetRealTimeUpdates(frameType, enabled)
-    if not NivUI.current.unitFrameRealTimeUpdates then
-        NivUI.current.unitFrameRealTimeUpdates = {}
+    if not NivUI:GetActiveProfile().unitFrameRealTimeUpdates then
+        NivUI:GetActiveProfile().unitFrameRealTimeUpdates = {}
     end
 
-    NivUI.current.unitFrameRealTimeUpdates[frameType] = enabled
+    NivUI:GetActiveProfile().unitFrameRealTimeUpdates[frameType] = enabled
 
     self:TriggerEvent("RealTimeUpdatesChanged", { frameType = frameType, enabled = enabled })
 end
@@ -258,10 +258,10 @@ end
 --- @param frameType string The frame type to check
 --- @return string|nil driver The visibility driver string, or nil if no override
 function NivUI:GetVisibilityOverride(frameType)
-    if not NivUI.current.unitFrameVisibilityOverrides then
+    if not NivUI:GetActiveProfile().unitFrameVisibilityOverrides then
         return nil
     end
-    local override = NivUI.current.unitFrameVisibilityOverrides[frameType]
+    local override = NivUI:GetActiveProfile().unitFrameVisibilityOverrides[frameType]
     if override and override ~= "" then
         return override
     end
@@ -272,15 +272,15 @@ end
 --- @param frameType string The frame type to configure
 --- @param driver string|nil The visibility driver string, or nil/empty to clear
 function NivUI:SetVisibilityOverride(frameType, driver)
-    if not NivUI.current.unitFrameVisibilityOverrides then
-        NivUI.current.unitFrameVisibilityOverrides = {}
+    if not NivUI:GetActiveProfile().unitFrameVisibilityOverrides then
+        NivUI:GetActiveProfile().unitFrameVisibilityOverrides = {}
     end
 
     if driver == "" then
         driver = nil
     end
 
-    NivUI.current.unitFrameVisibilityOverrides[frameType] = driver
+    NivUI:GetActiveProfile().unitFrameVisibilityOverrides[frameType] = driver
 
     self:TriggerEvent("VisibilityOverrideChanged", { frameType = frameType, driver = driver })
 end
@@ -288,16 +288,16 @@ end
 --- Checks if the party frames include the player.
 --- @return boolean includePlayer Whether party frames include the player
 function NivUI:DoesPartyIncludePlayer()
-    if NivUI.current.partyIncludePlayer == nil then
+    if NivUI:GetActiveProfile().partyIncludePlayer == nil then
         return true  -- Default to including player
     end
-    return NivUI.current.partyIncludePlayer
+    return NivUI:GetActiveProfile().partyIncludePlayer
 end
 
 --- Sets whether party frames include the player.
 --- @param enabled boolean Whether to include the player in party frames
 function NivUI:SetPartyIncludePlayer(enabled)
-    NivUI.current.partyIncludePlayer = enabled
+    NivUI:GetActiveProfile().partyIncludePlayer = enabled
 
     self:TriggerEvent("PartySettingsChanged", { setting = "includePlayer", enabled = enabled })
 end
@@ -305,7 +305,7 @@ end
 --- Returns the party frame spacing in pixels.
 --- @return number spacing The spacing value (0-100), defaults to 2
 function NivUI:GetPartySpacing()
-    return NivUI.current.partySpacing or 2
+    return NivUI:GetActiveProfile().partySpacing or 2
 end
 
 local function ValidateSpacing(value, min, max, default)
@@ -316,21 +316,21 @@ end
 --- Sets the party frame spacing.
 --- @param value number The spacing in pixels (clamped to 0-100)
 function NivUI:SetPartySpacing(value)
-    NivUI.current.partySpacing = ValidateSpacing(value, 0, 100, 2)
+    NivUI:GetActiveProfile().partySpacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("PartySettingsChanged", { setting = "spacing", value = NivUI.current.partySpacing })
+    self:TriggerEvent("PartySettingsChanged", { setting = "spacing", value = NivUI:GetActiveProfile().partySpacing })
 end
 
 --- Returns the party frame orientation.
 --- @return string orientation Either "VERTICAL" or "HORIZONTAL"
 function NivUI:GetPartyOrientation()
-    return NivUI.current.partyOrientation or "VERTICAL"
+    return NivUI:GetActiveProfile().partyOrientation or "VERTICAL"
 end
 
 --- Sets the party frame orientation.
 --- @param value string Either "VERTICAL" or "HORIZONTAL"
 function NivUI:SetPartyOrientation(value)
-    NivUI.current.partyOrientation = value
+    NivUI:GetActiveProfile().partyOrientation = value
 
     self:TriggerEvent("PartySettingsChanged", { setting = "orientation", value = value })
 end
@@ -338,13 +338,13 @@ end
 --- Returns the party frame growth direction.
 --- @return string direction Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:GetPartyGrowthDirection()
-    return NivUI.current.partyGrowthDirection or "DOWN"
+    return NivUI:GetActiveProfile().partyGrowthDirection or "DOWN"
 end
 
 --- Sets the party frame growth direction.
 --- @param value string Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:SetPartyGrowthDirection(value)
-    NivUI.current.partyGrowthDirection = value
+    NivUI:GetActiveProfile().partyGrowthDirection = value
 
     self:TriggerEvent("PartySettingsChanged", { setting = "growthDirection", value = value })
 end
@@ -352,16 +352,16 @@ end
 --- Checks if party frames are shown when solo.
 --- @return boolean showWhenSolo Whether party frames show when solo
 function NivUI:DoesPartyShowWhenSolo()
-    if NivUI.current.partyShowWhenSolo == nil then
+    if NivUI:GetActiveProfile().partyShowWhenSolo == nil then
         return false
     end
-    return NivUI.current.partyShowWhenSolo
+    return NivUI:GetActiveProfile().partyShowWhenSolo
 end
 
 --- Sets whether party frames are shown when solo.
 --- @param enabled boolean Whether to show party frames when solo
 function NivUI:SetPartyShowWhenSolo(enabled)
-    NivUI.current.partyShowWhenSolo = enabled
+    NivUI:GetActiveProfile().partyShowWhenSolo = enabled
 
     self:TriggerEvent("PartySettingsChanged", { setting = "showWhenSolo", enabled = enabled })
 end
@@ -369,23 +369,23 @@ end
 --- Returns the party frame sort mode.
 --- @return string sortMode The sort mode (e.g., "DEFAULT", "ROLE", "NAME")
 function NivUI:GetPartySortMode()
-    return NivUI.current.partySortMode or "DEFAULT"
+    return NivUI:GetActiveProfile().partySortMode or "DEFAULT"
 end
 
 --- Sets the party frame sort mode.
 --- @param value string The sort mode (e.g., "DEFAULT", "ROLE", "NAME")
 function NivUI:SetPartySortMode(value)
-    NivUI.current.partySortMode = value
+    NivUI:GetActiveProfile().partySortMode = value
 
     self:TriggerEvent("PartySettingsChanged", { setting = "sortMode", value = value })
 end
 
 local function EnsureRaidSettings(raidSize)
-    if not NivUI.current.raidSettings then
-        NivUI.current.raidSettings = {}
+    if not NivUI:GetActiveProfile().raidSettings then
+        NivUI:GetActiveProfile().raidSettings = {}
     end
-    if not NivUI.current.raidSettings[raidSize] then
-        NivUI.current.raidSettings[raidSize] = {}
+    if not NivUI:GetActiveProfile().raidSettings[raidSize] then
+        NivUI:GetActiveProfile().raidSettings[raidSize] = {}
     end
 end
 
@@ -393,10 +393,10 @@ end
 --- @param raidSize number The raid size (10, 25, or 40)
 --- @return number spacing The spacing value, defaults to 2
 function NivUI:GetRaidSpacing(raidSize)
-    if not NivUI.current.raidSettings or not NivUI.current.raidSettings[raidSize] then
+    if not NivUI:GetActiveProfile().raidSettings or not NivUI:GetActiveProfile().raidSettings[raidSize] then
         return 2
     end
-    return NivUI.current.raidSettings[raidSize].spacing or 2
+    return NivUI:GetActiveProfile().raidSettings[raidSize].spacing or 2
 end
 
 --- Sets the raid frame spacing for a given raid size.
@@ -404,19 +404,19 @@ end
 --- @param value number The spacing in pixels (clamped to 0-100)
 function NivUI:SetRaidSpacing(raidSize, value)
     EnsureRaidSettings(raidSize)
-    NivUI.current.raidSettings[raidSize].spacing = ValidateSpacing(value, 0, 100, 2)
+    NivUI:GetActiveProfile().raidSettings[raidSize].spacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "spacing", value = NivUI.current.raidSettings[raidSize].spacing })
+    self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "spacing", value = NivUI:GetActiveProfile().raidSettings[raidSize].spacing })
 end
 
 --- Returns the raid group orientation for a given raid size.
 --- @param raidSize number The raid size (10, 25, or 40)
 --- @return string orientation Either "VERTICAL" or "HORIZONTAL"
 function NivUI:GetRaidGroupOrientation(raidSize)
-    if not NivUI.current.raidSettings or not NivUI.current.raidSettings[raidSize] then
+    if not NivUI:GetActiveProfile().raidSettings or not NivUI:GetActiveProfile().raidSettings[raidSize] then
         return "VERTICAL"
     end
-    return NivUI.current.raidSettings[raidSize].groupOrientation or "VERTICAL"
+    return NivUI:GetActiveProfile().raidSettings[raidSize].groupOrientation or "VERTICAL"
 end
 
 --- Sets the raid group orientation for a given raid size.
@@ -424,7 +424,7 @@ end
 --- @param value string Either "VERTICAL" or "HORIZONTAL"
 function NivUI:SetRaidGroupOrientation(raidSize, value)
     EnsureRaidSettings(raidSize)
-    NivUI.current.raidSettings[raidSize].groupOrientation = value
+    NivUI:GetActiveProfile().raidSettings[raidSize].groupOrientation = value
 
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "groupOrientation", value = value })
 end
@@ -433,10 +433,10 @@ end
 --- @param raidSize number The raid size (10, 25, or 40)
 --- @return string direction Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:GetRaidGroupGrowthDirection(raidSize)
-    if not NivUI.current.raidSettings or not NivUI.current.raidSettings[raidSize] then
+    if not NivUI:GetActiveProfile().raidSettings or not NivUI:GetActiveProfile().raidSettings[raidSize] then
         return "DOWN"
     end
-    return NivUI.current.raidSettings[raidSize].groupGrowthDirection or "DOWN"
+    return NivUI:GetActiveProfile().raidSettings[raidSize].groupGrowthDirection or "DOWN"
 end
 
 --- Sets the raid group growth direction for a given raid size.
@@ -444,7 +444,7 @@ end
 --- @param value string Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:SetRaidGroupGrowthDirection(raidSize, value)
     EnsureRaidSettings(raidSize)
-    NivUI.current.raidSettings[raidSize].groupGrowthDirection = value
+    NivUI:GetActiveProfile().raidSettings[raidSize].groupGrowthDirection = value
 
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "groupGrowthDirection", value = value })
 end
@@ -453,10 +453,10 @@ end
 --- @param raidSize number The raid size (10, 25, or 40)
 --- @return string direction Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:GetRaidPlayerGrowthDirection(raidSize)
-    if not NivUI.current.raidSettings or not NivUI.current.raidSettings[raidSize] then
+    if not NivUI:GetActiveProfile().raidSettings or not NivUI:GetActiveProfile().raidSettings[raidSize] then
         return "DOWN"
     end
-    return NivUI.current.raidSettings[raidSize].playerGrowthDirection or "DOWN"
+    return NivUI:GetActiveProfile().raidSettings[raidSize].playerGrowthDirection or "DOWN"
 end
 
 --- Sets the raid player growth direction for a given raid size.
@@ -464,7 +464,7 @@ end
 --- @param value string Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:SetRaidPlayerGrowthDirection(raidSize, value)
     EnsureRaidSettings(raidSize)
-    NivUI.current.raidSettings[raidSize].playerGrowthDirection = value
+    NivUI:GetActiveProfile().raidSettings[raidSize].playerGrowthDirection = value
 
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "playerGrowthDirection", value = value })
 end
@@ -473,10 +473,10 @@ end
 --- @param raidSize number The raid size (10, 25, or 40)
 --- @return string sortMode The sort mode (e.g., "GROUP", "ROLE", "NAME")
 function NivUI:GetRaidSortMode(raidSize)
-    if not NivUI.current.raidSettings or not NivUI.current.raidSettings[raidSize] then
+    if not NivUI:GetActiveProfile().raidSettings or not NivUI:GetActiveProfile().raidSettings[raidSize] then
         return "GROUP"
     end
-    return NivUI.current.raidSettings[raidSize].sortMode or "GROUP"
+    return NivUI:GetActiveProfile().raidSettings[raidSize].sortMode or "GROUP"
 end
 
 --- Sets the raid sort mode for a given raid size.
@@ -484,7 +484,7 @@ end
 --- @param value string The sort mode (e.g., "GROUP", "ROLE", "NAME")
 function NivUI:SetRaidSortMode(raidSize, value)
     EnsureRaidSettings(raidSize)
-    NivUI.current.raidSettings[raidSize].sortMode = value
+    NivUI:GetActiveProfile().raidSettings[raidSize].sortMode = value
 
     self:TriggerEvent("RaidSettingsChanged", { raidSize = raidSize, setting = "sortMode", value = value })
 end
@@ -492,27 +492,27 @@ end
 --- Returns the boss frame spacing in pixels.
 --- @return number spacing The spacing value (0-100), defaults to 2
 function NivUI:GetBossSpacing()
-    return NivUI.current.bossSpacing or 2
+    return NivUI:GetActiveProfile().bossSpacing or 2
 end
 
 --- Sets the boss frame spacing.
 --- @param value number The spacing in pixels (clamped to 0-100)
 function NivUI:SetBossSpacing(value)
-    NivUI.current.bossSpacing = ValidateSpacing(value, 0, 100, 2)
+    NivUI:GetActiveProfile().bossSpacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("BossSettingsChanged", { setting = "spacing", value = NivUI.current.bossSpacing })
+    self:TriggerEvent("BossSettingsChanged", { setting = "spacing", value = NivUI:GetActiveProfile().bossSpacing })
 end
 
 --- Returns the boss frame orientation.
 --- @return string orientation Either "VERTICAL" or "HORIZONTAL"
 function NivUI:GetBossOrientation()
-    return NivUI.current.bossOrientation or "VERTICAL"
+    return NivUI:GetActiveProfile().bossOrientation or "VERTICAL"
 end
 
 --- Sets the boss frame orientation.
 --- @param value string Either "VERTICAL" or "HORIZONTAL"
 function NivUI:SetBossOrientation(value)
-    NivUI.current.bossOrientation = value
+    NivUI:GetActiveProfile().bossOrientation = value
 
     self:TriggerEvent("BossSettingsChanged", { setting = "orientation", value = value })
 end
@@ -520,13 +520,13 @@ end
 --- Returns the boss frame growth direction.
 --- @return string direction Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:GetBossGrowthDirection()
-    return NivUI.current.bossGrowthDirection or "DOWN"
+    return NivUI:GetActiveProfile().bossGrowthDirection or "DOWN"
 end
 
 --- Sets the boss frame growth direction.
 --- @param value string Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:SetBossGrowthDirection(value)
-    NivUI.current.bossGrowthDirection = value
+    NivUI:GetActiveProfile().bossGrowthDirection = value
 
     self:TriggerEvent("BossSettingsChanged", { setting = "growthDirection", value = value })
 end
@@ -534,27 +534,27 @@ end
 --- Returns the arena frame spacing in pixels.
 --- @return number spacing The spacing value (0-100), defaults to 2
 function NivUI:GetArenaSpacing()
-    return NivUI.current.arenaSpacing or 2
+    return NivUI:GetActiveProfile().arenaSpacing or 2
 end
 
 --- Sets the arena frame spacing.
 --- @param value number The spacing in pixels (clamped to 0-100)
 function NivUI:SetArenaSpacing(value)
-    NivUI.current.arenaSpacing = ValidateSpacing(value, 0, 100, 2)
+    NivUI:GetActiveProfile().arenaSpacing = ValidateSpacing(value, 0, 100, 2)
 
-    self:TriggerEvent("ArenaSettingsChanged", { setting = "spacing", value = NivUI.current.arenaSpacing })
+    self:TriggerEvent("ArenaSettingsChanged", { setting = "spacing", value = NivUI:GetActiveProfile().arenaSpacing })
 end
 
 --- Returns the arena frame orientation.
 --- @return string orientation Either "VERTICAL" or "HORIZONTAL"
 function NivUI:GetArenaOrientation()
-    return NivUI.current.arenaOrientation or "VERTICAL"
+    return NivUI:GetActiveProfile().arenaOrientation or "VERTICAL"
 end
 
 --- Sets the arena frame orientation.
 --- @param value string Either "VERTICAL" or "HORIZONTAL"
 function NivUI:SetArenaOrientation(value)
-    NivUI.current.arenaOrientation = value
+    NivUI:GetActiveProfile().arenaOrientation = value
 
     self:TriggerEvent("ArenaSettingsChanged", { setting = "orientation", value = value })
 end
@@ -562,13 +562,13 @@ end
 --- Returns the arena frame growth direction.
 --- @return string direction Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:GetArenaGrowthDirection()
-    return NivUI.current.arenaGrowthDirection or "DOWN"
+    return NivUI:GetActiveProfile().arenaGrowthDirection or "DOWN"
 end
 
 --- Sets the arena frame growth direction.
 --- @param value string Either "DOWN", "UP", "LEFT", or "RIGHT"
 function NivUI:SetArenaGrowthDirection(value)
-    NivUI.current.arenaGrowthDirection = value
+    NivUI:GetActiveProfile().arenaGrowthDirection = value
 
     self:TriggerEvent("ArenaSettingsChanged", { setting = "growthDirection", value = value })
 end
@@ -577,31 +577,31 @@ end
 --- @param frameType string The frame type to check
 --- @return boolean enabled Whether fade-out-of-range is enabled
 function NivUI:IsFadeOutOfRangeEnabled(frameType)
-    if NivUI.current.unitFrameFadeOutOfRange == nil then
+    if NivUI:GetActiveProfile().unitFrameFadeOutOfRange == nil then
         return false
     end
-    return NivUI.current.unitFrameFadeOutOfRange[frameType] or false
+    return NivUI:GetActiveProfile().unitFrameFadeOutOfRange[frameType] or false
 end
 
 --- Sets whether fade-out-of-range is enabled for a frame type.
 --- @param frameType string The frame type to configure
 --- @param enabled boolean Whether to enable fade-out-of-range
 function NivUI:SetFadeOutOfRange(frameType, enabled)
-    NivUI.current.unitFrameFadeOutOfRange = NivUI.current.unitFrameFadeOutOfRange or {}
-    NivUI.current.unitFrameFadeOutOfRange[frameType] = enabled
+    NivUI:GetActiveProfile().unitFrameFadeOutOfRange = NivUI:GetActiveProfile().unitFrameFadeOutOfRange or {}
+    NivUI:GetActiveProfile().unitFrameFadeOutOfRange[frameType] = enabled
     self:TriggerEvent("FadeOutOfRangeChanged", { frameType = frameType, enabled = enabled })
 end
 
 --- Returns the alpha value for out-of-range units.
 --- @return number alpha The alpha value (0-1) for out-of-range units
 function NivUI:GetOutOfRangeAlpha()
-    return NivUI.current.outOfRangeAlpha or 0.3
+    return NivUI:GetActiveProfile().outOfRangeAlpha or 0.3
 end
 
 --- Sets the alpha value for out-of-range units.
 --- @param alpha number The alpha value (0-1)
 function NivUI:SetOutOfRangeAlpha(alpha)
-    NivUI.current.outOfRangeAlpha = alpha
+    NivUI:GetActiveProfile().outOfRangeAlpha = alpha
     self:TriggerEvent("OutOfRangeAlphaChanged", { alpha = alpha })
 end
 
@@ -612,15 +612,15 @@ end
 --- Returns all custom raid groups.
 --- @return table groups A table of custom raid group configurations keyed by ID
 function NivUI:GetCustomRaidGroups()
-    return NivUI.current.customRaidGroups or {}
+    return NivUI:GetActiveProfile().customRaidGroups or {}
 end
 
 --- Returns a specific custom raid group by ID.
 --- @param id string The custom raid group ID
 --- @return table|nil group The group configuration, or nil if not found
 function NivUI:GetCustomRaidGroup(id)
-    if not NivUI.current.customRaidGroups then return nil end
-    return NivUI.current.customRaidGroups[id]
+    if not NivUI:GetActiveProfile().customRaidGroups then return nil end
+    return NivUI:GetActiveProfile().customRaidGroups[id]
 end
 
 --- Creates a new custom raid group.
@@ -632,14 +632,14 @@ function NivUI:CreateCustomRaidGroup(name)
         return nil, "Group name cannot be empty"
     end
 
-    if not NivUI.current.customRaidGroups then
-        NivUI.current.customRaidGroups = {}
+    if not NivUI:GetActiveProfile().customRaidGroups then
+        NivUI:GetActiveProfile().customRaidGroups = {}
     end
 
     local id = GenerateCustomRaidGroupId()
     local defaultStyleName = self:GetStyleNames()[1] or "Default"
 
-    NivUI.current.customRaidGroups[id] = {
+    NivUI:GetActiveProfile().customRaidGroups[id] = {
         name = name,
         filterType = "role",
         roles = {
@@ -668,11 +668,11 @@ function NivUI:SaveCustomRaidGroup(id, data)
         return false, "Invalid parameters"
     end
 
-    if not NivUI.current.customRaidGroups or not NivUI.current.customRaidGroups[id] then
+    if not NivUI:GetActiveProfile().customRaidGroups or not NivUI:GetActiveProfile().customRaidGroups[id] then
         return false, "Custom raid group does not exist"
     end
 
-    NivUI.current.customRaidGroups[id] = NivUI.DeepCopy(data)
+    NivUI:GetActiveProfile().customRaidGroups[id] = NivUI.DeepCopy(data)
 
     self:TriggerEvent("CustomRaidGroupChanged", { id = id, data = data })
 
@@ -688,15 +688,15 @@ function NivUI:DeleteCustomRaidGroup(id)
         return false, "Invalid group ID"
     end
 
-    if not NivUI.current.customRaidGroups or not NivUI.current.customRaidGroups[id] then
+    if not NivUI:GetActiveProfile().customRaidGroups or not NivUI:GetActiveProfile().customRaidGroups[id] then
         return false, "Custom raid group does not exist"
     end
 
-    local name = NivUI.current.customRaidGroups[id].name
-    NivUI.current.customRaidGroups[id] = nil
+    local name = NivUI:GetActiveProfile().customRaidGroups[id].name
+    NivUI:GetActiveProfile().customRaidGroups[id] = nil
 
-    if NivUI.current.unitFramePositions then
-        NivUI.current.unitFramePositions["customRaid_" .. id] = nil
+    if NivUI:GetActiveProfile().unitFramePositions then
+        NivUI:GetActiveProfile().unitFramePositions["customRaid_" .. id] = nil
     end
 
     self:TriggerEvent("CustomRaidGroupDeleted", { id = id, name = name })

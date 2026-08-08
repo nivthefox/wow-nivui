@@ -45,12 +45,23 @@ local function HideBlizzardArenaFrames(state)
     state.pendingHide = false
 
     if CompactArenaFrame then
-        CompactArenaFrame:UnregisterAllEvents()
-        CompactArenaFrame:Hide()
-        CompactArenaFrame:SetScript("OnShow", function(self) self:Hide() end)
+        RegisterStateDriver(CompactArenaFrame, "visibility", "hide")
     end
 
     state.blizzardHidden = true
+end
+
+local function RestoreBlizzardArenaFrames(state)
+    if InCombatLockdown and InCombatLockdown() then
+        state.pendingRestore = true
+        return
+    end
+
+    state.pendingRestore = false
+    if CompactArenaFrame then
+        UnregisterStateDriver(CompactArenaFrame, "visibility")
+    end
+    state.blizzardHidden = false
 end
 
 local ArenaFrame = MultiUnitFrameBase.CreateModule({
@@ -71,6 +82,7 @@ local ArenaFrame = MultiUnitFrameBase.CreateModule({
     shouldShowUnit = ShouldShowArenaUnit,
 
     hideBlizzardFrames = HideBlizzardArenaFrames,
+    restoreBlizzardFrames = RestoreBlizzardArenaFrames,
 
     events = {
         "ARENA_OPPONENT_UPDATE",

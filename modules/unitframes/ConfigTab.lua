@@ -162,8 +162,8 @@ StaticPopupDialogs["NIVUI_CONFIRM_RELOAD"] = {
         NivUI:SetFrameEnabled(data.frameType, false)
     end,
     OnCancel = function(_dialog, data)
-        NivUI.current.unitFrameEnabled = NivUI.current.unitFrameEnabled or {}
-        NivUI.current.unitFrameEnabled[data.frameType] = false
+        NivUI:GetActiveProfile().unitFrameEnabled = NivUI:GetActiveProfile().unitFrameEnabled or {}
+        NivUI:GetActiveProfile().unitFrameEnabled[data.frameType] = false
     end,
     timeout = 0,
     whileDead = 1,

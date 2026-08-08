@@ -7,7 +7,7 @@ local isDeathKnight = false
 local inCombat = false
 
 local function GetSetting(key)
-    local db = NivUI.current and NivUI.current.runeBar
+    local db = NivUI:GetActiveProfile() and NivUI:GetActiveProfile().runeBar
     if db and db[key] ~= nil then
         return db[key]
     end
@@ -118,7 +118,7 @@ local function OnUpdate(self, elapsed)
 end
 
 local function LoadPosition(frame)
-    local db = NivUI.current.runeBar or {}
+    local db = NivUI:GetActiveProfile().runeBar or {}
     local defaults = NivUI.runeBarDefaults
 
     frame:ClearAllPoints()
@@ -251,6 +251,15 @@ local function OnDisable(_frame)
     NivUI.RuneBar = nil
 end
 
+local function OnRefresh(frame)
+    LoadPosition(frame)
+    ApplyBorder(frame)
+    CheckClass()
+    frame:RebuildSegments()
+    ApplyColors(frame)
+    UpdateVisibility()
+end
+
 local RuneBarModule = NivUI.BarBase.CreateModule({
     barType = "rune",
     createUI = CreateRuneBarUI,
@@ -258,6 +267,7 @@ local RuneBarModule = NivUI.BarBase.CreateModule({
     onUpdate = OnUpdate,
     onEnable = OnEnable,
     onDisable = OnDisable,
+    onRefresh = OnRefresh,
 })
 
 NivUI.RuneBarModule = RuneBarModule
