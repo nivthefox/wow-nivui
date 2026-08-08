@@ -6,6 +6,7 @@ NivUI.Config = NivUI.Config or {}
 NivUI.Config.Filters = {}
 
 local Filters = NivUI.Filters
+local ConfigDeletion = NivUI.ConfigDeletion
 
 local ROW_HEIGHT = 26
 local ICON_SIZE = 18
@@ -36,6 +37,21 @@ StaticPopupDialogs["NIVUI_NEW_CUSTOM_FILTER"] = {
 }
 
 NivUI:RegisterConfigPopup("NIVUI_NEW_CUSTOM_FILTER")
+
+function NivUI.Config.Filters.RequestDelete(name)
+    if type(name) ~= "string" or name == "" then
+        return false
+    end
+
+    local profile = NivUI:GetActiveProfile()
+    local consequences = ConfigDeletion.DescribeFilter(profile, name)
+    return ConfigDeletion.Request("filter", name, consequences, function()
+        local success, err = Filters:DeleteCustom(name)
+        if not success then
+            print("|cffff2020NivUI:|r " .. tostring(err))
+        end
+    end)
+end
 
 local function BuildSpellRow(content)
     local row = CreateFrame("Button", nil, content)
@@ -173,9 +189,12 @@ local function CreateSpellPanel(parent)
     addBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
     deleteButton:SetScript("OnClick", function()
-        if panel.filterName then
-            Filters:DeleteCustom(panel.filterName)
+        local name = panel.filterName
+        if not name then
+            return
         end
+
+        NivUI.Config.Filters.RequestDelete(name)
     end)
 
     return panel

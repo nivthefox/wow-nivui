@@ -2,6 +2,7 @@ local _, NivUI = ...
 
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
+local ConfigDeletion = NivUI.ConfigDeletion
 local ROW_HEIGHT = 32
 local WIDGET_LIST_WIDTH = 140
 local LABEL_WIDTH = 200
@@ -11,6 +12,34 @@ local SelectSubTab
 
 NivUI.UnitFrames.currentStyleName = "Default"
 NivUI.UnitFrames.refreshCallback = nil
+
+local function RequestStyleDelete()
+    local name = NivUI.UnitFrames.currentStyleName
+    local profile = NivUI:GetActiveProfile()
+    local consequences = ConfigDeletion.DescribeStyle(profile, name)
+    ConfigDeletion.Request("style", name, consequences, function()
+        local success, err = NivUI:DeleteStyle(name)
+        if not success then
+            print("NivUI: " .. (err or "Failed to delete style"))
+            return
+        end
+
+        local names = NivUI:GetStyleNames()
+        NivUI.UnitFrames.currentStyleName = names[1] or "Default"
+        if NivUI.UnitFrames.refreshCallback then
+            NivUI.UnitFrames.refreshCallback()
+        end
+    end)
+end
+
+local function RequestCustomRaidGroupDelete(groupId, groupName)
+    ConfigDeletion.Request("custom raid group", groupName, "", function()
+        local success, err = NivUI:DeleteCustomRaidGroup(groupId)
+        if not success then
+            print("NivUI: " .. (err or "Failed to delete custom raid group"))
+        end
+    end)
+end
 
 StaticPopupDialogs["NIVUI_NEW_STYLE"] = {
     text = "Enter name for new style:",
@@ -132,28 +161,6 @@ StaticPopupDialogs["NIVUI_RENAME_STYLE"] = {
     hideOnEscape = 1,
 }
 
-StaticPopupDialogs["NIVUI_DELETE_STYLE"] = {
-    text = "Delete style '%s'? This cannot be undone.",
-    button1 = "Delete",
-    button2 = "Cancel",
-    OnAccept = function()
-        local success, err = NivUI:DeleteStyle(NivUI.UnitFrames.currentStyleName)
-        if success then
-            local names = NivUI:GetStyleNames()
-            NivUI.UnitFrames.currentStyleName = names[1] or "Default"
-            if NivUI.UnitFrames.refreshCallback then
-                NivUI.UnitFrames.refreshCallback()
-            end
-        else
-            print("NivUI: " .. (err or "Failed to delete style"))
-        end
-    end,
-    timeout = 0,
-    whileDead = 1,
-    hideOnEscape = 1,
-    showAlert = 1,
-}
-
 StaticPopupDialogs["NIVUI_CONFIRM_RELOAD"] = {
     text = "Disabling this frame type requires a UI reload. Reload now?",
     button1 = "Reload",
@@ -200,29 +207,11 @@ StaticPopupDialogs["NIVUI_NEW_CUSTOM_RAID_GROUP"] = {
     hideOnEscape = 1,
 }
 
-StaticPopupDialogs["NIVUI_DELETE_CUSTOM_RAID_GROUP"] = {
-    text = "Delete custom raid group '%s'? This cannot be undone.",
-    button1 = "Delete",
-    button2 = "Cancel",
-    OnAccept = function(_dialog, data)
-        local success, err = NivUI:DeleteCustomRaidGroup(data.groupId)
-        if not success then
-            print("NivUI: " .. (err or "Failed to delete custom raid group"))
-        end
-    end,
-    timeout = 0,
-    whileDead = 1,
-    hideOnEscape = 1,
-    showAlert = 1,
-}
-
 NivUI:RegisterConfigPopup("NIVUI_NEW_STYLE")
 NivUI:RegisterConfigPopup("NIVUI_DUPLICATE_STYLE")
 NivUI:RegisterConfigPopup("NIVUI_RENAME_STYLE")
-NivUI:RegisterConfigPopup("NIVUI_DELETE_STYLE")
 NivUI:RegisterConfigPopup("NIVUI_CONFIRM_RELOAD")
 NivUI:RegisterConfigPopup("NIVUI_NEW_CUSTOM_RAID_GROUP")
-NivUI:RegisterConfigPopup("NIVUI_DELETE_CUSTOM_RAID_GROUP")
 
 local function DeepGet(tbl, key)
     local parts = { strsplit(".", key) }
@@ -1101,7 +1090,7 @@ function NivUI.UnitFrames:SetupConfigTab(parent, _Components)
     delBtn:SetPoint("LEFT", renameBtn, "RIGHT", 4, 0)
     delBtn:SetText("Delete")
     delBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_DELETE_STYLE", NivUI.UnitFrames.currentStyleName)
+        RequestStyleDelete()
     end)
 
     local previewContainer = CreateFrame("Frame", nil, container)
@@ -1221,10 +1210,7 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
         deleteBtn:SetPoint("RIGHT", 0, 0)
         deleteBtn:SetText("Delete")
         deleteBtn:SetScript("OnClick", function()
-            local dialog = StaticPopup_Show("NIVUI_DELETE_CUSTOM_RAID_GROUP", groupData.name)
-            if dialog then
-                dialog.data = { groupId = groupId }
-            end
+            RequestCustomRaidGroupDelete(groupId, groupData.name)
         end)
 
         AddRow(headerRow)
@@ -1777,7 +1763,7 @@ function NivUI.UnitFrames:SetupDesignerContent(parent, _Components)
     delBtn:SetPoint("LEFT", renameBtn, "RIGHT", 2, 0)
     delBtn:SetText("Delete")
     delBtn:SetScript("OnClick", function()
-        StaticPopup_Show("NIVUI_DELETE_STYLE", NivUI.UnitFrames.currentStyleName)
+        RequestStyleDelete()
     end)
 
     local previewContainer = CreateFrame("Frame", nil, container)

@@ -21,3 +21,9 @@ Database initialization reconciles all saved profiles and character specializati
 Reconciliation creates a Default style when a profile has no styles, replaces dangling required style references with the deterministic fallback, and removes dangling optional profile, filter, and overlay references.
 
 The model reports affected dependents in mutation event payloads. Configuration UI may present those details, but it does not repair persisted data.
+
+## Configuration deletion policy
+
+Every configuration action that permanently deletes a profile, style, custom raid group, custom filter, or overlay uses the shared deletion confirmation. The prompt names the object, states that deletion cannot be undone, and offers consistent Delete and Cancel actions.
+
+When deletion also changes dependent references, the prompt identifies those mappings or named dependents before the model is mutated. The requested object and callback are captured when the prompt opens. Canceling or dismissing the prompt does not call the model, so the object and all references remain unchanged.

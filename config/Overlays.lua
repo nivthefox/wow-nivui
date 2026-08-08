@@ -7,6 +7,7 @@ NivUI.Config = NivUI.Config or {}
 NivUI.Config.Overlays = {}
 
 local Overlays = NivUI.Overlays
+local ConfigDeletion = NivUI.ConfigDeletion
 local TAB_HEIGHT = 24
 
 StaticPopupDialogs["NIVUI_NEW_OVERLAY"] = {
@@ -34,6 +35,21 @@ StaticPopupDialogs["NIVUI_NEW_OVERLAY"] = {
 }
 
 NivUI:RegisterConfigPopup("NIVUI_NEW_OVERLAY")
+
+function NivUI.Config.Overlays.RequestDelete(name)
+    if type(name) ~= "string" or name == "" then
+        return false
+    end
+
+    local profile = NivUI:GetActiveProfile()
+    local consequences = ConfigDeletion.DescribeOverlay(profile, name)
+    return ConfigDeletion.Request("overlay", name, consequences, function()
+        local success, err = Overlays:Delete(name)
+        if not success then
+            print("|cffff2020NivUI:|r " .. tostring(err))
+        end
+    end)
+end
 
 function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
     local container = CreateFrame("Frame", nil, ContentArea)
@@ -145,9 +161,12 @@ function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
     end
 
     deleteButton:SetScript("OnClick", function()
-        if container.currentOverlay then
-            Overlays:Delete(container.currentOverlay)
+        local name = container.currentOverlay
+        if not name then
+            return
         end
+
+        NivUI.Config.Overlays.RequestDelete(name)
     end)
 
     container:SetScript("OnShow", RebuildTabs)

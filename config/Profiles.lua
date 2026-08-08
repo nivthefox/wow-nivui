@@ -3,6 +3,7 @@ local _, NivUI = ...
 NivUI.Config = NivUI.Config or {}
 NivUI.Config.Profiles = {}
 
+local ConfigDeletion = NivUI.ConfigDeletion
 local FRAME_WIDTH = 680
 local SIDEBAR_WIDTH = 100
 local ROW_HEIGHT = 32
@@ -260,7 +261,14 @@ function NivUI.Config.Profiles.SetupTab(ContentArea, Components)
             print("|cffff0000NivUI:|r Cannot delete the Default profile")
             return
         end
-        StaticPopup_Show("NIVUI_DELETE_PROFILE", current)
+
+        local consequences = ConfigDeletion.DescribeProfile(NivUI_DB, current)
+        ConfigDeletion.Request("profile", current, consequences, function()
+            local _, err = NivUI.Profiles:DeleteProfile(current)
+            if err then
+                print("|cffff0000NivUI:|r " .. err)
+            end
+        end)
     end)
 
     local specHeader = Components.GetHeader(content, "Specialization Profiles")
@@ -494,24 +502,6 @@ StaticPopupDialogs["NIVUI_RENAME_PROFILE"] = {
     preferredIndex = 3,
 }
 
-StaticPopupDialogs["NIVUI_DELETE_PROFILE"] = {
-    text = "Are you sure you want to delete the profile '%s'?",
-    button1 = YES,
-    button2 = NO,
-    OnAccept = function()
-        local current = NivUI.Profiles:GetCurrentProfileName()
-        local _, err = NivUI.Profiles:DeleteProfile(current)
-        if err then
-            print("|cffff0000NivUI:|r " .. err)
-        end
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
 NivUI:RegisterConfigPopup("NIVUI_NEW_PROFILE")
 NivUI:RegisterConfigPopup("NIVUI_COPY_PROFILE")
 NivUI:RegisterConfigPopup("NIVUI_RENAME_PROFILE")
-NivUI:RegisterConfigPopup("NIVUI_DELETE_PROFILE")
