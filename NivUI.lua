@@ -1,4 +1,4 @@
-NivUI = NivUI or {}
+local addonName, NivUI = ...
 
 NivUI_DB = NivUI_DB or {}
 NivUI.current = NivUI.current or {}
@@ -9,6 +9,10 @@ NivUI.eventCallbacks = NivUI.eventCallbacks or {}
 NivUI.classBarRegistry = NivUI.classBarRegistry or {}
 
 function NivUI:RegisterClassBar(barType, config)
+    if type(barType) ~= "string" or barType == "" or type(config) ~= "table" then
+        return false
+    end
+
     config.barType = barType
     config.dbKey = barType .. "Bar"
     self.classBarRegistry[barType] = config
@@ -16,10 +20,10 @@ function NivUI:RegisterClassBar(barType, config)
     -- Store defaults for backward compatibility
     self[barType .. "BarDefaults"] = config.defaults
 
-    -- Create the module immediately
     if config.createModule then
         config.module = config.createModule()
     end
+    return true
 end
 
 function NivUI:GetRegisteredClassBars()
@@ -33,15 +37,18 @@ function NivUI:GetRegisteredClassBars()
     return ordered
 end
 
--- ReloadUI debouncing: allows multiple toggles to coalesce before actually reloading
 local pendingReload = false
 local reloadTimer = nil
 
 function NivUI:RequestReload()
-    if pendingReload then return end
+    if pendingReload then
+        return
+    end
     pendingReload = true
 
-    if reloadTimer then reloadTimer:Cancel() end
+    if reloadTimer then
+        reloadTimer:Cancel()
+    end
     reloadTimer = C_Timer.NewTimer(0.5, function()
         pendingReload = false
         ReloadUI()
@@ -77,38 +84,38 @@ end
 
 function NivUI:GetBarTextures()
     local LSM = self:GetSharedMedia()
-    if LSM then
-        local list = LSM:List("statusbar")
-        local textures = {}
-        for _, name in ipairs(list) do
-            local path = LSM:Fetch("statusbar", name)
-            table.insert(textures, {
-                value = name,
-                name = name,
-                path = path,
-            })
-        end
-        return textures
+    if not LSM then
+        return BUILTIN_TEXTURES
     end
-    return BUILTIN_TEXTURES
+
+    local textures = {}
+    for _, name in ipairs(LSM:List("statusbar")) do
+        local path = LSM:Fetch("statusbar", name)
+        table.insert(textures, {
+            value = name,
+            name = name,
+            path = path,
+        })
+    end
+    return textures
 end
 
 function NivUI:GetFonts()
     local LSM = self:GetSharedMedia()
-    if LSM then
-        local list = LSM:List("font")
-        local fonts = {}
-        for _, name in ipairs(list) do
-            local path = LSM:Fetch("font", name)
-            table.insert(fonts, {
-                value = name,
-                name = name,
-                path = path,
-            })
-        end
-        return fonts
+    if not LSM then
+        return BUILTIN_FONTS
     end
-    return BUILTIN_FONTS
+
+    local fonts = {}
+    for _, name in ipairs(LSM:List("font")) do
+        local path = LSM:Fetch("font", name)
+        table.insert(fonts, {
+            value = name,
+            name = name,
+            path = path,
+        })
+    end
+    return fonts
 end
 
 function NivUI:GetBorders()
@@ -129,10 +136,14 @@ function NivUI:GetTexturePath(nameOrPath)
     local LSM = self:GetSharedMedia()
     if LSM then
         local path = LSM:Fetch("statusbar", nameOrPath)
-        if path then return path end
+        if path then
+            return path
+        end
     end
     for _, item in ipairs(BUILTIN_TEXTURES) do
-        if item.name == nameOrPath then return item.path end
+        if item.name == nameOrPath then
+            return item.path
+        end
     end
     return nameOrPath
 end
@@ -141,10 +152,14 @@ function NivUI:GetFontPath(nameOrPath)
     local LSM = self:GetSharedMedia()
     if LSM then
         local path = LSM:Fetch("font", nameOrPath)
-        if path then return path end
+        if path then
+            return path
+        end
     end
     for _, item in ipairs(BUILTIN_FONTS) do
-        if item.name == nameOrPath then return item.path end
+        if item.name == nameOrPath then
+            return item.path
+        end
     end
     return nameOrPath
 end
@@ -152,23 +167,31 @@ end
 NivUI.applyCallbacks = NivUI.applyCallbacks or {}
 
 function NivUI:RegisterApplyCallback(name, callback)
+    if type(name) ~= "string" or type(callback) ~= "function" then
+        return false
+    end
     self.applyCallbacks[name] = callback
+    return true
 end
 
 function NivUI:ApplySettings(settingName)
     if settingName then
         local callback = self.applyCallbacks[settingName]
-        if callback then callback() end
-    else
-        for _, callback in pairs(self.applyCallbacks) do
+        if callback then
             callback()
         end
+        return
+    end
+
+    for _, callback in pairs(self.applyCallbacks) do
+        callback()
     end
 end
 
-
 function NivUI.DeepCopy(src)
-    if type(src) ~= "table" then return src end
+    if type(src) ~= "table" then
+        return src
+    end
     local copy = {}
     for k, v in pairs(src) do
         copy[k] = NivUI.DeepCopy(v)
@@ -177,7 +200,6 @@ function NivUI.DeepCopy(src)
 end
 
 function NivUI:InitializeDB()
-    -- Initialize all registered class bars
     for _, config in pairs(self.classBarRegistry) do
         local dbKey = config.dbKey
         if not NivUI.current[dbKey] then
@@ -213,14 +235,20 @@ function NivUI:InitializeDB()
 end
 
 function NivUI:RegisterCallback(event, callback)
+    if type(event) ~= "string" or type(callback) ~= "function" then
+        return false
+    end
     if not self.eventCallbacks[event] then
         self.eventCallbacks[event] = {}
     end
     table.insert(self.eventCallbacks[event], callback)
+    return true
 end
 
 function NivUI:UnregisterCallback(event, callback)
-    if not self.eventCallbacks[event] then return end
+    if not self.eventCallbacks[event] then
+        return
+    end
     for i, cb in ipairs(self.eventCallbacks[event]) do
         if cb == callback then
             table.remove(self.eventCallbacks[event], i)
@@ -230,7 +258,9 @@ function NivUI:UnregisterCallback(event, callback)
 end
 
 function NivUI:TriggerEvent(event, data)
-    if not self.eventCallbacks[event] then return end
+    if not self.eventCallbacks[event] then
+        return
+    end
     for _, callback in ipairs(self.eventCallbacks[event]) do
         callback(data)
     end
@@ -266,14 +296,20 @@ local function RenameStyleShowAbsorb(style)
 end
 
 local function MigrateProfileShowAbsorb(profile)
-    if type(profile) ~= "table" then return false end
+    if type(profile) ~= "table" then
+        return false
+    end
 
     profile.migrations = profile.migrations or {}
-    if profile.migrations.healthBarShowAbsorbRename then return false end
+    if profile.migrations.healthBarShowAbsorbRename then
+        return false
+    end
     profile.migrations.healthBarShowAbsorbRename = true
 
     local styles = profile.unitFrameStyles
-    if type(styles) ~= "table" then return false end
+    if type(styles) ~= "table" then
+        return false
+    end
 
     local migrated = false
     for _, style in pairs(styles) do
@@ -287,7 +323,9 @@ end
 --- Renames the legacy `showAbsorb` healthBar widget config to `showDamageAbsorb`
 --- across every profile. Idempotent: a per-profile flag prevents re-runs.
 function NivUI:MigrateHealthBarShowAbsorb()
-    if not NivUI_DB or not NivUI_DB.profiles then return false end
+    if not NivUI_DB or not NivUI_DB.profiles then
+        return false
+    end
 
     local migratedAny = false
     for _, profile in pairs(NivUI_DB.profiles) do
@@ -326,7 +364,9 @@ end
 local initFrame = CreateFrame("Frame")
 initFrame:RegisterEvent("ADDON_LOADED")
 initFrame:SetScript("OnEvent", function(self, _, addon)
-    if addon ~= "NivUI" then return end
+    if addon ~= addonName then
+        return
+    end
 
     NivUI_DB = NivUI_DB or {}
     NivUI_CurrentProfile = NivUI_CurrentProfile or "Default"
@@ -351,19 +391,23 @@ initFrame:SetScript("OnEvent", function(self, _, addon)
     self:UnregisterEvent("ADDON_LOADED")
 end)
 
+local function ToggleConfigFrame()
+    if not NivUI.ConfigFrame then
+        print("NivUI: Config frame not loaded")
+        return
+    end
+    if NivUI.ConfigFrame:IsShown() then
+        NivUI.ConfigFrame:Hide()
+        return
+    end
+    NivUI.ConfigFrame:Show()
+end
+
 SLASH_NIVUI1 = "/nivui"
 SlashCmdList["NIVUI"] = function(msg)
-    if not msg or msg == "" then
-        if NivUI.ConfigFrame then
-            if NivUI.ConfigFrame:IsShown() then
-                NivUI.ConfigFrame:Hide()
-            else
-                NivUI.ConfigFrame:Show()
-            end
-        else
-            print("NivUI: Config frame not loaded")
-        end
-    else
+    if msg and msg ~= "" then
         print("NivUI: Use /nivui to open the config panel")
+        return
     end
+    ToggleConfigFrame()
 end

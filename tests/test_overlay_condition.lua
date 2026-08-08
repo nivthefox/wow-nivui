@@ -7,11 +7,19 @@
 -- The existing showIf schemas compare against boolean values, so boolean
 -- equality must work as well.
 
+local NivUI, assertions = ...
+local assertTrue = assertions.isTrue
+local assertFalse = assertions.isFalse
+
 local function Eval(cond, value)
     return NivUI.OverlayLogic.EvaluateCondition(cond, value)
 end
 
 return {
+    ["malformed condition fails safely"] = function()
+        assertFalse(Eval("invalid", "anything"), "non-table conditions should not be indexed")
+    end,
+
     ["nil condition is always true"] = function()
         assertTrue(Eval(nil, "anything"), "nil cond is true regardless of value")
         assertTrue(Eval(nil, nil), "nil cond is true even for nil value")

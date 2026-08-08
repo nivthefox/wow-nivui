@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 NivUI:RegisterClassBar("comboPoints", {
     displayName = "Combo Points Bar",
     tabName = "Combo",

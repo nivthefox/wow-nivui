@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 NivUI:RegisterClassBar("chi", {
     displayName = "Chi Bar",
     tabName = "Chi",

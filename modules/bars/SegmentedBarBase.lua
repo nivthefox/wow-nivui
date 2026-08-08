@@ -1,6 +1,12 @@
+local _, NivUI = ...
+
 NivUI.SegmentedBarBase = {}
 
 function NivUI.SegmentedBarBase.CreateModule(config)
+    if type(config) ~= "table" then
+        return nil
+    end
+
     local barType = config.barType
     local powerType = config.powerType
     local frameName = config.frameName

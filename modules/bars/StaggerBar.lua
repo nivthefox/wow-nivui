@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 local STAGGER_LIGHT = 124273
 local STAGGER_MODERATE = 124274
 local STAGGER_HEAVY = 124275

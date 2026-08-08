@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 local FRAME_WIDTH = 680
 local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
@@ -461,6 +463,5 @@ ConfigFrame:SetScript("OnShow", function()
     SelectSidebarTab(currentSidebarTab)
 end)
 
--- Exports
 NivUI.Components = Components
 NivUI.ConfigFrame = ConfigFrame

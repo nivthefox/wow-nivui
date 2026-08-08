@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local Base = NivUI.UnitFrames.Base

@@ -1,6 +1,7 @@
 --- Custom Filters config tab: create and edit named spell lists. Each list becomes a
 --- sub-tab; aura widgets reference them (with Allow/Block) from the Unit Frame designer.
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Config = NivUI.Config or {}
 NivUI.Config.Filters = {}
 

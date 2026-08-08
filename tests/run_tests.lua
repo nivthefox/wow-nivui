@@ -8,23 +8,11 @@
 -- Each tests/test_*.lua file must return a table of the form:
 --   { ["test name"] = function() ... end }
 -- Tests pass by returning normally; they fail by calling error().
--- Global assert helpers are injected before any test file is loaded.
 
---------------------------------------------------------------------------------
--- Determine paths
---------------------------------------------------------------------------------
-
--- arg[0] is the script path as passed on the command line
--- (e.g. "tests/run_tests.lua" when run from the addon root).
 local scriptPath = arg[0] or "tests/run_tests.lua"
--- Strip the filename to get the tests directory.
 local testsDir = scriptPath:match("^(.*)[/\\][^/\\]+$") or "."
 
 local addonRoot = testsDir:match("^(.*)[/\\][^/\\]+$") or "."
-
---------------------------------------------------------------------------------
--- Small table serializer (used in failure messages)
---------------------------------------------------------------------------------
 
 local function serialize(v, depth)
     depth = depth or 0
@@ -42,7 +30,6 @@ local function serialize(v, depth)
             return "{...}"
         end
         local parts = {}
-        -- array portion
         local maxN = 0
         for i, _ in ipairs(v) do
             maxN = i
@@ -50,7 +37,6 @@ local function serialize(v, depth)
         for i = 1, maxN do
             parts[#parts + 1] = serialize(v[i], depth + 1)
         end
-        -- hash portion
         for k, val in pairs(v) do
             if type(k) ~= "number" or k < 1 or k > maxN then
                 parts[#parts + 1] = string.format("[%s]=%s",
@@ -63,11 +49,7 @@ local function serialize(v, depth)
     end
 end
 
---------------------------------------------------------------------------------
--- Assert helpers (injected as globals before test files load)
---------------------------------------------------------------------------------
-
-function assertEquals(actual, expected, msg)
+local function assertEquals(actual, expected, msg)
     if actual ~= expected then
         error(string.format("%sexpected %s, got %s",
             msg and (msg .. ": ") or "",
@@ -76,7 +58,7 @@ function assertEquals(actual, expected, msg)
     end
 end
 
-function assertNear(actual, expected, eps, msg)
+local function assertNear(actual, expected, eps, msg)
     if math.abs(actual - expected) > eps then
         error(string.format("%sexpected %s near %s (eps %s), got %s",
             msg and (msg .. ": ") or "",
@@ -87,7 +69,7 @@ function assertNear(actual, expected, eps, msg)
     end
 end
 
-function assertTrue(v, msg)
+local function assertTrue(v, msg)
     if not v then
         error(string.format("%sexpected true, got %s",
             msg and (msg .. ": ") or "",
@@ -95,7 +77,7 @@ function assertTrue(v, msg)
     end
 end
 
-function assertFalse(v, msg)
+local function assertFalse(v, msg)
     if v then
         error(string.format("%sexpected false, got %s",
             msg and (msg .. ": ") or "",
@@ -103,7 +85,7 @@ function assertFalse(v, msg)
     end
 end
 
-function assertNil(v, msg)
+local function assertNil(v, msg)
     if v ~= nil then
         error(string.format("%sexpected nil, got %s",
             msg and (msg .. ": ") or "",
@@ -111,7 +93,7 @@ function assertNil(v, msg)
     end
 end
 
-function assertNotNil(v, msg)
+local function assertNotNil(v, msg)
     if v == nil then
         error(string.format("%sexpected non-nil value%s",
             msg and (msg .. ": ") or "",
@@ -119,19 +101,15 @@ function assertNotNil(v, msg)
     end
 end
 
--- assertTableEquals: deep equality.
--- Array portions are compared order-sensitively; hash keys are order-insensitive.
 local function tableEquals(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then
         return a == b
     end
-    -- Check all keys in a exist and match in b
     for k, v in pairs(a) do
         if not tableEquals(v, b[k]) then
             return false
         end
     end
-    -- Check b has no extra keys
     for k, _ in pairs(b) do
         if a[k] == nil then
             return false
@@ -140,7 +118,7 @@ local function tableEquals(a, b)
     return true
 end
 
-function assertTableEquals(actual, expected, msg)
+local function assertTableEquals(actual, expected, msg)
     if not tableEquals(actual, expected) then
         error(string.format("%sexpected %s, got %s",
             msg and (msg .. ": ") or "",
@@ -149,7 +127,7 @@ function assertTableEquals(actual, expected, msg)
     end
 end
 
-function assertError(fn, msg)
+local function assertError(fn, msg)
     local ok = pcall(fn)
     if ok then
         error(string.format("%sexpected an error but none was raised",
@@ -157,45 +135,59 @@ function assertError(fn, msg)
     end
 end
 
---------------------------------------------------------------------------------
--- Load stubs
---------------------------------------------------------------------------------
+local addonName = "NivUI"
+local addonNamespace = {}
+
+local function loadChunk(path, environment, ...)
+    local chunk, loadErr = loadfile(path)
+    if not chunk then
+        error(loadErr, 0)
+    end
+    if environment then
+        setfenv(chunk, environment)
+    end
+    return chunk(...)
+end
 
 local stubsPath = testsDir .. "/wow_stubs.lua"
-local ok, err = pcall(dofile, stubsPath)
+local ok, stubs = pcall(loadChunk, stubsPath, nil, addonName, addonNamespace)
 if not ok then
-    io.stderr:write("FATAL: could not load wow_stubs.lua: " .. tostring(err) .. "\n")
+    io.stderr:write("FATAL: could not load wow_stubs.lua: " .. tostring(stubs) .. "\n")
     os.exit(1)
 end
 
---------------------------------------------------------------------------------
--- Load production modules under test (in dependency order)
---------------------------------------------------------------------------------
+local assertions = {
+    equals = assertEquals,
+    near = assertNear,
+    isTrue = assertTrue,
+    isFalse = assertFalse,
+    isNil = assertNil,
+    isNotNil = assertNotNil,
+    tablesEqual = assertTableEquals,
+    raisesError = assertError,
+}
 
--- OverlayLogic.lua may not exist yet (tests-first). A load failure here must not
--- abort the runner: warn and continue so the tests themselves report the missing
--- API as failures rather than the harness crashing.
+local testEnvironment = setmetatable({
+    strtrim = stubs.strtrim,
+}, { __index = _G })
+
 local modules = {
+    addonRoot .. "/modules/filters/SpellFilters.lua",
     addonRoot .. "/modules/overlays/OverlayLogic.lua",
     addonRoot .. "/modules/overlays/Overlays.lua",
     addonRoot .. "/modules/unitframes/Defaults.lua",
 }
 
 for _, modulePath in ipairs(modules) do
-    local loadOk, loadErr = pcall(dofile, modulePath)
+    local loadOk, loadErr = pcall(loadChunk, modulePath, testEnvironment, addonName, addonNamespace)
     if not loadOk then
         io.stderr:write(string.format(
             "WARNING: could not load module %s: %s\n", modulePath, tostring(loadErr)))
     end
 end
 
---------------------------------------------------------------------------------
--- Discover test files
---------------------------------------------------------------------------------
-
 local function discoverTestFiles(dir)
     local files = {}
-    -- Try Windows dir first, fall back to POSIX ls
     local handle = io.popen('dir /b "' .. dir .. '" 2>nul')
     if handle then
         local output = handle:read("*a")
@@ -208,7 +200,6 @@ local function discoverTestFiles(dir)
             end
         end
     end
-    -- Fall back to ls if nothing found
     if #files == 0 then
         handle = io.popen('ls "' .. dir .. '"')
         if handle then
@@ -227,58 +218,75 @@ end
 
 local testFiles = discoverTestFiles(testsDir)
 
---------------------------------------------------------------------------------
--- Run tests
---------------------------------------------------------------------------------
+local function getSortedTestNames(tests)
+    local names = {}
+    for name in pairs(tests) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    return names
+end
 
-local totalPassed = 0
-local totalFailed = 0
+local function runTestCase(filename, name, test)
+    local ok, testErr = pcall(test)
+    if not ok then
+        print(string.format("FAIL %s:%s\n  %s", filename, name, tostring(testErr)))
+        return false
+    end
 
-for _, filename in ipairs(testFiles) do
+    print(string.format("PASS %s:%s", filename, name))
+    return true
+end
+
+local function loadTests(filename)
     local filepath = testsDir .. "/" .. filename
     local chunk, loadErr = loadfile(filepath)
     if not chunk then
-        print(string.format("FAIL %s: (load error) %s", filename, tostring(loadErr)))
-        totalFailed = totalFailed + 1
-    else
-        local runOk, result = pcall(chunk)
-        if not runOk then
-            print(string.format("FAIL %s: (runtime error) %s", filename, tostring(result)))
-            totalFailed = totalFailed + 1
-        elseif type(result) ~= "table" then
-            print(string.format("FAIL %s: test file did not return a table", filename))
-            totalFailed = totalFailed + 1
-        else
-            -- Collect and sort test names
-            local names = {}
-            for name, _ in pairs(result) do
-                names[#names + 1] = name
-            end
-            table.sort(names)
-
-            for _, name in ipairs(names) do
-                local fn = result[name]
-                local testOk, testErr = pcall(fn)
-                if testOk then
-                    print(string.format("PASS %s:%s", filename, name))
-                    totalPassed = totalPassed + 1
-                else
-                    print(string.format("FAIL %s:%s\n  %s", filename, name, tostring(testErr)))
-                    totalFailed = totalFailed + 1
-                end
-            end
-        end
+        return nil, "load error", loadErr
     end
+
+    setfenv(chunk, testEnvironment)
+    local ok, tests = pcall(chunk, addonNamespace, assertions)
+    if not ok then
+        return nil, "runtime error", tests
+    end
+    if type(tests) ~= "table" then
+        return nil, "test file did not return a table"
+    end
+    return tests
 end
 
---------------------------------------------------------------------------------
--- Summary
---------------------------------------------------------------------------------
+local function runTestFile(filename)
+    local tests, errorKind, testError = loadTests(filename)
+    if not tests then
+        local details = testError and (" " .. tostring(testError)) or ""
+        print(string.format("FAIL %s: (%s)%s", filename, errorKind, details))
+        return 0, 1
+    end
+
+    local passed = 0
+    local failed = 0
+    for _, name in ipairs(getSortedTestNames(tests)) do
+        if runTestCase(filename, name, tests[name]) then
+            passed = passed + 1
+        else
+            failed = failed + 1
+        end
+    end
+    return passed, failed
+end
+
+local totalPassed = 0
+local totalFailed = 0
+for _, filename in ipairs(testFiles) do
+    local passed, failed = runTestFile(filename)
+    totalPassed = totalPassed + passed
+    totalFailed = totalFailed + failed
+end
 
 print(string.format("\n%d passed, %d failed", totalPassed, totalFailed))
 
 if totalFailed > 0 then
     os.exit(1)
-else
-    os.exit(0)
 end
+os.exit(0)

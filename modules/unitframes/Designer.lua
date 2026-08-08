@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Designer = {}
 
 local PREVIEW_SCALE = 1.0

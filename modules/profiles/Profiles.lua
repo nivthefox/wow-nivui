@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 NivUI.Profiles = {}
 
 --- Returns the character key for per-character profile selection.
@@ -30,9 +32,13 @@ end
 --- @param name string
 --- @return boolean
 function NivUI.Profiles:ProfileExists(name)
-    return NivUI_DB
-        and NivUI_DB.profiles
-        and NivUI_DB.profiles[name] ~= nil
+    if type(name) ~= "string" then
+        return false
+    end
+    if type(NivUI_DB) ~= "table" or type(NivUI_DB.profiles) ~= "table" then
+        return false
+    end
+    return NivUI_DB.profiles[name] ~= nil
 end
 
 --- Creates a new profile with the given name.
@@ -47,6 +53,9 @@ function NivUI.Profiles:CreateProfile(name, copyFrom)
 
     if self:ProfileExists(name) then
         return false, string.format("Profile '%s' already exists", name)
+    end
+    if type(NivUI_DB) ~= "table" or type(NivUI_DB.profiles) ~= "table" then
+        return false, "Profile storage is not initialized"
     end
 
     local source = {}
@@ -181,13 +190,14 @@ function NivUI.Profiles:RenameProfile(oldName, newName)
         NivUI.current = NivUI_DB.profiles[newName]
     end
 
-    -- Update any spec mappings that reference the old name
-    if NivUI_DB.charMeta then
-        for _, charData in pairs(NivUI_DB.charMeta) do
-            if charData.specProfileMap then
-                for specID, profileName in pairs(charData.specProfileMap) do
+    local charMeta = NivUI_DB.charMeta
+    if type(charMeta) == "table" then
+        for _, charData in pairs(charMeta) do
+            local specProfileMap = type(charData) == "table" and charData.specProfileMap
+            if type(specProfileMap) == "table" then
+                for specID, profileName in pairs(specProfileMap) do
                     if profileName == oldName then
-                        charData.specProfileMap[specID] = newName
+                        specProfileMap[specID] = newName
                     end
                 end
             end
@@ -204,6 +214,10 @@ end
 --- @param tbl table The table to encode
 --- @return string|nil encoded
 local function EncodeCompact(tbl)
+    if type(tbl) ~= "table" then
+        return nil
+    end
+
     local E = C_EncodingUtil
 
     local ok, bin = pcall(E.SerializeCBOR, tbl)
@@ -232,6 +246,9 @@ end
 --- @param str string The encoded string
 --- @return table|nil decoded
 local function DecodeCompact(str)
+    if type(str) ~= "string" then
+        return nil
+    end
     if not str:match("^NIVUI:") then
         return nil
     end
@@ -263,6 +280,10 @@ end
 --- Exports the current profile as a compact encoded string.
 --- @return string
 function NivUI.Profiles:ExportCurrentProfile()
+    if type(NivUI.current) ~= "table" then
+        return nil
+    end
+
     local snapshot = {
         addon = "NivUI",
         version = 1,
@@ -300,7 +321,7 @@ end
 --- @return table|nil payload The profile data to create
 --- @return string|nil errorMessage
 function NivUI.Profiles:DecodeImport(str)
-    if not str or str == "" then
+    if type(str) ~= "string" or str == "" then
         return nil, "Empty import string"
     end
 
@@ -316,6 +337,9 @@ function NivUI.Profiles:DecodeImport(str)
     if data.kind ~= "profile" then
         return nil, "Not a profile export"
     end
+    if type(data.payload) ~= "table" then
+        return nil, "Profile export has no payload"
+    end
 
     return data.payload
 end
@@ -326,6 +350,10 @@ end
 --- @return boolean success
 --- @return string|nil errorMessage
 function NivUI.Profiles:CreateFromImport(name, payload)
+    if type(payload) ~= "table" then
+        return false, "Imported profile data is invalid"
+    end
+
     local success, err = self:CreateProfile(name)
     if not success then
         return false, err
@@ -335,16 +363,6 @@ function NivUI.Profiles:CreateFromImport(name, payload)
     print(string.format("|cff00ff00NivUI:|r Imported profile '%s'", name))
     return true
 end
-
----------------------------------------------------------------------
--- Spec-Based Profile Auto-Switch
---
--- Stored in NivUI_DB.charMeta[charKey]:
---   specAutoSwitch  (boolean)
---   specProfileMap  (table: specID -> profileName)
---
--- Combat-safe: defers switch to PLAYER_REGEN_ENABLED if in combat.
----------------------------------------------------------------------
 
 --- Returns the per-character metadata table, creating it if needed.
 --- @return table charMeta
@@ -441,7 +459,6 @@ function NivUI.Profiles:GetPlayerSpecID()
     return specID
 end
 
--- Combat-safe deferral
 local pendingSpecSwitch = nil
 local specDeferFrame = nil
 
@@ -515,7 +532,6 @@ function NivUI.Profiles:ApplySpecProfileIfEnabled(_reason)
     end)
 end
 
--- Event frame for spec changes
 local specEventFrame = CreateFrame("Frame")
 specEventFrame:RegisterEvent("PLAYER_LOGIN")
 specEventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")

@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 function NivUI.UnitFrames:GetWidgetParentOptions(excludeWidget)

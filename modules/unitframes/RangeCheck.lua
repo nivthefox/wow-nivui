@@ -6,7 +6,8 @@
 --- Falls back to CheckInteractDistance() outside of combat when no spell data
 --- is available.
 
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local RangeCheck = {}

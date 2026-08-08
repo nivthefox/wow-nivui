@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local UnitFrameBase = {}
@@ -1488,36 +1489,27 @@ function UnitFrameBase.RegisterStandardEvents(frame, unit)
     frame:RegisterEvent("RAID_TARGET_UPDATE")
 end
 
---- Builds or rebuilds the custom unit frame for a module.
---- Creates the secure frame, widgets, registers events, and sets up update scripts.
---- @param state table The unit frame state table
-function UnitFrameBase.BuildCustomFrame(state)
-    local style = NivUI:GetStyleWithDefaults(state.styleName)
-    if not style then
-        print("NivUI " .. state.frameType .. ": No style found for", state.styleName)
-        return
-    end
-
-    state.currentStyle = style
-
-    local frameConfig = style.frame or {}
-    local frameWidth = frameConfig.width or 200
-    local frameHeight = frameConfig.height or 60
-
+local function GetCustomFrame(state)
     local frameName = "NivUI_" .. state.frameType .. "Frame"
     local customFrame = _G[frameName]
     local isNewFrame = not customFrame
-
     if isNewFrame then
         customFrame = CreateFrame("Button", frameName, UIParent, "SecureUnitButtonTemplate")
     else
         ClearFrameWidgets(customFrame)
         customFrame:SetParent(UIParent)
     end
+    return customFrame, isNewFrame
+end
 
-    customFrame:SetSize(frameWidth, frameHeight)
-    if frameConfig.strata then customFrame:SetFrameStrata(frameConfig.strata) end
-    if frameConfig.frameLevel then customFrame:SetFrameLevel(frameConfig.frameLevel) end
+local function ConfigureCustomFrame(customFrame, state, frameConfig)
+    customFrame:SetSize(frameConfig.width or 200, frameConfig.height or 60)
+    if frameConfig.strata then
+        customFrame:SetFrameStrata(frameConfig.strata)
+    end
+    if frameConfig.frameLevel then
+        customFrame:SetFrameLevel(frameConfig.frameLevel)
+    end
 
     customFrame:SetAttribute("unit", state.unit)
     customFrame:SetAttribute("type1", "target")
@@ -1532,32 +1524,189 @@ function UnitFrameBase.BuildCustomFrame(state)
     customFrame:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+end
 
+local function ApplyCustomFramePosition(customFrame, state)
     local positionApplied = NivUI.EditMode and NivUI.EditMode:ApplyPosition(state.frameType, customFrame)
-
-    if not positionApplied then
-        local anchorFrame = state.anchorFrame
-        if type(anchorFrame) == "function" then
-            anchorFrame = anchorFrame()
-        end
-        if anchorFrame then
-            customFrame:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", state.anchorOffsetX or 0, state.anchorOffsetY or 0)
-        else
-            customFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-        end
+    if positionApplied then
+        return
     end
 
-    if frameConfig.showBorder then
-        customFrame.border = CreateFrame("Frame", nil, customFrame, "BackdropTemplate")
-        customFrame.border:SetAllPoints()
-        local borderSize = frameConfig.borderSize or 1
-        local borderColor = frameConfig.borderColor or { r = 0, g = 0, b = 0, a = 1 }
-        customFrame.border:SetBackdrop({
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = borderSize,
-        })
-        customFrame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+    local anchorFrame = state.anchorFrame
+    if type(anchorFrame) == "function" then
+        anchorFrame = anchorFrame()
     end
+    if anchorFrame then
+        customFrame:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT", state.anchorOffsetX or 0, state.anchorOffsetY or 0)
+        return
+    end
+    customFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+end
+
+local function CreateCustomFrameBorder(customFrame, frameConfig)
+    if not frameConfig.showBorder then
+        return
+    end
+
+    customFrame.border = CreateFrame("Frame", nil, customFrame, "BackdropTemplate")
+    customFrame.border:SetAllPoints()
+    local borderSize = frameConfig.borderSize or 1
+    local borderColor = frameConfig.borderColor or { r = 0, g = 0, b = 0, a = 1 }
+    customFrame.border:SetBackdrop({
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = borderSize,
+    })
+    customFrame.border:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a or 1)
+end
+
+local VISIBILITY_EVENTS = {
+    "PLAYER_ENTERING_WORLD",
+    "ZONE_CHANGED_NEW_AREA",
+    "ENCOUNTER_START",
+    "ENCOUNTER_END",
+    "PLAYER_ALIVE",
+    "PLAYER_DEAD",
+    "PLAYER_UNGHOST",
+    "GROUP_ROSTER_UPDATE",
+    "PARTY_LEADER_CHANGED",
+    "PLAYER_ROLES_ASSIGNED",
+    "PLAYER_UPDATE_RESTING",
+    "PLAYER_FLAGS_CHANGED",
+}
+
+local function HandleCustomFrameEvent(state, frame, event, eventUnit)
+    UnitFrameBase.HandleEvent(state, event)
+
+    if event == "PLAYER_UPDATE_RESTING" then
+        UnitFrameBase.UpdateStatusIndicators(state)
+    elseif event == "PLAYER_FLAGS_CHANGED" then
+        UnitFrameBase.UpdateStatusText(state)
+    elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
+        UnitFrameBase.UpdateLeaderIcon(state)
+    elseif event == "PLAYER_ROLES_ASSIGNED" then
+        UnitFrameBase.UpdateRoleIcon(state)
+    elseif event == "PLAYER_ENTERING_WORLD"
+        or event == "ZONE_CHANGED_NEW_AREA"
+        or event == "ENCOUNTER_START"
+        or event == "ENCOUNTER_END" then
+        UnitFrameBase.CheckVisibility(state)
+    elseif event == "PLAYER_ALIVE"
+        or event == "PLAYER_DEAD"
+        or event == "PLAYER_UNGHOST" then
+        UnitFrameBase.CheckVisibility(state)
+        UnitFrameBase.UpdateStatusText(state)
+    end
+
+    if state.onEvent then
+        state.onEvent(frame, event, eventUnit)
+    end
+end
+
+local function UpdateCustomFrame(state, frame, elapsed)
+    UnitFrameBase.CheckVisibility(state)
+    if not frame:IsShown() then
+        return
+    end
+
+    if state.preUpdate then
+        state.preUpdate(state, elapsed)
+    end
+
+    if not NivUI:IsRealTimeUpdates(state.frameType) then
+        state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
+        if state.timeSinceLastUpdate < NivUI.UPDATE_INTERVAL then
+            return
+        end
+        state.timeSinceLastUpdate = 0
+    end
+
+    UnitFrameBase.UpdateHealthBar(state)
+    UnitFrameBase.UpdateHealthText(state)
+    UnitFrameBase.UpdatePowerBar(state)
+    UnitFrameBase.UpdatePowerText(state)
+    UnitFrameBase.UpdateCastbar(state)
+    UnitFrameBase.UpdateRangeAlpha(state)
+end
+
+local function RegisterCustomFrameEvents(customFrame, state)
+    UnitFrameBase.RegisterStandardEvents(customFrame, state.unit)
+    customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+
+    if state.registerEvents then
+        state.registerEvents(customFrame)
+    end
+
+    for _, event in ipairs(VISIBILITY_EVENTS) do
+        customFrame:RegisterEvent(event)
+    end
+
+    customFrame:SetScript("OnEvent", function(frame, event, eventUnit)
+        HandleCustomFrameEvent(state, frame, event, eventUnit)
+    end)
+end
+
+local function ConfigureVisibilityDriver(customFrame, state)
+    local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
+    state.effectiveVisibilityDriver = visibilityDriver
+    if not visibilityDriver then
+        return
+    end
+
+    RegisterStateDriver(customFrame, "visibility", visibilityDriver)
+    if NivUI.EditMode then
+        NivUI.EditMode:RegisterVisibilityDriver(state.frameType, customFrame, visibilityDriver)
+    end
+    customFrame:HookScript("OnShow", function()
+        UnitFrameBase.UpdateAllWidgets(state)
+    end)
+end
+
+local function ConfigureCustomFrameUpdates(customFrame, state)
+    state.timeSinceLastUpdate = 0
+    customFrame:SetScript("OnUpdate", function(frame, elapsed)
+        UpdateCustomFrame(state, frame, elapsed)
+    end)
+end
+
+local function ConfigureEditMode(customFrame, state)
+    if not NivUI.EditMode then
+        return
+    end
+
+    NivUI.EditMode:CreateSelectionFrame(state.frameType, customFrame)
+    if NivUI.EditMode:IsActive() then
+        NivUI.EditMode:ShowSelection(state.frameType)
+    end
+end
+
+local function ConfigureNewCustomFrame(customFrame, state)
+    ConfigureVisibilityDriver(customFrame, state)
+    RegisterCustomFrameEvents(customFrame, state)
+    ConfigureCustomFrameUpdates(customFrame, state)
+    ConfigureEditMode(customFrame, state)
+end
+
+--- Builds or rebuilds the custom unit frame for a module.
+--- @param state table The unit frame state table
+function UnitFrameBase.BuildCustomFrame(state)
+    if type(state) ~= "table" then
+        return false
+    end
+
+    local style = NivUI:GetStyleWithDefaults(state.styleName)
+    if not style then
+        print("NivUI " .. state.frameType .. ": No style found for", state.styleName)
+        return false
+    end
+
+    state.currentStyle = style
+
+    local frameConfig = style.frame or {}
+    local customFrame, isNewFrame = GetCustomFrame(state)
+    ConfigureCustomFrame(customFrame, state, frameConfig)
+    ApplyCustomFramePosition(customFrame, state)
+    CreateCustomFrameBorder(customFrame, frameConfig)
 
     customFrame.widgets = UnitFrameBase.CreateWidgets(customFrame, style, state.unit, { frameType = state.frameType })
     UnitFrameBase.ApplyAnchors(customFrame, customFrame.widgets, style)
@@ -1565,101 +1714,14 @@ function UnitFrameBase.BuildCustomFrame(state)
     -- state outlives customFrame rebuilds; clear stale FRAME overlay tints so a
     -- removed or retyped overlay never leaves a permanent color on a rebuilt bar.
     state.frameOverlayColors = nil
-
     state.customFrame = customFrame
 
     if isNewFrame then
-        local visibilityDriver = NivUI:GetVisibilityOverride(state.frameType) or state.visibilityDriver
-        state.effectiveVisibilityDriver = visibilityDriver
-        if visibilityDriver then
-            RegisterStateDriver(customFrame, "visibility", visibilityDriver)
-            NivUI.EditMode:RegisterVisibilityDriver(state.frameType, customFrame, visibilityDriver)
-            customFrame:HookScript("OnShow", function()
-                UnitFrameBase.UpdateAllWidgets(state)
-            end)
-        end
-
-        UnitFrameBase.RegisterStandardEvents(customFrame, state.unit)
-        customFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-        customFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-
-        if state.registerEvents then
-            state.registerEvents(customFrame)
-        end
-
-        customFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-        customFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-        customFrame:RegisterEvent("ENCOUNTER_START")
-        customFrame:RegisterEvent("ENCOUNTER_END")
-        customFrame:RegisterEvent("PLAYER_ALIVE")
-        customFrame:RegisterEvent("PLAYER_DEAD")
-        customFrame:RegisterEvent("PLAYER_UNGHOST")
-        customFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-        customFrame:RegisterEvent("PARTY_LEADER_CHANGED")
-        customFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
-        customFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
-        customFrame:RegisterEvent("PLAYER_FLAGS_CHANGED")
-
-        customFrame:SetScript("OnEvent", function(self, event, eventUnit)
-            UnitFrameBase.HandleEvent(state, event)
-
-            if event == "PLAYER_UPDATE_RESTING" then
-                UnitFrameBase.UpdateStatusIndicators(state)
-            elseif event == "PLAYER_FLAGS_CHANGED" then
-                UnitFrameBase.UpdateStatusText(state)
-            elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_LEADER_CHANGED" then
-                UnitFrameBase.UpdateLeaderIcon(state)
-            elseif event == "PLAYER_ROLES_ASSIGNED" then
-                UnitFrameBase.UpdateRoleIcon(state)
-            elseif event == "PLAYER_ENTERING_WORLD"
-                or event == "ZONE_CHANGED_NEW_AREA"
-                or event == "ENCOUNTER_START"
-                or event == "ENCOUNTER_END" then
-                UnitFrameBase.CheckVisibility(state)
-            elseif event == "PLAYER_ALIVE"
-                or event == "PLAYER_DEAD"
-                or event == "PLAYER_UNGHOST" then
-                UnitFrameBase.CheckVisibility(state)
-                UnitFrameBase.UpdateStatusText(state)
-            end
-
-            if state.onEvent then
-                state.onEvent(self, event, eventUnit)
-            end
-        end)
-
-        state.timeSinceLastUpdate = 0
-        customFrame:SetScript("OnUpdate", function(self, elapsed)
-            UnitFrameBase.CheckVisibility(state)
-            if not self:IsShown() then return end
-
-            if state.preUpdate then
-                state.preUpdate(state, elapsed)
-            end
-
-            if not NivUI:IsRealTimeUpdates(state.frameType) then
-                state.timeSinceLastUpdate = state.timeSinceLastUpdate + elapsed
-                if state.timeSinceLastUpdate < NivUI.UPDATE_INTERVAL then return end
-                state.timeSinceLastUpdate = 0
-            end
-
-            UnitFrameBase.UpdateHealthBar(state)
-            UnitFrameBase.UpdateHealthText(state)
-            UnitFrameBase.UpdatePowerBar(state)
-            UnitFrameBase.UpdatePowerText(state)
-            UnitFrameBase.UpdateCastbar(state)
-            UnitFrameBase.UpdateRangeAlpha(state)
-        end)
-
-        if NivUI.EditMode then
-            NivUI.EditMode:CreateSelectionFrame(state.frameType, customFrame)
-            if NivUI.EditMode:IsActive() then
-                NivUI.EditMode:ShowSelection(state.frameType)
-            end
-        end
+        ConfigureNewCustomFrame(customFrame, state)
     end
 
     UnitFrameBase.CheckVisibility(state)
+    return true
 end
 
 --- Checks and updates frame visibility based on visibility driver or shouldShow callback.
@@ -1739,6 +1801,10 @@ end
 --- @param config table Module configuration with unit, frameType, anchorFrame, etc.
 --- @return table module The created module with Enable/Disable/Refresh/GetState functions
 function UnitFrameBase.CreateModule(config)
+    if type(config) ~= "table" then
+        return nil
+    end
+
     local state = {
         unit = config.unit,
         frameType = config.frameType,
@@ -1882,7 +1948,6 @@ do
             end
         end
 
-        -- Custom raid groups
         if UF.CustomRaidGroup and UF.CustomRaidGroup.GetAllStates then
             for _, state in pairs(UF.CustomRaidGroup.GetAllStates()) do
                 if state.enabled and state.memberStates then
@@ -1893,7 +1958,6 @@ do
             end
         end
 
-        -- Party frames
         if UF.PartyFrame then
             local state = UF.PartyFrame.GetState()
             if state and state.enabled and state.memberStates then

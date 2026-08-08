@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Config = NivUI.Config or {}
 NivUI.Config.Bars = {}
 
@@ -547,7 +548,6 @@ end
 --- @param globalRef string The global reference name (e.g., "ChiBar")
 local function AutoWireSections(sections, globalRef)
     for _, section in ipairs(sections) do
-        -- Wire applyFunc if not already set
         if not section.applyFunc and not section.applySetting then
             if section.type == "visibility" then
                 section.applyFunc = function()
@@ -572,7 +572,6 @@ local function AutoWireSections(sections, globalRef)
             end
         end
 
-        -- Auto-wire rebuildFunc for sliders that affect segments
         if not section.rebuildFunc then
             if section.type == "spacingSlider" or section.type == "widthSlider" or section.type == "heightSlider" then
                 section.rebuildFunc = function()
@@ -648,7 +647,6 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
     for _, regConfig in ipairs(NivUI:GetRegisteredClassBars()) do
         tabIndex = tabIndex + 1
 
-        -- Deep copy sections to avoid mutating the registration
         local sections = {}
         for _, section in ipairs(regConfig.configSections) do
             local copy = {}
@@ -658,7 +656,6 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
             table.insert(sections, copy)
         end
 
-        -- Auto-wire apply functions
         AutoWireSections(sections, regConfig.globalRef)
 
         local barConfig = {

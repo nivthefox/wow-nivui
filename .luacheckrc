@@ -29,7 +29,6 @@ ignore = {
 	-- "542", -- An empty if branch
 }
 globals = {
-	"NivUI",
 	"NivUI_DB",
 	"NivUI_CurrentProfile",
 }
@@ -57173,20 +57172,4 @@ read_globals = {
 	-- Bonus Module Name to Global
 	"BONUS_OBJECTIVE_TRACKER_MODULE",
 	"WORLD_QUEST_TRACKER_MODULE",
-}
-
--- Headless test harness (tests/) injects assert helpers as globals and stubs
--- read-only WoW globals such as strtrim. Declare them here so luacheck is clean.
-files["tests/"] = {
-	globals = {
-		"strtrim",
-		"assertEquals",
-		"assertNear",
-		"assertTrue",
-		"assertFalse",
-		"assertNil",
-		"assertNotNil",
-		"assertTableEquals",
-		"assertError",
-	},
 }

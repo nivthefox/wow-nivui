@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Config = NivUI.Config or {}
 NivUI.Config.Profiles = {}
 
@@ -395,7 +396,6 @@ function NivUI.Config.Profiles.SetupTab(ContentArea, Components)
     return container
 end
 
--- Static popup dialogs
 StaticPopupDialogs["NIVUI_NEW_PROFILE"] = {
     text = "Enter a name for the new profile:",
     button1 = ACCEPT,

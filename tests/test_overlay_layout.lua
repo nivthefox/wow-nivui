@@ -17,13 +17,15 @@
 --   NormalizeWrap(growth, wrap) -> valid perpendicular member, else default
 --   NivUI.UnitFrames:GetWrapOptions(growth) -> adaptive option list
 
+local NivUI, assertions = ...
+local assertEquals = assertions.equals
+local assertTrue = assertions.isTrue
+local assertFalse = assertions.isFalse
+local assertNil = assertions.isNil
+local assertTableEquals = assertions.tablesEqual
+
 local OverlayLogic = NivUI.OverlayLogic
 local UnitFrames = NivUI.UnitFrames
-
---------------------------------------------------------------------------------
--- Shared fixture: iconSize 10 + spacing 2 -> step 12; perLine 3, maxIcons 5.
--- Container is one icon slot: width == height == iconSize == 10 in every case.
---------------------------------------------------------------------------------
 
 local function Layout(growth, wrap)
     return OverlayLogic.ComputeGridLayout({
@@ -36,8 +38,6 @@ local function Layout(growth, wrap)
     })
 end
 
--- Build the full expected return table for the shared fixture from the
--- single-slot width/height, an anchor, and the five signed icon offsets.
 local function Expected(width, height, anchor, offsets)
     local icons = {}
     for i = 1, #offsets do
@@ -47,9 +47,20 @@ local function Expected(width, height, anchor, offsets)
 end
 
 return {
-    ----------------------------------------------------------------------------
-    -- Six spec examples (docs/overlay-growth-directions.html "Examples")
-    ----------------------------------------------------------------------------
+    ["nil parameters return nil"] = function()
+        assertNil(OverlayLogic.ComputeGridLayout(nil), "nil params should not be dereferenced")
+    end,
+
+    ["invalid dimensions return nil"] = function()
+        assertNil(OverlayLogic.ComputeGridLayout({
+            growth = "RIGHT",
+            wrap = "DOWN",
+            perLine = 0,
+            maxIcons = 2,
+            iconSize = 20,
+            spacing = 2,
+        }), "perLine must be positive")
+    end,
 
     ["RIGHT/DOWN fills from TOPLEFT (current behavior)"] = function()
         assertTableEquals(Layout("RIGHT", "DOWN"),
@@ -93,18 +104,6 @@ return {
             "DOWN/LEFT layout")
     end,
 
-    ----------------------------------------------------------------------------
-    -- Offset-math continuity with the original CreateAuraWidget implementation.
-    -- Production defaults: iconSize 20, spacing 2 (step 22), perLine 8,
-    -- maxIcons 16. RIGHT + nil wrap -> TOPLEFT, x = col*22, y = -row*22.
-    -- LEFT + nil wrap -> TOPRIGHT, x = -col*22, same y.
-    --
-    -- These cases pin the relative icon offsets only, NOT pixel-identical
-    -- rendering: the container semantics deliberately changed from the
-    -- full-grid footprint (174x42) to a single icon slot (20x20) so the user's
-    -- anchor settings pin icon 1 directly.
-    ----------------------------------------------------------------------------
-
     ["RIGHT + nil wrap keeps the original implementation's offset math"] = function()
         local layout = OverlayLogic.ComputeGridLayout({
             growth = "RIGHT",
@@ -144,10 +143,6 @@ return {
             assertEquals(layout.icons[i].y, -row * 22, "LEFT offset y for icon " .. i)
         end
     end,
-
-    ----------------------------------------------------------------------------
-    -- Edge cases: unknown growth, invalid wrap, single line, boundary.
-    ----------------------------------------------------------------------------
 
     ["unknown growth with nil wrap renders as RIGHT/DOWN"] = function()
         assertTableEquals(Layout("DIAGONAL", nil), Layout("RIGHT", "DOWN"),
@@ -211,10 +206,6 @@ return {
             "maxIcons == perLine offsets")
     end,
 
-    ----------------------------------------------------------------------------
-    -- IsVerticalGrowth truth table.
-    ----------------------------------------------------------------------------
-
     ["IsVerticalGrowth is true only for UP and DOWN"] = function()
         assertTrue(OverlayLogic.IsVerticalGrowth("UP"), "UP is vertical")
         assertTrue(OverlayLogic.IsVerticalGrowth("DOWN"), "DOWN is vertical")
@@ -224,10 +215,6 @@ return {
         assertFalse(OverlayLogic.IsVerticalGrowth("X"), "unknown is not vertical")
     end,
 
-    ----------------------------------------------------------------------------
-    -- DefaultWrapFor: RIGHT if vertical else DOWN.
-    ----------------------------------------------------------------------------
-
     ["DefaultWrapFor returns DOWN for horizontal, RIGHT for vertical"] = function()
         assertEquals(OverlayLogic.DefaultWrapFor("RIGHT"), "DOWN", "RIGHT -> DOWN")
         assertEquals(OverlayLogic.DefaultWrapFor("LEFT"), "DOWN", "LEFT -> DOWN")
@@ -235,10 +222,6 @@ return {
         assertEquals(OverlayLogic.DefaultWrapFor("DOWN"), "RIGHT", "DOWN -> RIGHT")
         assertEquals(OverlayLogic.DefaultWrapFor(nil), "DOWN", "nil -> DOWN")
     end,
-
-    ----------------------------------------------------------------------------
-    -- NormalizeWrap full matrix: valid perpendicular preserved, else default.
-    ----------------------------------------------------------------------------
 
     ["NormalizeWrap preserves valid perpendicular wraps"] = function()
         assertEquals(OverlayLogic.NormalizeWrap("RIGHT", "UP"), "UP", "RIGHT + UP kept")
@@ -259,11 +242,6 @@ return {
         assertEquals(OverlayLogic.NormalizeWrap("GARBAGE", "LEFT"), "DOWN",
             "unknown growth is horizontal; LEFT invalid -> DOWN")
     end,
-
-    ----------------------------------------------------------------------------
-    -- GetWrapOptions: horizontal list for horizontal/unknown/nil growth,
-    -- vertical list for vertical growth. Default option first in each.
-    ----------------------------------------------------------------------------
 
     ["GetWrapOptions returns the horizontal pair for RIGHT"] = function()
         assertTableEquals(UnitFrames:GetWrapOptions("RIGHT"),

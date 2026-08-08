@@ -5,7 +5,8 @@
 --- or debuffs (HARMFUL). Overlays are profile-scoped under NivUI.current.overlays; a
 --- style references them by name via style.overlays. Editing an overlay lives in the
 --- Custom Overlays tab.
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Overlays = NivUI.Overlays or {}
 
 local Overlays = NivUI.Overlays
@@ -111,13 +112,15 @@ end
 --- @return table Sorted array of overlay names
 function Overlays:GetNames()
     local store = GetStore()
-    local names = {}
-    if store then
-        for name in pairs(store) do
-            names[#names + 1] = name
-        end
-        table.sort(names)
+    if not store then
+        return {}
     end
+
+    local names = {}
+    for name in pairs(store) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
     return names
 end
 
@@ -151,8 +154,10 @@ end
 
 function Overlays:Delete(name)
     local store = GetStore()
-    if store and store[name] then
-        store[name] = nil
-        NivUI:TriggerEvent("OverlaysChanged", { name = name, deleted = true })
+    if not store or not store[name] then
+        return
     end
+
+    store[name] = nil
+    NivUI:TriggerEvent("OverlaysChanged", { name = name, deleted = true })
 end

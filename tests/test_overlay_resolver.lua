@@ -9,11 +9,22 @@
 -- name (string < wins); missing priority treated as 1; result is independent of
 -- input array order; the returned winner is the exact claim table passed in.
 
+local NivUI, assertions = ...
+local assertEquals = assertions.equals
+local assertTrue = assertions.isTrue
+local assertFalse = assertions.isFalse
+local assertNil = assertions.isNil
+local assertTableEquals = assertions.tablesEqual
+
 local function Resolve(claims)
     return NivUI.OverlayLogic.ResolveTransformative(claims)
 end
 
 return {
+    ["nil claims yield empty winners"] = function()
+        assertTableEquals(Resolve(nil), { FRAME = {}, BORDER = {} })
+    end,
+
     ["single active claim wins"] = function()
         local claim = { name = "A", priority = 1, targetWidget = "healthBar", kind = "FRAME", active = true }
         local result = Resolve({ claim })

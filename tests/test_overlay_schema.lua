@@ -1,3 +1,10 @@
+local NivUI, assertions = ...
+local assertEquals = assertions.equals
+local assertTrue = assertions.isTrue
+local assertNil = assertions.isNil
+local assertNotNil = assertions.isNotNil
+local assertTableEquals = assertions.tablesEqual
+
 -- tests/test_overlay_schema.lua
 -- Data-shape contract tests for the overlay schema after the Display Types
 -- redesign: Overlays.CONFIG / Overlays.DEFAULTS and the NivUI.UnitFrames option
@@ -6,10 +13,6 @@
 
 local Overlays = NivUI.Overlays
 local UnitFrames = NivUI.UnitFrames
-
---------------------------------------------------------------------------------
--- Dot-path lookup into a data table (e.g. "duration.font").
---------------------------------------------------------------------------------
 
 local function DeepGet(root, path)
     local node = root
@@ -22,11 +25,6 @@ local function DeepGet(root, path)
     return node
 end
 
---------------------------------------------------------------------------------
--- Evaluate a showIf/hideIf condition against a data table, resolving the
--- condition's key through the same dot-path lookup used for nested settings.
---------------------------------------------------------------------------------
-
 local function ConditionPasses(cond, data)
     if not cond then
         return true
@@ -34,12 +32,6 @@ local function ConditionPasses(cond, data)
     local value = DeepGet(data, cond.key)
     return NivUI.OverlayLogic.EvaluateCondition(cond, value)
 end
-
---------------------------------------------------------------------------------
--- Walk every tab in Overlays.CONFIG for a given display type and collect the
--- set of visible entry keys. Keyless entries (e.g. the filter matrix) are
--- skipped for the key set but tracked so we can assert the Filter tab shows.
---------------------------------------------------------------------------------
 
 local function CollectVisibleKeys(displayType)
     local data = {
@@ -92,10 +84,6 @@ local function ExpectedSet(list)
     return set
 end
 
---------------------------------------------------------------------------------
--- Expected visible key sets per display type, from the design doc matrix.
---------------------------------------------------------------------------------
-
 local ICON_KEYS = {
     "auraType", "priority", "displayType",
     "iconSize", "spacing",
@@ -128,10 +116,6 @@ local BORDER_KEYS = {
 }
 
 return {
-    --------------------------------------------------------------------------
-    -- Removed Dispellable feature
-    --------------------------------------------------------------------------
-
     ["no Dispellable tab in CONFIG"] = function()
         for _, tab in ipairs(Overlays.CONFIG) do
             assertTrue(tab.label ~= "Dispellable", "CONFIG must not contain a Dispellable tab")
@@ -155,10 +139,6 @@ return {
         assertNil(UnitFrames.DISPEL_INDICATOR, "DISPEL_INDICATOR option list removed")
     end,
 
-    --------------------------------------------------------------------------
-    -- New DEFAULTS fields
-    --------------------------------------------------------------------------
-
     ["DEFAULTS has the five new fields with exact values"] = function()
         assertEquals(Overlays.DEFAULTS.displayType, "ICON", "displayType default")
         assertEquals(Overlays.DEFAULTS.priority, 1, "priority default")
@@ -166,10 +146,6 @@ return {
         assertEquals(Overlays.DEFAULTS.targetWidget, "healthBar", "targetWidget default")
         assertEquals(Overlays.DEFAULTS.borderThickness, 2, "borderThickness default")
     end,
-
-    --------------------------------------------------------------------------
-    -- Option lists
-    --------------------------------------------------------------------------
 
     ["OVERLAY_DISPLAY_TYPES is the ordered four-type list"] = function()
         assertTableEquals(UnitFrames.OVERLAY_DISPLAY_TYPES, {
@@ -197,10 +173,6 @@ return {
         end
         assertTrue(found, "target widget options must include a healthBar entry")
     end,
-
-    --------------------------------------------------------------------------
-    -- Visibility matrix (Filter tab always visible)
-    --------------------------------------------------------------------------
 
     ["Filter tab is visible for all four display types"] = function()
         for _, displayType in ipairs({ "ICON", "COLOR", "FRAME", "BORDER" }) do
@@ -232,10 +204,6 @@ return {
         assertTableEquals(SortedKeys(visible), SortedKeys(ExpectedSet(BORDER_KEYS)),
             "BORDER visible keys")
     end,
-
-    --------------------------------------------------------------------------
-    -- Wrap direction: new setting on the additive (Icon/Color) types only.
-    --------------------------------------------------------------------------
 
     ["DEFAULTS.wrap is DOWN"] = function()
         assertEquals(Overlays.DEFAULTS.wrap, "DOWN", "wrap default is DOWN (horizontal default growth)")

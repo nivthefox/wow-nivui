@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.EditMode = NivUI.EditMode or {}
 
 local editModeActive = false

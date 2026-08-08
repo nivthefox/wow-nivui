@@ -1,7 +1,8 @@
 --- Custom Overlays config tab: create and edit named aura overlays. Each overlay becomes a
 --- sub-tab holding the shared settings panel; unit-frame styles pick which overlays apply
 --- from the designer's Overlays list.
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Config = NivUI.Config or {}
 NivUI.Config.Overlays = {}
 

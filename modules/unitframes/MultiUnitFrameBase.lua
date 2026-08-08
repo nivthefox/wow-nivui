@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local MultiUnitFrameBase = {}
@@ -10,6 +11,10 @@ local Base = NivUI.UnitFrames.Base
 ---@param config table Module configuration
 ---@return table module The created module with Enable, Disable, Refresh, SetPreviewMode, GetState methods
 function MultiUnitFrameBase.CreateModule(config)
+    if type(config) ~= "table" then
+        return nil
+    end
+
     local state = {
         enabled = false,
         previewMode = false,

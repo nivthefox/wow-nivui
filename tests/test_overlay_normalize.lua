@@ -6,11 +6,27 @@
 -- not share sub-tables), preserves existing values, and removes the legacy
 -- dispelIndicator key. Overlays:Get returns a normalized live record.
 
+local NivUI, assertions = ...
+local assertEquals = assertions.equals
+local assertNil = assertions.isNil
+local assertNotNil = assertions.isNotNil
+local assertTableEquals = assertions.tablesEqual
+
 local function Normalize(config)
     return NivUI.OverlayLogic.NormalizeOverlay(config, NivUI.Overlays.DEFAULTS)
 end
 
 return {
+    ["nil config returns nil"] = function()
+        assertNil(Normalize(nil), "nil input should not be dereferenced")
+    end,
+
+    ["nil defaults preserves a valid config"] = function()
+        local config = { priority = 3 }
+        local output = NivUI.OverlayLogic.NormalizeOverlay(config, nil)
+        assertEquals(output, config, "valid config should be returned unchanged")
+    end,
+
     ["empty table gains all defaults"] = function()
         local config = Normalize({})
         assertEquals(config.displayType, "ICON", "displayType default")
@@ -61,15 +77,6 @@ return {
         assertNil(record.dispelIndicator, "legacy dispelIndicator stripped on Get")
         NivUI.current.overlays["Legacy"] = nil
     end,
-
-    --------------------------------------------------------------------------
-    -- Wrap coherence: NormalizeOverlay fills and repairs the wrap value so it
-    -- is always a valid perpendicular member of the (possibly horizontal)
-    -- growth orientation. Missing wrap -> orientation default; an out-of-
-    -- orientation wrap hard-resets to the new orientation's default; a valid
-    -- perpendicular wrap is preserved. Unknown growth is treated as horizontal
-    -- for wrap purposes but is never itself rewritten.
-    --------------------------------------------------------------------------
 
     ["empty table gains wrap DOWN"] = function()
         local config = Normalize({})

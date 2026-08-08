@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 local NUM_RUNES = 6
 
 local lastUpdate = 0

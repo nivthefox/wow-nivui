@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 NivUI:RegisterClassBar("arcaneCharges", {
     displayName = "Arcane Charges Bar",
     tabName = "Arcane",

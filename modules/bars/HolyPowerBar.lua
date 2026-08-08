@@ -1,3 +1,5 @@
+local _, NivUI = ...
+
 NivUI:RegisterClassBar("holyPower", {
     displayName = "Holy Power Bar",
     tabName = "Holy",

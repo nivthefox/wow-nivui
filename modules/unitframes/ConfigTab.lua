@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local ROW_HEIGHT = 32
@@ -1402,7 +1403,6 @@ local function CreateCustomRaidGroupPanel(parent, groupId, Components)
             AddRow(scrollContainer, 4)
         end
 
-        -- Exclude Player checkbox (applies to both filter types)
         local excludeRow = CreateFrame("Frame", nil, frame)
         excludeRow:SetHeight(24)
         excludeRow:SetPoint("LEFT", 20, 0)

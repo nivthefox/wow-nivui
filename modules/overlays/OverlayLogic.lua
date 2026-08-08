@@ -3,7 +3,8 @@
 --- evaluation, and transformative conflict resolution. Loads with only the
 --- NivUI namespace bootstrap and touches no WoW API at load or runtime, so it is
 --- unit-testable in a headless Lua runner. Keep it that way.
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.OverlayLogic = NivUI.OverlayLogic or {}
 
 local OverlayLogic = NivUI.OverlayLogic
@@ -47,6 +48,13 @@ end
 --- @param defaults table The Overlays.DEFAULTS table to fill from
 --- @return table The same config table, now normalized
 function OverlayLogic.NormalizeOverlay(config, defaults)
+    if type(config) ~= "table" then
+        return nil
+    end
+    if type(defaults) ~= "table" then
+        return config
+    end
+
     for key, defaultValue in pairs(defaults) do
         if config[key] == nil then
             config[key] = DeepCopy(defaultValue)
@@ -129,15 +137,34 @@ end
 --- @param params table { growth, wrap, perLine, maxIcons, iconSize, spacing }
 --- @return table { width, height, anchor, icons = { [i] = { x = n, y = n } } }
 function OverlayLogic.ComputeGridLayout(params)
+    if type(params) ~= "table" then
+        return nil
+    end
+
+    local perLine = params.perLine
+    local maxIcons = params.maxIcons
+    local iconSize = params.iconSize
+    local spacing = params.spacing
+    if type(perLine) ~= "number" or perLine <= 0 then
+        return nil
+    end
+    if type(maxIcons) ~= "number" or maxIcons <= 0 then
+        return nil
+    end
+    if type(iconSize) ~= "number" or iconSize <= 0 then
+        return nil
+    end
+    if type(spacing) ~= "number" or spacing < 0 then
+        return nil
+    end
+
     local growth = params.growth
     if not ORIGIN_CORNER[growth] then
         growth = "RIGHT"
     end
     local wrap = OverlayLogic.NormalizeWrap(growth, params.wrap)
 
-    local perLine = params.perLine
-    local maxIcons = params.maxIcons
-    local step = params.iconSize + params.spacing
+    local step = iconSize + spacing
     local vertical = OverlayLogic.IsVerticalGrowth(growth)
 
     local anchor = ORIGIN_CORNER[growth][wrap]
@@ -163,7 +190,7 @@ function OverlayLogic.ComputeGridLayout(params)
         icons[i] = { x = xSign * x, y = ySign * y }
     end
 
-    return { width = params.iconSize, height = params.iconSize, anchor = anchor, icons = icons }
+    return { width = iconSize, height = iconSize, anchor = anchor, icons = icons }
 end
 
 --- Evaluates a showIf/hideIf condition against a resolved value. A nil
@@ -176,6 +203,9 @@ end
 function OverlayLogic.EvaluateCondition(cond, value)
     if cond == nil then
         return true
+    end
+    if type(cond) ~= "table" then
+        return false
     end
     if cond.anyOf ~= nil then
         for _, candidate in ipairs(cond.anyOf) do
@@ -203,6 +233,27 @@ local function ClaimOutranks(a, b)
     return (a.name or "") < (b.name or "")
 end
 
+local function ResolveClaim(result, claim)
+    if type(claim) ~= "table" then
+        return
+    end
+    if not claim.active or claim.targetWidget == nil then
+        return
+    end
+
+    local byTarget = result[claim.kind]
+    if not byTarget then
+        return
+    end
+
+    local current = byTarget[claim.targetWidget]
+    if current and not ClaimOutranks(claim, current) then
+        return
+    end
+
+    byTarget[claim.targetWidget] = claim
+end
+
 --- Resolves transformative overlay claims into a single winner per (kind,
 --- targetWidget). Only active claims with a targetWidget participate
 --- (malformed claims are skipped, never errored on). FRAME and BORDER resolve
@@ -214,18 +265,12 @@ end
 --- @return table { FRAME = { [targetWidget] = winnerClaim }, BORDER = { ... } }
 function OverlayLogic.ResolveTransformative(claims)
     local result = { FRAME = {}, BORDER = {} }
+    if type(claims) ~= "table" then
+        return result
+    end
+
     for _, claim in ipairs(claims) do
-        -- A claim without a targetWidget is malformed; skip it rather than
-        -- writing to a nil table key in the per-frame hot path.
-        if claim.active and claim.targetWidget ~= nil then
-            local byTarget = result[claim.kind]
-            if byTarget then
-                local current = byTarget[claim.targetWidget]
-                if current == nil or ClaimOutranks(claim, current) then
-                    byTarget[claim.targetWidget] = claim
-                end
-            end
-        end
+        ResolveClaim(result, claim)
     end
     return result
 end

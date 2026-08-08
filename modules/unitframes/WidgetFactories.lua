@@ -1,4 +1,5 @@
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.WidgetFactories = {}
 
 function NivUI.WidgetFactories.GetClassColor(unit)

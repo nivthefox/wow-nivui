@@ -1,6 +1,12 @@
+local _, NivUI = ...
+
 NivUI.BarBase = {}
 
 function NivUI.BarBase.CreateModule(config)
+    if type(config) ~= "table" then
+        return nil
+    end
+
     local state = {
         barType = config.barType,
         frame = nil,

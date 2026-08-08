@@ -1,7 +1,8 @@
 --- Aura filtering model: Blizzard's built-in filter modifiers plus user-defined
 --- custom spell lists. Each aura widget independently toggles Allow/Block per filter.
 --- Custom lists are profile-scoped under NivUI.current.customFilters.
-NivUI = NivUI or {}
+local _, NivUI = ...
+
 NivUI.Filters = NivUI.Filters or {}
 
 local Filters = NivUI.Filters
@@ -34,13 +35,15 @@ end
 --- @return table Sorted array of custom filter names
 function Filters:GetCustomNames()
     local store = GetStore()
-    local names = {}
-    if store then
-        for name in pairs(store) do
-            names[#names + 1] = name
-        end
-        table.sort(names)
+    if not store then
+        return {}
     end
+
+    local names = {}
+    for name in pairs(store) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
     return names
 end
 
@@ -67,10 +70,12 @@ end
 
 function Filters:DeleteCustom(name)
     local store = GetStore()
-    if store and store[name] then
-        store[name] = nil
-        NivUI:TriggerEvent("CustomFiltersChanged", { name = name, deleted = true })
+    if not store or not store[name] then
+        return
     end
+
+    store[name] = nil
+    NivUI:TriggerEvent("CustomFiltersChanged", { name = name, deleted = true })
 end
 
 --- @return table The spellID -> saved name table for a custom filter (empty if missing)
@@ -151,6 +156,11 @@ end
 --- @return table Spec with allowBuiltin/blockBuiltin filter strings, allowSpells/blockSpells sets, hasAllow flag
 function Filters:BuildSpec(config, prefix)
     local spec = { allowBuiltin = {}, blockBuiltin = {}, allowSpells = {}, blockSpells = {} }
+    if type(config) ~= "table" or type(prefix) ~= "string" then
+        spec.hasAllow = false
+        return spec
+    end
+
     local allow, block = config.allow, config.block
 
     for _, entry in ipairs(self.BUILTIN) do
