@@ -65,9 +65,6 @@ function NivUI.EditMode:SavePosition(frameType, customFrame)
                 db.point = point
                 db.x = x
                 db.y = y
-                if NivUI.OnBarMoved then
-                    NivUI.OnBarMoved()
-                end
             end
         end
         return

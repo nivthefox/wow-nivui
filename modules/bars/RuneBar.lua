@@ -322,7 +322,7 @@ NivUI:RegisterClassBar("rune", {
         { type = "emptyColor" },
         { type = "filledColor" },
         { type = "borderColor" },
-        { type = "header", text = "Position" },
+        { type = "header", text = "Size" },
         { type = "widthSlider", min = 120, max = 480 },
         { type = "heightSlider" },
         { type = "intervalSlider" },

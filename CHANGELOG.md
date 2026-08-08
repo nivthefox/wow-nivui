@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Config panel labels and sliders now use a fixed-width layout instead of stretching across the full panel width
+- Equivalent checkboxes and sliders now share interaction behavior across the main panel, unit-frame designer, and Edit Mode dialog
+- Class-bar positioning is managed exclusively through Blizzard Edit Mode, while size and appearance remain in the NivUI panel
 
 ### Fixed
 
 - Raid frames no longer drift out of position when the raid is not fully populated
+- Scrolling over a configuration slider no longer changes its value
 
 ## [2.1.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.1.0) - 2026-07-21
 

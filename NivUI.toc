@@ -7,6 +7,7 @@
 ## SavedVariablesPerCharacter: NivUI_CurrentProfile
 
 NivUI.lua
+ConfigControls.lua
 modules/ReferenceIntegrity.lua
 ConfigLifecycle.lua
 ConfigDeletion.lua

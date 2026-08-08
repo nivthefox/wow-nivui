@@ -342,7 +342,7 @@ function SectionHandlers.widthSlider(content, section, config, Components)
         local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.width or config.defaults.width)
     end
-    return widget, onShow, "widthSlider"
+    return widget, onShow
 end
 
 function SectionHandlers.heightSlider(content, section, config, Components)
@@ -380,7 +380,7 @@ function SectionHandlers.heightSlider(content, section, config, Components)
         local db = NivUI:GetActiveProfile()[config.dbKey] or {}
         widget:SetValue(db.height or config.defaults.height)
     end
-    return widget, onShow, "heightSlider"
+    return widget, onShow
 end
 
 function SectionHandlers.intervalSlider(content, section, config, Components)
@@ -507,25 +507,27 @@ function NivUI.Config.Bars.BuildClassBarConfig(parent, config, Components)
         table.insert(allFrames, frame)
     end
 
-    local refs = {}
     local onShowHandlers = {}
 
     for _, section in ipairs(config.sections) do
         local handler = SectionHandlers[section.type]
         if handler then
-            local widget, onShow, refKey = handler(content, section, config, Components)
+            local widget, onShow = handler(content, section, config, Components)
             if widget then
                 local spacing = section.spacing
                 if spacing == nil and section.type == "header" then
                     spacing = SECTION_SPACING
                 end
                 AddFrame(widget, spacing or 0)
+                if section.type == "enable" then
+                    AddFrame(Components.GetDescription(
+                        content,
+                        "Position this bar in Blizzard Edit Mode. Size and appearance remain configurable here."
+                    ), 4)
+                end
             end
             if onShow then
                 table.insert(onShowHandlers, onShow)
-            end
-            if refKey then
-                refs[refKey] = widget
             end
         end
     end
@@ -536,11 +538,7 @@ function NivUI.Config.Bars.BuildClassBarConfig(parent, config, Components)
         end
     end)
 
-    return {
-        container = container,
-        widthSlider = refs.widthSlider,
-        heightSlider = refs.heightSlider,
-    }
+    return container
 end
 
 --- Auto-wires apply functions for config sections based on globalRef
@@ -589,14 +587,12 @@ end
 --- @param ContentArea Frame The content area frame
 --- @param Components table The Components table from ConfigFrame
 --- @return Frame container The tab container
---- @return table results Table keyed by barType for OnBarMoved
 function NivUI.Config.Bars.SetupTab(ContentArea, Components)
     local container = CreateFrame("Frame", nil, ContentArea)
     container:SetAllPoints()
     container:Hide()
 
     local allTabs = {}
-    local results = {}
     local currentSubTab = 1
 
     local function SelectSubTab(index)
@@ -651,8 +647,7 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
             sections = sections,
         }
 
-        local result = NivUI.Config.Bars.BuildClassBarConfig(container, barConfig, Components)
-        results[regConfig.barType] = result
+        local barContainer = NivUI.Config.Bars.BuildClassBarConfig(container, barConfig, Components)
 
         local tab = Components.GetTab(container, regConfig.tabName or regConfig.displayName)
         local idx = tabIndex
@@ -660,7 +655,7 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
 
         table.insert(allTabs, {
             tab = tab,
-            container = result.container,
+            container = barContainer,
         })
     end
 
@@ -673,25 +668,5 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
         SelectSubTab(currentSubTab)
     end)
 
-    return container, results
-end
-
---- Sets up the OnBarMoved callback for updating sliders when bars are moved.
---- @param results table The results table from SetupTab
-function NivUI.Config.Bars.SetupOnBarMoved(results)
-    NivUI.OnBarMoved = function()
-        for barType, regConfig in pairs(NivUI.classBarRegistry) do
-            local db = NivUI:GetActiveProfile()[regConfig.dbKey] or {}
-            local defaults = regConfig.defaults
-            local result = results[barType]
-            if result then
-                if result.widthSlider then
-                    result.widthSlider:SetValue(db.width or defaults.width)
-                end
-                if result.heightSlider then
-                    result.heightSlider:SetValue(db.height or defaults.height)
-                end
-            end
-        end
-    end
+    return container
 end

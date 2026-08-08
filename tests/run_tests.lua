@@ -168,10 +168,16 @@ local assertions = {
 }
 
 local testEnvironment = setmetatable({
+    MinimalSliderWithSteppersMixin = {
+        Event = {
+            OnValueChanged = "OnValueChanged",
+        },
+    },
     strtrim = stubs.strtrim,
 }, { __index = _G })
 
 local modules = {
+    addonRoot .. "/ConfigControls.lua",
     addonRoot .. "/modules/TabLayout.lua",
     addonRoot .. "/modules/filters/SpellFilters.lua",
     addonRoot .. "/modules/overlays/OverlayLogic.lua",

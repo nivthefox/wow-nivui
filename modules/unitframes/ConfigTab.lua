@@ -1,5 +1,7 @@
 local _, NivUI = ...
 
+local ConfigControls = NivUI.ConfigControls
+
 NivUI.UnitFrames = NivUI.UnitFrames or {}
 
 local ConfigDeletion = NivUI.ConfigDeletion
@@ -533,12 +535,14 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
             checkBox:GetFontString():SetPoint("RIGHT", holder, "LEFT", LABEL_WIDTH - 30, 0)
             checkBox:GetFontString():SetPoint("LEFT", holder, "LEFT", 10, 0)
             checkBox:GetFontString():SetJustifyH("RIGHT")
-            checkBox:SetChecked(currentValue)
-
-            checkBox:SetScript("OnClick", function()
-                panel:Commit(entry.key, checkBox:GetChecked())
-                panel:BuildFor(panel.subject)
-            end)
+            local binding = ConfigControls.BindCheckboxRow(holder, checkBox, {
+                canChange = function() return NivUI:CanChangeConfig() end,
+                onChanged = function(checked)
+                    panel:Commit(entry.key, checked)
+                    panel:BuildFor(panel.subject)
+                end,
+            })
+            binding:SetValue(currentValue)
 
         elseif entry.kind == "filterMatrix" then
             local rows = {}
@@ -599,7 +603,6 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
             editBox:SetSize(50, 20)
             editBox:SetAutoFocus(false)
             editBox:SetMaxLetters(6)
-            editBox:SetText(tostring(currentValue or entry.min))
 
             local slider = CreateFrame("Slider", nil, holder, "MinimalSliderWithSteppersTemplate")
             slider:SetPoint("LEFT", holder, "LEFT", LABEL_WIDTH - 20, 0)
@@ -617,32 +620,16 @@ function NivUI.UnitFrames:CreateSettingsPanel(parent, opts)
                 UpdateSliderWidth(holder, holder:GetWidth())
             end
 
-            local numSteps = math.floor((entry.max - entry.min) / entry.step)
-            slider:Init(currentValue or entry.min, entry.min, entry.max, numSteps, {})
-
-            local updating = false
-
-            slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
-                if updating then return end
-                updating = true
-                editBox:SetText(tostring(math.floor(value)))
-                panel:Commit(entry.key, value)
-                updating = false
-            end)
-
-            editBox:SetScript("OnEnterPressed", function(self)
-                local value = tonumber(self:GetText()) or entry.min
-                value = math.max(entry.min, math.min(entry.max, value))
-                updating = true
-                slider:SetValue(value)
-                panel:Commit(entry.key, value)
-                updating = false
-                self:ClearFocus()
-            end)
-
-            editBox:SetScript("OnEscapePressed", function(self)
-                self:ClearFocus()
-            end)
+            ConfigControls.BindSlider(slider, editBox, {
+                min = entry.min,
+                max = entry.max,
+                step = entry.step,
+                value = currentValue or entry.min,
+                canChange = function() return NivUI:CanChangeConfig() end,
+                onChanged = function(value)
+                    panel:Commit(entry.key, value)
+                end,
+            })
 
         elseif entry.kind == "dropdown" then
             local label = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

@@ -1,5 +1,7 @@
 local _, NivUI = ...
 
+local ConfigControls = NivUI.ConfigControls
+
 local FRAME_WIDTH = 680
 local FRAME_HEIGHT = 650
 local ROW_HEIGHT = 32
@@ -23,29 +25,18 @@ function Components.GetCheckbox(parent, label, callback)
     checkBox:GetFontString():SetPoint("LEFT", holder, 20, 0)
     checkBox:GetFontString():SetJustifyH("RIGHT")
 
+    local binding = ConfigControls.BindCheckboxRow(holder, checkBox, {
+        canChange = function() return NivUI:CanChangeConfig() end,
+        onChanged = callback,
+    })
+
     function holder:SetValue(value)
-        checkBox:SetChecked(value)
+        binding:SetValue(value)
     end
 
     function holder:GetValue()
-        return checkBox:GetChecked()
+        return binding:GetValue()
     end
-
-    holder:SetScript("OnEnter", function()
-        if checkBox.OnEnter then checkBox:OnEnter() end
-    end)
-
-    holder:SetScript("OnLeave", function()
-        if checkBox.OnLeave then checkBox:OnLeave() end
-    end)
-
-    holder:SetScript("OnMouseUp", function()
-        checkBox:Click()
-    end)
-
-    checkBox:SetScript("OnClick", function()
-        if callback then callback(checkBox:GetChecked()) end
-    end)
 
     return holder
 end
@@ -146,7 +137,6 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
     local editBox = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
     editBox:SetSize(50, 20)
     editBox:SetAutoFocus(false)
-    editBox:SetNumeric(not isDecimal)
     editBox:SetMaxLetters(6)
 
     holder.Slider = CreateFrame("Slider", nil, holder, "MinimalSliderWithSteppersTemplate")
@@ -165,71 +155,23 @@ function Components.GetSliderWithInput(parent, labelText, min, max, step, isDeci
         UpdateSliderWidth(holder, holder:GetWidth())
     end
 
-    local numSteps = math.floor((max - min) / step)
-    holder.Slider:Init(min, min, max, numSteps, {})
-
-    local updatingFromSlider = false
-    local updatingFromInput = false
-
-    holder.Slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
-        if updatingFromInput then return end
-        updatingFromSlider = true
-        if isDecimal then
-            editBox:SetText(string.format("%.2f", value))
-        else
-            editBox:SetText(tostring(math.floor(value)))
-        end
-        updatingFromSlider = false
-        if callback then callback(value) end
-    end)
-
-    local function ApplyInputValue()
-        if updatingFromSlider then return end
-        if not NivUI:CanChangeConfig() then return end
-        local text = editBox:GetText()
-        local value = tonumber(text)
-        if value then
-            value = math.max(min, math.min(max, value))
-            updatingFromInput = true
-            holder.Slider:SetValue(value)
-            updatingFromInput = false
-            if callback then callback(value) end
-        end
-    end
-
-    editBox:SetScript("OnEnterPressed", function(self)
-        ApplyInputValue()
-        self:ClearFocus()
-    end)
-
-    editBox:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus()
-    end)
-
-    editBox:SetScript("OnEditFocusLost", function()
-        ApplyInputValue()
-    end)
+    local binding = ConfigControls.BindSlider(holder.Slider, editBox, {
+        min = min,
+        max = max,
+        step = step,
+        value = min,
+        decimalPlaces = isDecimal and 2 or 0,
+        canChange = function() return NivUI:CanChangeConfig() end,
+        onChanged = callback,
+    })
 
     function holder:GetValue()
-        return holder.Slider.Slider:GetValue()
+        return binding:GetValue()
     end
 
     function holder:SetValue(value)
-        updatingFromSlider = true
-        holder.Slider:SetValue(value)
-        if isDecimal then
-            editBox:SetText(string.format("%.2f", value))
-        else
-            editBox:SetText(tostring(math.floor(value)))
-        end
-        updatingFromSlider = false
+        binding:SetValue(value)
     end
-
-    holder:SetScript("OnMouseWheel", function(_, delta)
-        if holder.Slider.Slider:IsEnabled() then
-            holder.Slider:SetValue(holder.Slider.Slider:GetValue() + delta * step)
-        end
-    end)
 
     holder.EditBox = editBox
 
@@ -317,6 +259,22 @@ function Components.GetHeader(parent, text)
     holder.text = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     holder.text:SetText(text)
     holder.text:SetPoint("LEFT", 10, 0)
+
+    return holder
+end
+
+function Components.GetDescription(parent, text)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetPoint("LEFT", 20, 0)
+    holder:SetPoint("RIGHT", -20, 0)
+    holder:SetHeight(34)
+
+    local description = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    description:SetPoint("LEFT", 20, 0)
+    description:SetPoint("RIGHT", -20, 0)
+    description:SetJustifyH("LEFT")
+    description:SetTextColor(0.65, 0.65, 0.65)
+    description:SetText(text)
 
     return holder
 end
@@ -430,9 +388,8 @@ function NivUI:CreateConfigFrame()
         currentSidebarTab = index
     end
 
-    local classBarsContainer, barResults = NivUI.Config.Bars.SetupTab(ContentArea, Components)
+    local classBarsContainer = NivUI.Config.Bars.SetupTab(ContentArea, Components)
     table.insert(sidebarContainers, classBarsContainer)
-    NivUI.Config.Bars.SetupOnBarMoved(barResults)
 
     local classBarsTab = Components.GetSidebarTab(Sidebar, "Class Bars")
     classBarsTab:SetPoint("TOPLEFT", Sidebar, "TOPLEFT", 4, -8)

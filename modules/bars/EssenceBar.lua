@@ -29,7 +29,7 @@ NivUI:RegisterClassBar("essence", {
         { type = "emptyColor" },
         { type = "filledColor" },
         { type = "borderColor" },
-        { type = "header", text = "Position" },
+        { type = "header", text = "Size" },
         { type = "widthSlider", min = 60, max = 400 },
         { type = "heightSlider" },
         { type = "intervalSlider" },

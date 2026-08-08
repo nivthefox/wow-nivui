@@ -1,5 +1,7 @@
 local _, NivUI = ...
 
+local ConfigControls = NivUI.ConfigControls
+
 NivUI.EditMode = NivUI.EditMode or {}
 
 local DIALOG_WIDTH = 320
@@ -409,33 +411,29 @@ local function CreateSettingControl(parent, settingDef, index)
     elseif settingDef.type == SettingType.Slider then
         local slider = CreateFrame("Slider", nil, control, "MinimalSliderWithSteppersTemplate")
         slider:SetPoint("LEFT", label, "RIGHT", 10, 0)
-        slider:SetWidth(120)
         slider:SetHeight(20)
 
-        local steps = math.floor((settingDef.max - settingDef.min) / (settingDef.step or 1))
-        slider:Init(settingDef.get(), settingDef.min, settingDef.max, steps, {})
+        local editBox = CreateFrame("EditBox", nil, control, "InputBoxTemplate")
+        editBox:SetPoint("RIGHT", 0, 0)
+        editBox:SetSize(42, 20)
+        editBox:SetAutoFocus(false)
+        editBox:SetMaxLetters(6)
+
+        slider:SetPoint("RIGHT", editBox, "LEFT", -8, 0)
 
         control.slider = slider
+        control.editBox = editBox
 
-        local valueText = control:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        valueText:SetPoint("LEFT", slider, "RIGHT", 8, 0)
-        valueText:SetWidth(30)
-        control.valueText = valueText
-
-        local updating = false
-        slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
-            if updating then return end
-            updating = true
-            value = math.floor(value + 0.5)
-            valueText:SetText(tostring(value))
-            settingDef.set(value)
-            updating = false
-        end)
+        local binding = ConfigControls.BindSlider(slider, editBox, {
+            min = settingDef.min,
+            max = settingDef.max,
+            step = settingDef.step or 1,
+            value = settingDef.get(),
+            onChanged = settingDef.set,
+        })
 
         function control:Refresh()
-            local value = self.settingDef.get()
-            self.slider:SetValue(value)
-            self.valueText:SetText(tostring(value))
+            binding:SetValue(self.settingDef.get())
         end
 
     elseif settingDef.type == SettingType.Checkbox then
@@ -448,14 +446,14 @@ local function CreateSettingControl(parent, settingDef, index)
         checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
         checkbox:SetDisabledCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check-Disabled")
 
-        checkbox:SetScript("OnClick", function(self)
-            settingDef.set(self:GetChecked())
-        end)
-
         control.checkbox = checkbox
 
+        local binding = ConfigControls.BindCheckboxRow(control, checkbox, {
+            onChanged = settingDef.set,
+        })
+
         function control:Refresh()
-            self.checkbox:SetChecked(self.settingDef.get())
+            binding:SetValue(self.settingDef.get())
         end
 
     elseif settingDef.type == SettingType.TextInput then

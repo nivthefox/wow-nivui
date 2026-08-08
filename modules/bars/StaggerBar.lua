@@ -416,7 +416,7 @@ NivUI:RegisterClassBar("stagger", {
         { type = "fontSizeSlider", applySetting = "font" },
         { type = "fontColor", applySetting = "font" },
         { type = "fontShadow", applySetting = "font" },
-        { type = "header", text = "Position" },
+        { type = "header", text = "Size" },
         { type = "widthSlider", applySetting = "position" },
         { type = "heightSlider", applySetting = "position" },
         { type = "intervalSlider" },

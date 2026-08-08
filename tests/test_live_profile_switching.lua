@@ -411,9 +411,8 @@ local function createConfigHarness()
     NivUI.Config = {
         Bars = {
             SetupTab = function()
-                return setupTab(), {}
+                return setupTab()
             end,
-            SetupOnBarMoved = function() end,
         },
         Filters = { SetupTab = setupTab },
         Overlays = { SetupTab = setupTab },

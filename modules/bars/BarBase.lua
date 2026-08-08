@@ -22,16 +22,7 @@ function NivUI.BarBase.CreateModule(config)
         if not barConfig then return end
 
         local frameType = "classBar_" .. state.barType
-        local selection = NivUI.EditMode:CreateSelectionFrame(frameType, frame)
-
-        if not selection.barDragHooked then
-            selection.barDragHooked = true
-            local origDragStop = selection:GetScript("OnDragStop")
-            selection:SetScript("OnDragStop", function(self)
-                origDragStop(self)
-                self.customFrame:SetMovable(true)
-            end)
-        end
+        NivUI.EditMode:CreateSelectionFrame(frameType, frame)
 
         if NivUI.EditMode:IsActive() then
             if not frame:IsShown() then
