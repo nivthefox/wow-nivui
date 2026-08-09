@@ -7,11 +7,12 @@
 ## SavedVariablesPerCharacter: NivUI_CurrentProfile
 
 NivUI.lua
-ConfigControls.lua
+modules/config/Controls.lua
 modules/ReferenceIntegrity.lua
-ConfigLifecycle.lua
-ConfigDeletion.lua
-modules/TabLayout.lua
+modules/config/Lifecycle.lua
+modules/config/Deletion.lua
+modules/config/TabLayout.lua
+modules/config/SettingsPanel.lua
 modules/profiles/Profiles.lua
 modules/filters/SpellFilters.lua
 modules/overlays/OverlayLogic.lua
@@ -30,10 +31,21 @@ modules/unitframes/Defaults.lua
 modules/unitframes/StyleManager.lua
 modules/unitframes/WidgetConfigs.lua
 modules/unitframes/WidgetFactories.lua
+modules/unitframes/config/AssignmentsPanel.lua
+modules/unitframes/config/CustomRaidGroupPanel.lua
+modules/unitframes/config/StyleDesignerPanel.lua
 modules/unitframes/ConfigTab.lua
 modules/unitframes/Designer.lua
 modules/unitframes/RangeCheck.lua
 modules/unitframes/UnitFrameLifecycle.lua
+modules/unitframes/runtime/HealthUpdater.lua
+modules/unitframes/runtime/StandardWidgetUpdater.lua
+modules/unitframes/runtime/CastbarUpdater.lua
+modules/unitframes/runtime/AuraOverlays.lua
+modules/unitframes/runtime/WidgetTree.lua
+modules/unitframes/runtime/EventRouter.lua
+modules/unitframes/runtime/SecureFrame.lua
+modules/unitframes/runtime/NameRefresh.lua
 modules/unitframes/UnitFrameBase.lua
 modules/unitframes/MultiUnitFrameBase.lua
 modules/unitframes/EditModeSettingsDialog.lua

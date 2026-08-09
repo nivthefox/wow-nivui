@@ -1,5 +1,7 @@
 local _, NivUI = ...
 
+NivUI.Config = NivUI.Config or {}
+
 local ConfigDeletion = {}
 NivUI.ConfigDeletion = ConfigDeletion
 

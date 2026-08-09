@@ -1,5 +1,7 @@
 local _, NivUI = ...
 
+NivUI.Config = NivUI.Config or {}
+
 local DEFAULT_FALLBACK_WIDTH = 600
 local DEFAULT_ROW_HEIGHT = 24
 

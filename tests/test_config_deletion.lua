@@ -94,7 +94,7 @@ local function createHarness()
     loadChunk(addonRoot .. "/modules/ReferenceIntegrity.lua", environment, "NivUI", NivUI)
     loadChunk(addonRoot .. "/modules/filters/SpellFilters.lua", environment, "NivUI", NivUI)
     loadChunk(addonRoot .. "/modules/overlays/Overlays.lua", environment, "NivUI", NivUI)
-    loadChunk(addonRoot .. "/ConfigDeletion.lua", environment, "NivUI", NivUI)
+    loadChunk(addonRoot .. "/modules/config/Deletion.lua", environment, "NivUI", NivUI)
     loadChunk(addonRoot .. "/config/Filters.lua", environment, "NivUI", NivUI)
     loadChunk(addonRoot .. "/config/Overlays.lua", environment, "NivUI", NivUI)
 

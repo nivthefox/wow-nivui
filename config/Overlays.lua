@@ -88,7 +88,7 @@ function NivUI.Config.Overlays.SetupTab(ContentArea, Components)
         end)
     end
 
-    local settingsPanel = NivUI.UnitFrames:CreateSettingsPanel(body, {
+    local settingsPanel = NivUI.Config.SettingsPanel.Create(body, {
         getConfig = function() return Overlays.CONFIG end,
         getData = function(name) return name and Overlays:Get(name) or nil end,
         save = NotifyModified,

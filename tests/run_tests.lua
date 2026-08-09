@@ -177,8 +177,9 @@ local testEnvironment = setmetatable({
 }, { __index = _G })
 
 local modules = {
-    addonRoot .. "/ConfigControls.lua",
-    addonRoot .. "/modules/TabLayout.lua",
+    addonRoot .. "/modules/config/Controls.lua",
+    addonRoot .. "/modules/config/TabLayout.lua",
+    addonRoot .. "/modules/config/SettingsPanel.lua",
     addonRoot .. "/modules/filters/SpellFilters.lua",
     addonRoot .. "/modules/overlays/OverlayLogic.lua",
     addonRoot .. "/modules/overlays/Overlays.lua",

@@ -353,7 +353,7 @@ local function createAddon(profileData)
 
     harness:load("NivUI.lua")
     harness:load("modules/ReferenceIntegrity.lua")
-    harness:load("ConfigLifecycle.lua")
+    harness:load("modules/config/Lifecycle.lua")
     namespace.activeProfileName = "Alpha"
     harness.providedGetActiveProfile = type(namespace.GetActiveProfile) == "function"
     if not harness.providedGetActiveProfile then
@@ -787,6 +787,14 @@ return {
             end,
         }
         harness:load("modules/unitframes/UnitFrameLifecycle.lua")
+        harness:load("modules/unitframes/runtime/HealthUpdater.lua")
+        harness:load("modules/unitframes/runtime/StandardWidgetUpdater.lua")
+        harness:load("modules/unitframes/runtime/CastbarUpdater.lua")
+        harness:load("modules/unitframes/runtime/AuraOverlays.lua")
+        harness:load("modules/unitframes/runtime/WidgetTree.lua")
+        harness:load("modules/unitframes/runtime/EventRouter.lua")
+        harness:load("modules/unitframes/runtime/SecureFrame.lua")
+        harness:load("modules/unitframes/runtime/NameRefresh.lua")
         harness:load("modules/unitframes/UnitFrameBase.lua")
         harness:load("modules/profiles/Profiles.lua")
         harness:initialize()
