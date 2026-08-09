@@ -7,16 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.1.1](https://github.com/nivthefox/wow-nivui/releases/tag/v2.1.1) - 2026-08-08
+
 ### Changed
 
 - Config panel labels and sliders now use a fixed-width layout instead of stretching across the full panel width
 - Equivalent checkboxes and sliders now share interaction behavior across the main panel, unit-frame designer, and Edit Mode dialog
 - Class-bar positioning is managed exclusively through Blizzard Edit Mode, while size and appearance remain in the NivUI panel
+- Custom raid group tabs are now sorted alphabetically
+- Deleting a profile, style, custom raid group, filter, or overlay now asks for confirmation and lists any affected settings
+- NivUI configuration windows now close when combat begins, and attempts to open them wait until combat ends
 
 ### Fixed
 
 - Raid frames no longer drift out of position when the raid is not fully populated
 - Scrolling over a configuration slider no longer changes its value
+- Long filter, overlay, bar, and unit-frame tab lists now wrap within the configuration panel instead of overflowing it
+- Switching profiles now updates existing bars and unit frames immediately, including profile changes deferred until combat ends
+- Renaming or deleting profiles, styles, filters, and overlays now keeps specialization mappings, frame assignments, and overlay selections consistent
+- Style, filter, and overlay changes now appear reliably on every affected unit frame
 
 ## [2.1.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.1.0) - 2026-07-21
 
