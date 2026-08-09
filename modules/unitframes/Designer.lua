@@ -44,12 +44,12 @@ function NivUI.Designer:Create(parent)
     selInner:SetColorTexture(0, 0, 0, 0)
     container.selectionOverlay.inner = selInner
 
-    container.SelectWidget = function(self, widgetType)
-        self.selectedWidget = widgetType
-        self.selectionOverlay:Hide()
+    container.SelectWidget = function(designer, widgetType)
+        designer.selectedWidget = widgetType
+        designer.selectionOverlay:Hide()
 
-        if self.onSelectionChanged then
-            self.onSelectionChanged(widgetType)
+        if designer.onSelectionChanged then
+            designer.onSelectionChanged(widgetType)
         end
     end
 

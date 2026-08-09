@@ -349,9 +349,9 @@ function NivUI:CreateConfigFrame()
     ConfigFrame:EnableMouse(true)
     ConfigFrame:RegisterForDrag("LeftButton")
     ConfigFrame:SetScript("OnDragStart", ConfigFrame.StartMoving)
-    ConfigFrame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        self:SetUserPlaced(false)
+    ConfigFrame:SetScript("OnDragStop", function(frame)
+        frame:StopMovingOrSizing()
+        frame:SetUserPlaced(false)
     end)
 
     ConfigFrame:SetScript("OnMouseWheel", function() end)
@@ -428,9 +428,9 @@ function NivUI:CreateConfigFrame()
     profilesTab:SetScript("OnClick", function() SelectSidebarTab(5) end)
     table.insert(sidebarTabs, profilesTab)
 
-    ConfigFrame:SetScript("OnShow", function(self)
+    ConfigFrame:SetScript("OnShow", function(frame)
         if InCombatLockdown() then
-            self:Hide()
+            frame:Hide()
             NivUI:RequestConfigOpenAfterCombat()
             return
         end

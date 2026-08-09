@@ -317,11 +317,11 @@ local function CreateOverlaySelector(parent, getStyle, saveStyle, refreshPreview
             row.label:SetText(name)
             row.overlayName = name
             row:SetChecked(style.overlays[name] and true or false)
-            row:SetScript("OnClick", function(self)
+            row:SetScript("OnClick", function(checkBox)
                 local s = getStyle()
                 if not s then return end
                 s.overlays = s.overlays or {}
-                s.overlays[self.overlayName] = self:GetChecked() or nil
+                s.overlays[checkBox.overlayName] = checkBox:GetChecked() or nil
                 saveStyle(s)
                 refreshPreview()
             end)

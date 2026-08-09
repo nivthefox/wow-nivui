@@ -6,21 +6,26 @@ A World of Warcraft UI overhaul addon. Fixing all the shit Blizzard broke in 12.
 
 ## Philosophy
 
-Everything is opt-in. On first load, NivUI registers only the `/nivui` command. Every module stays disabled until you explicitly enable it. No assumptions, no wasted resources.
+Display modules are opt-in. NivUI loads its shared infrastructure at startup, but unit frames and resource bars stay disabled until you explicitly enable them. The configuration panel is created when you first open `/nivui` and reused afterward.
 
 ## Features
 
 ### Unit Frames
 - Player, Target, Target-of-Target, Focus, Pet
-- Party and Raid frames
-- Boss frames
+- Party, Raid, Boss, and Arena frames
 - Visual style designer with live preview
 - Style management: create, clone, rename, and assign styles
 - Edit Mode integration for positioning
 
 ### Resource Bars
-- **Stagger Bar** - Brewmaster Monk stagger visualization with DPS and percent display
-- **Chi Bar** - Windwalker Monk chi resource display
+- Arcane Charges Bar
+- Chi Bar
+- Combo Points Bar
+- Essence Bar
+- Holy Power Bar
+- Rune Bar
+- Soul Shards Bar
+- Stagger Bar
 
 ## Installation
 

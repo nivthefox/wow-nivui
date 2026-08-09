@@ -332,48 +332,48 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
     end
     selection.Label:SetText(labelText)
 
-    selection:SetScript("OnDragStart", function(self)
+    selection:SetScript("OnDragStart", function(selectionFrame)
         if InCombatLockdown() then return end
 
-        self.customFrame:SetMovable(true)
-        self.customFrame:StartMoving()
-        self.isDragging = true
+        selectionFrame.customFrame:SetMovable(true)
+        selectionFrame.customFrame:StartMoving()
+        selectionFrame.isDragging = true
 
         if EditModeManagerFrame and NivUI.EditMode:IsSnapEnabled() then
-            EditModeManagerFrame:SetSnapPreviewFrame(self.customFrame)
+            EditModeManagerFrame:SetSnapPreviewFrame(selectionFrame.customFrame)
         end
     end)
 
-    selection:SetScript("OnDragStop", function(self)
-        self.customFrame:StopMovingOrSizing()
-        self.customFrame:SetMovable(false)
-        self.isDragging = false
+    selection:SetScript("OnDragStop", function(selectionFrame)
+        selectionFrame.customFrame:StopMovingOrSizing()
+        selectionFrame.customFrame:SetMovable(false)
+        selectionFrame.isDragging = false
 
         if EditModeManagerFrame then
             EditModeManagerFrame:ClearSnapPreviewFrame()
         end
 
         if NivUI.EditMode:IsSnapEnabled() and EditModeMagnetismManager then
-            EditModeMagnetismManager:ApplyMagnetism(self.customFrame)
+            EditModeMagnetismManager:ApplyMagnetism(selectionFrame.customFrame)
         end
 
-        NivUI.EditMode:SavePosition(self.frameType, self.customFrame)
+        NivUI.EditMode:SavePosition(selectionFrame.frameType, selectionFrame.customFrame)
     end)
 
-    selection:SetScript("OnMouseDown", function(self)
-        NivUI.EditMode:SelectFrame(self.frameType, self.customFrame)
+    selection:SetScript("OnMouseDown", function(selectionFrame)
+        NivUI.EditMode:SelectFrame(selectionFrame.frameType, selectionFrame.customFrame)
     end)
 
-    selection:SetScript("OnEnter", function(self)
-        self.MouseOverHighlight:Show()
+    selection:SetScript("OnEnter", function(selectionFrame)
+        selectionFrame.MouseOverHighlight:Show()
     end)
 
-    selection:SetScript("OnLeave", function(self)
-        self.MouseOverHighlight:Hide()
+    selection:SetScript("OnLeave", function(selectionFrame)
+        selectionFrame.MouseOverHighlight:Hide()
     end)
 
-    selection.IsDragging = function(self)
-        return self.isDragging
+    selection.IsDragging = function(selectionFrame)
+        return selectionFrame.isDragging
     end
 
     selectionFrames[frameType] = selection
@@ -612,8 +612,8 @@ function NivUI.EditMode:HideBlizzardSelections()
             blizzFrame.Selection:Hide()
             if not blizzFrame.Selection.NivUI_Hooked then
                 blizzFrame.Selection.NivUI_Hooked = true
-                hooksecurefunc(blizzFrame.Selection, "Show", function(self)
-                    self:Hide()
+                hooksecurefunc(blizzFrame.Selection, "Show", function(selection)
+                    selection:Hide()
                 end)
             end
         end

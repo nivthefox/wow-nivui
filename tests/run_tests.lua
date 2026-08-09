@@ -150,8 +150,8 @@ local function loadChunk(path, environment, ...)
 end
 
 local stubsPath = testsDir .. "/wow_stubs.lua"
-local ok, stubs = pcall(loadChunk, stubsPath, nil, addonName, addonNamespace)
-if not ok then
+local stubsOk, stubs = pcall(loadChunk, stubsPath, nil, addonName, addonNamespace)
+if not stubsOk then
     io.stderr:write("FATAL: could not load wow_stubs.lua: " .. tostring(stubs) .. "\n")
     os.exit(1)
 end

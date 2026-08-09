@@ -169,8 +169,8 @@ function SettingsPanel.Create(parent, opts)
         for i, tabConfig in ipairs(visibleTabs) do
             local tab = CreateFrame("Button", nil, self.tabHolder, "PanelTopTabButtonTemplate")
             tab:SetText(tabConfig.label)
-            tab:SetScript("OnShow", function(self)
-                PanelTemplates_TabResize(self, 10, nil, 60)
+            tab:SetScript("OnShow", function(tabButton)
+                PanelTemplates_TabResize(tabButton, 10, nil, 60)
             end)
             tab:GetScript("OnShow")(tab)
             tab:SetScript("OnClick", function()
@@ -234,10 +234,10 @@ function SettingsPanel.Create(parent, opts)
         end)
     end
 
-    function frame:CreateEntry(parent, entry, widgetData)
+    function frame:CreateEntry(entryParent, entry, widgetData)
         local panel = self
         local widgetType = self.subject
-        local holder = CreateFrame("Frame", nil, parent)
+        local holder = CreateFrame("Frame", nil, entryParent)
         holder:SetHeight(ROW_HEIGHT)
         holder:SetPoint("LEFT", 10, 0)
         holder:SetPoint("RIGHT", -10, 0)
@@ -491,25 +491,25 @@ function SettingsPanel.Create(parent, opts)
             editBox:SetNumeric(true)
             editBox:SetText(tostring(currentValue or entry.min or 1))
 
-            local function CommitNumeric(self)
+            local function CommitNumeric(input)
                 if not NivUI:CanChangeConfig() then return end
-                local value = math.max(entry.min or 1, math.floor(tonumber(self:GetText()) or entry.min or 1))
-                self:SetText(tostring(value))
+                local value = math.max(entry.min or 1, math.floor(tonumber(input:GetText()) or entry.min or 1))
+                input:SetText(tostring(value))
                 panel:Commit(entry.key, value)
             end
 
-            editBox:SetScript("OnEnterPressed", function(self)
-                CommitNumeric(self)
-                self:ClearFocus()
+            editBox:SetScript("OnEnterPressed", function(input)
+                CommitNumeric(input)
+                input:ClearFocus()
             end)
 
-            editBox:SetScript("OnEditFocusLost", function(self)
-                CommitNumeric(self)
+            editBox:SetScript("OnEditFocusLost", function(input)
+                CommitNumeric(input)
             end)
 
-            editBox:SetScript("OnEscapePressed", function(self)
-                self:SetText(tostring(DeepGet(panel:GetData() or {}, entry.key) or entry.min or 1))
-                self:ClearFocus()
+            editBox:SetScript("OnEscapePressed", function(input)
+                input:SetText(tostring(DeepGet(panel:GetData() or {}, entry.key) or entry.min or 1))
+                input:ClearFocus()
             end)
         end
 

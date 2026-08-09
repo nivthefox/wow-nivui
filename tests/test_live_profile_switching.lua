@@ -516,6 +516,89 @@ local function assertStaggerBar(frame, expected, message)
 end
 
 return {
+    ["resetting an inactive profile defers module defaults until activation"] = function()
+        local profiles = unitFrameProfiles()
+        profiles.Beta.testBar = { width = 999 }
+        local harness = createAddon(profiles)
+        local NivUI = harness.namespace
+        local database = harness.environment.NivUI_DB
+        local applyCount = 0
+
+        NivUI.classBarRegistry.test = {
+            dbKey = "testBar",
+            defaults = { width = 160, nested = { value = 42 } },
+        }
+        NivUI:RegisterProfileApplyCallback("test-reset", function()
+            applyCount = applyCount + 1
+        end)
+        harness:load("modules/profiles/Profiles.lua")
+        harness:initialize()
+
+        local activeProfile = NivUI:GetActiveProfile()
+        assertTrue(NivUI.Profiles:ResetProfile("Beta"))
+        assertEquals(NivUI:GetActiveProfile(), activeProfile, "inactive reset preserves active profile")
+        assertEquals(database.profiles.Beta.testBar, nil, "inactive module defaults remain deferred")
+        assertNotNil(database.profiles.Beta.unitFrameStyles.Default, "inactive references are reconciled")
+        assertEquals(applyCount, 0, "inactive reset does not apply active profile")
+
+        assertTrue(NivUI.Profiles:SwitchProfile("Beta"))
+        assertEquals(database.profiles.Beta.testBar.width, 160, "module default after activation")
+        assertEquals(database.profiles.Beta.testBar.nested.value, 42, "nested default after activation")
+        assertEquals(applyCount, 1, "activation applies reset profile")
+    end,
+
+    ["resetting the active profile restores defaults and reapplies it"] = function()
+        local profiles = unitFrameProfiles()
+        profiles.Alpha.testBar = { width = 999, nested = { value = -1 } }
+        profiles.Alpha.classBarEnabled = { test = true }
+        local harness = createAddon(profiles)
+        local NivUI = harness.namespace
+        local applyCount = 0
+
+        NivUI.classBarRegistry.test = {
+            dbKey = "testBar",
+            defaults = { width = 160, nested = { value = 42 } },
+        }
+        NivUI:RegisterProfileApplyCallback("test-reset", function()
+            applyCount = applyCount + 1
+        end)
+        harness:load("modules/profiles/Profiles.lua")
+        harness:initialize()
+
+        local previousProfile = NivUI:GetActiveProfile()
+        assertTrue(NivUI.Profiles:ResetProfile())
+
+        local resetProfile = NivUI:GetActiveProfile()
+        assertTrue(resetProfile ~= previousProfile, "active reset replaces the stored profile")
+        assertEquals(resetProfile.testBar.width, 160, "module width default")
+        assertEquals(resetProfile.testBar.nested.value, 42, "nested module default")
+        assertEquals(resetProfile.classBarEnabled.test, nil, "enabled state returns to opt-in default")
+        assertNotNil(resetProfile.unitFrameStyles.Default, "references are reconciled")
+        assertEquals(applyCount, 1, "active reset reapplies profile")
+    end,
+
+    ["resetting a missing profile fails without mutation"] = function()
+        local harness = createAddon(unitFrameProfiles())
+        local NivUI = harness.namespace
+        local database = harness.environment.NivUI_DB
+        local applyCount = 0
+
+        NivUI:RegisterProfileApplyCallback("test-reset", function()
+            applyCount = applyCount + 1
+        end)
+        harness:load("modules/profiles/Profiles.lua")
+        harness:initialize()
+
+        local activeProfile = NivUI:GetActiveProfile()
+        local success, message = NivUI.Profiles:ResetProfile("Missing")
+
+        assertFalse(success, "missing reset result")
+        assertEquals(message, "Profile does not exist", "missing reset message")
+        assertEquals(NivUI:GetActiveProfile(), activeProfile, "missing reset preserves active profile")
+        assertEquals(database.profiles.Missing, nil, "missing profile remains absent")
+        assertEquals(applyCount, 0, "missing reset does not apply profile")
+    end,
+
     ["database initialization repairs references before config is opened"] = function()
         local profiles = {
             Alpha = {

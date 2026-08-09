@@ -293,7 +293,6 @@ function NivUI.Config.Profiles.SetupTab(ContentArea, Components)
         local enabled = NivUI.Profiles:IsSpecAutoSwitchEnabled()
         for _, row in ipairs(specDropdowns) do
             row.DropDown:SetEnabled(enabled)
-            local specID = row.specID
             row:SetValue()
         end
     end
