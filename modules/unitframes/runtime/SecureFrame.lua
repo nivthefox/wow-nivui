@@ -297,9 +297,6 @@ function SecureFrame.BuildCustomFrame(state)
     customFrame.widgets = Facade.CreateWidgets(customFrame, style, state.unit, { frameType = state.frameType })
     Facade.ApplyAnchors(customFrame, customFrame.widgets, style)
 
-    -- state outlives customFrame rebuilds; clear stale FRAME overlay tints so a
-    -- removed or retyped overlay never leaves a permanent color on a rebuilt bar.
-    state.frameOverlayColors = nil
     state.customFrame = customFrame
 
     if isNewFrame then

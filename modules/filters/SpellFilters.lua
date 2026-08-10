@@ -157,25 +157,25 @@ function Filters:GetSortedSpells(name)
     return entries
 end
 
---- Resolves a widget's allow/block config into concrete matching sets for CollectAuras.
---- @param config table The aura widget config (with .allow / .block key sets)
---- @param prefix string "HELPFUL" or "HARMFUL"
---- @return table Spec with allowBuiltin/blockBuiltin filter strings, allowSpells/blockSpells sets, hasAllow flag
-function Filters:BuildSpec(config, prefix)
-    local spec = { allowBuiltin = {}, blockBuiltin = {}, allowSpells = {}, blockSpells = {} }
+function Filters:BuildContainerInputs(config, prefix)
+    local inputs = {
+        prefix = prefix,
+        allowTokens = {},
+        blockTokens = {},
+        allowSpellMaps = {},
+        blockSpellMaps = {},
+    }
     if type(config) ~= "table" or type(prefix) ~= "string" then
-        spec.hasAllow = false
-        return spec
+        return inputs
     end
 
     local allow, block = config.allow, config.block
-
     for _, entry in ipairs(self.BUILTIN) do
         if allow and allow[entry.token] then
-            spec.allowBuiltin[#spec.allowBuiltin + 1] = prefix .. "|" .. entry.token
+            inputs.allowTokens[#inputs.allowTokens + 1] = entry.token
         end
         if block and block[entry.token] then
-            spec.blockBuiltin[#spec.blockBuiltin + 1] = prefix .. "|" .. entry.token
+            inputs.blockTokens[#inputs.blockTokens + 1] = entry.token
         end
     end
 
@@ -183,14 +183,13 @@ function Filters:BuildSpec(config, prefix)
     if store then
         for name, filter in pairs(store) do
             if allow and allow[name] then
-                spec.allowSpells[#spec.allowSpells + 1] = filter.spells
+                inputs.allowSpellMaps[#inputs.allowSpellMaps + 1] = filter.spells
             end
             if block and block[name] then
-                spec.blockSpells[#spec.blockSpells + 1] = filter.spells
+                inputs.blockSpellMaps[#inputs.blockSpellMaps + 1] = filter.spells
             end
         end
     end
 
-    spec.hasAllow = #spec.allowBuiltin > 0 or #spec.allowSpells > 0
-    return spec
+    return inputs
 end

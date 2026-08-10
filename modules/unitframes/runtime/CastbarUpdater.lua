@@ -108,16 +108,11 @@ function CastbarUpdater.UpdateCastbar(state)
         widget.icon:SetTexture(texture)
     end
 
-    local overlayColor = state.frameOverlayColors and state.frameOverlayColors.castbar
-    if overlayColor then
-        widget:GetStatusBarTexture():SetVertexColor(overlayColor.r, overlayColor.g, overlayColor.b, overlayColor.a or 1)
-    else
-        local cast = config.castingColor
-        local nonInt = config.nonInterruptibleColor
-        widget:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible,
-            CreateColor(nonInt.r, nonInt.g, nonInt.b),
-            CreateColor(cast.r, cast.g, cast.b))
-    end
+    local cast = config.castingColor
+    local nonInt = config.nonInterruptibleColor
+    widget:GetStatusBarTexture():SetVertexColorFromBoolean(notInterruptible,
+        CreateColor(nonInt.r, nonInt.g, nonInt.b),
+        CreateColor(cast.r, cast.g, cast.b))
 
     widget:Show()
 end

@@ -6,7 +6,6 @@ local Runtime = NivUI.UnitFrames.Runtime
 local HealthUpdater = Runtime.HealthUpdater
 local StandardWidgetUpdater = Runtime.StandardWidgetUpdater
 local CastbarUpdater = Runtime.CastbarUpdater
-local AuraOverlays = Runtime.AuraOverlays
 local WidgetTree = Runtime.WidgetTree
 local EventRouter = Runtime.EventRouter
 local SecureFrame = Runtime.SecureFrame
@@ -31,7 +30,6 @@ UnitFrameBase.UpdateNameText = StandardWidgetUpdater.UpdateNameText
 UnitFrameBase.UpdateLevelText = StandardWidgetUpdater.UpdateLevelText
 UnitFrameBase.UpdateCastbar = CastbarUpdater.UpdateCastbar
 UnitFrameBase.UpdateRangeAlpha = StandardWidgetUpdater.UpdateRangeAlpha
-UnitFrameBase.UpdateOverlays = AuraOverlays.UpdateOverlays
 UnitFrameBase.CreateWidgets = WidgetTree.CreateWidgets
 UnitFrameBase.ApplyAnchors = WidgetTree.ApplyAnchors
 UnitFrameBase.HandleEvent = EventRouter.HandleEvent
@@ -57,12 +55,10 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateRoleIcon(state)
     UnitFrameBase.UpdateCastbar(state)
     UnitFrameBase.UpdateRangeAlpha(state)
-    UnitFrameBase.UpdateOverlays(state)
     StandardWidgetUpdater.CascadeAnchorVisibility(state)
 end
 
 EventRouter.SetFacade(UnitFrameBase)
-AuraOverlays.SetFacade(UnitFrameBase)
 SecureFrame.SetFacade(UnitFrameBase)
 NameRefresh.Start(function(state)
     UnitFrameBase.UpdateNameText(state)

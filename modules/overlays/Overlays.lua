@@ -27,7 +27,6 @@ Overlays.DEFAULTS = {
     strata = "MEDIUM",
     frameLevel = 5,
     displayType = "ICON",
-    priority = 1,
     color = { r = 1, g = 0, b = 0, a = 1 },
     targetWidget = "healthBar",
     borderThickness = 2,
@@ -52,7 +51,6 @@ Overlays.CONFIG = {
         entries = {
             { kind = "dropdown", key = "displayType", label = "Display Type", options = "OVERLAY_DISPLAY_TYPES" },
             { kind = "dropdown", key = "auraType", label = "Aura Type", options = "AURA_TYPE" },
-            { kind = "numericInput", key = "priority", label = "Priority", min = 1 },
             { kind = "colorPicker", key = "color", label = "Color", hasAlpha = true, showIf = { key = "displayType", anyOf = COLORABLE_TYPES } },
             { kind = "dropdown", key = "targetWidget", label = "Target Widget", options = "OVERLAY_TARGET_WIDGETS", showIf = { key = "displayType", anyOf = TARGETED_TYPES } },
             { kind = "slider", key = "borderThickness", label = "Border Thickness", min = 1, max = 16, step = 1, showIf = { key = "displayType", value = "BORDER" } },

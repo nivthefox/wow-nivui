@@ -143,7 +143,6 @@ local function createHarness()
     harness:load("modules/unitframes/runtime/HealthUpdater.lua")
     harness:load("modules/unitframes/runtime/StandardWidgetUpdater.lua")
     harness:load("modules/unitframes/runtime/CastbarUpdater.lua")
-    harness:load("modules/unitframes/runtime/AuraOverlays.lua")
     harness:load("modules/unitframes/runtime/WidgetTree.lua")
     harness:load("modules/unitframes/runtime/EventRouter.lua")
     harness:load("modules/unitframes/runtime/SecureFrame.lua")
@@ -215,7 +214,6 @@ return {
             "UpdateRoleIcon",
             "UpdateCastbar",
             "UpdateRangeAlpha",
-            "UpdateOverlays",
         }
 
         for _, updaterName in ipairs(updaterNames) do
@@ -243,7 +241,6 @@ return {
             "UpdateStatusIndicators",
             "UpdateStatusText",
             "UpdateRaidMarker",
-            "UpdateOverlays",
             "UpdateCastbar",
         }
 
@@ -261,7 +258,6 @@ return {
         harness.Base.HandleEvent({}, "PLAYER_REGEN_ENABLED")
         harness.Base.HandleEvent({}, "UNIT_FLAGS")
         harness.Base.HandleEvent({}, "RAID_TARGET_UPDATE")
-        harness.Base.HandleEvent({}, "UNIT_AURA")
         harness.Base.HandleEvent({}, "UNIT_SPELLCAST_START")
 
         local expected = {
@@ -276,7 +272,6 @@ return {
             "UpdateStatusText",
             "UpdateStatusText",
             "UpdateRaidMarker",
-            "UpdateOverlays",
             "UpdateCastbar",
         }
         assertEquals(table.concat(calls, ","), table.concat(expected, ","), "event dispatch order")
@@ -302,7 +297,6 @@ return {
             "UNIT_FACTION",
             "UNIT_FLAGS",
             "UNIT_CONNECTION",
-            "UNIT_AURA",
             "UNIT_SPELLCAST_START",
             "UNIT_SPELLCAST_STOP",
             "UNIT_SPELLCAST_FAILED",

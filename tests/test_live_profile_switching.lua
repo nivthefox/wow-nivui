@@ -873,7 +873,6 @@ return {
         harness:load("modules/unitframes/runtime/HealthUpdater.lua")
         harness:load("modules/unitframes/runtime/StandardWidgetUpdater.lua")
         harness:load("modules/unitframes/runtime/CastbarUpdater.lua")
-        harness:load("modules/unitframes/runtime/AuraOverlays.lua")
         harness:load("modules/unitframes/runtime/WidgetTree.lua")
         harness:load("modules/unitframes/runtime/EventRouter.lua")
         harness:load("modules/unitframes/runtime/SecureFrame.lua")

@@ -1,4 +1,4 @@
-## Interface: 120007
+## Interface: 120100
 ## Title: NivUI
 ## Notes: Niv's UI customizations
 ## Author: Niv
@@ -27,6 +27,7 @@ modules/bars/HolyPowerBar.lua
 modules/bars/SoulShardsBar.lua
 modules/bars/ArcaneChargesBar.lua
 modules/bars/RuneBar.lua
+modules/unitframes/RosterCache.lua
 modules/unitframes/Defaults.lua
 modules/unitframes/StyleManager.lua
 modules/unitframes/WidgetConfigs.lua
@@ -41,7 +42,6 @@ modules/unitframes/UnitFrameLifecycle.lua
 modules/unitframes/runtime/HealthUpdater.lua
 modules/unitframes/runtime/StandardWidgetUpdater.lua
 modules/unitframes/runtime/CastbarUpdater.lua
-modules/unitframes/runtime/AuraOverlays.lua
 modules/unitframes/runtime/WidgetTree.lua
 modules/unitframes/runtime/EventRouter.lua
 modules/unitframes/runtime/SecureFrame.lua

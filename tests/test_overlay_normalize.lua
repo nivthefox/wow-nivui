@@ -22,7 +22,7 @@ return {
     end,
 
     ["nil defaults preserves a valid config"] = function()
-        local config = { priority = 3 }
+        local config = { iconSize = 30 }
         local output = NivUI.OverlayLogic.NormalizeOverlay(config, nil)
         assertEquals(output, config, "valid config should be returned unchanged")
     end,
@@ -30,21 +30,22 @@ return {
     ["empty table gains all defaults"] = function()
         local config = Normalize({})
         assertEquals(config.displayType, "ICON", "displayType default")
-        assertEquals(config.priority, 1, "priority default")
+        assertNil(config.priority, "priority removed")
         assertTableEquals(config.color, { r = 1, g = 0, b = 0, a = 1 }, "color default")
         assertEquals(config.targetWidget, "healthBar", "targetWidget default")
         assertEquals(config.borderThickness, 2, "borderThickness default")
     end,
 
     ["existing values are preserved"] = function()
-        local config = Normalize({ priority = 7, displayType = "FRAME" })
-        assertEquals(config.priority, 7, "pre-set priority preserved")
+        local config = Normalize({ iconSize = 30, displayType = "FRAME" })
+        assertEquals(config.iconSize, 30, "pre-set icon size preserved")
         assertEquals(config.displayType, "FRAME", "pre-set displayType preserved")
     end,
 
-    ["dispelIndicator key is removed if present"] = function()
-        local config = Normalize({ dispelIndicator = "healthTint" })
+    ["legacy keys are removed if present"] = function()
+        local config = Normalize({ dispelIndicator = "healthTint", priority = 7 })
         assertNil(config.dispelIndicator, "legacy dispelIndicator must be removed")
+        assertNil(config.priority, "legacy priority must be removed")
     end,
 
     ["mutates and returns the same table"] = function()
@@ -68,12 +69,16 @@ return {
     end,
 
     ["Overlays:Get normalizes a legacy-shaped record"] = function()
-        NivUI.current.overlays["Legacy"] = { auraType = "HARMFUL", dispelIndicator = "healthTint" }
+        NivUI.current.overlays["Legacy"] = {
+            auraType = "HARMFUL",
+            dispelIndicator = "healthTint",
+            priority = 7,
+        }
         local record = NivUI.Overlays:Get("Legacy")
         assertNotNil(record, "legacy record should be retrievable")
         assertEquals(record.auraType, "HARMFUL", "existing auraType preserved")
         assertEquals(record.displayType, "ICON", "legacy record normalized to ICON")
-        assertEquals(record.priority, 1, "legacy record gains default priority")
+        assertNil(record.priority, "legacy priority stripped on Get")
         assertNil(record.dispelIndicator, "legacy dispelIndicator stripped on Get")
         NivUI.current.overlays["Legacy"] = nil
     end,

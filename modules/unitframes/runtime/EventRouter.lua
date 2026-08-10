@@ -23,7 +23,7 @@ local CASTBAR_EVENTS = {
 }
 --- Handles shared event dispatch for all unit frame types.
 --- Routes common events (health, power, model, name, level, faction, status,
---- raid marker, aura, castbar) to the appropriate update functions.
+--- raid marker, castbar) to the appropriate update functions.
 --- Frame-type-specific events (visibility, leader/role/resting) are handled
 --- by the individual frame type's OnEvent after calling this function.
 --- @param state table The unit frame state table (or memberState for multi-unit frames)
@@ -55,8 +55,6 @@ function EventRouter.HandleEvent(state, event)
         Facade.UpdateStatusText(state)
     elseif event == "RAID_TARGET_UPDATE" then
         Facade.UpdateRaidMarker(state)
-    elseif event == "UNIT_AURA" then
-        Facade.UpdateOverlays(state)
     elseif CASTBAR_EVENTS[event] then
         Facade.UpdateCastbar(state)
     end
@@ -64,7 +62,7 @@ end
 
 --- Registers the standard set of unit events shared by all frame types.
 --- This includes health, power, model, name, level, faction, status flags,
---- connection, aura, spellcast, and raid target events.
+--- connection, spellcast, and raid target events. AuraContainers update themselves.
 --- Does NOT register PLAYER_REGEN_ENABLED/DISABLED — multi-unit frames handle
 --- those at the container level; single-unit frames register them separately.
 --- @param frame Frame The frame to register events on
@@ -83,7 +81,6 @@ function EventRouter.RegisterStandardEvents(frame, unit)
     frame:RegisterUnitEvent("UNIT_FACTION", unit)
     frame:RegisterUnitEvent("UNIT_FLAGS", unit)
     frame:RegisterUnitEvent("UNIT_CONNECTION", unit)
-    frame:RegisterUnitEvent("UNIT_AURA", unit)
     for castEvent in pairs(CASTBAR_EVENTS) do
         frame:RegisterUnitEvent(castEvent, unit)
     end

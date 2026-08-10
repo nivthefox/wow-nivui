@@ -5,34 +5,34 @@ local assertTableEquals = assertions.tablesEqual
 local Filters = NivUI.Filters
 
 return {
-    ["nil config yields an empty spec"] = function()
-        assertTableEquals(Filters:BuildSpec(nil, "HELPFUL"), {
-            allowBuiltin = {},
-            blockBuiltin = {},
-            allowSpells = {},
-            blockSpells = {},
-            hasAllow = false,
+    ["nil config yields empty container inputs"] = function()
+        assertTableEquals(Filters:BuildContainerInputs(nil, "HELPFUL"), {
+            prefix = "HELPFUL",
+            allowTokens = {},
+            blockTokens = {},
+            allowSpellMaps = {},
+            blockSpellMaps = {},
         })
     end,
 
-    ["nil prefix yields an empty spec"] = function()
-        assertTableEquals(Filters:BuildSpec({ allow = { PLAYER = true } }, nil), {
-            allowBuiltin = {},
-            blockBuiltin = {},
-            allowSpells = {},
-            blockSpells = {},
-            hasAllow = false,
+    ["nil prefix yields empty container inputs"] = function()
+        assertTableEquals(Filters:BuildContainerInputs({ allow = { PLAYER = true } }, nil), {
+            prefix = nil,
+            allowTokens = {},
+            blockTokens = {},
+            allowSpellMaps = {},
+            blockSpellMaps = {},
         })
     end,
 
-    ["built-in filters include the aura prefix"] = function()
-        local spec = Filters:BuildSpec({
+    ["built-in filters remain unprefixed container tokens"] = function()
+        local inputs = Filters:BuildContainerInputs({
             allow = { PLAYER = true },
             block = { RAID = true },
         }, "HELPFUL")
 
-        assertTableEquals(spec.allowBuiltin, { "HELPFUL|PLAYER" })
-        assertTableEquals(spec.blockBuiltin, { "HELPFUL|RAID" })
-        assertTrue(spec.hasAllow)
+        assertTableEquals(inputs.allowTokens, { "PLAYER" })
+        assertTableEquals(inputs.blockTokens, { "RAID" })
+        assertTrue(inputs.prefix == "HELPFUL")
     end,
 }

@@ -27,7 +27,7 @@ local function GetFilteredUnits(groupConfig)
                 local shouldInclude = false
 
                 if groupConfig.filterType == "role" then
-                    local role = UnitGroupRolesAssigned(unit)
+                    local role = NivUI.Roster:GetRole(unit)
                     for roleKey, roleValue in pairs(ROLE_MAP) do
                         if groupConfig.roles[roleKey] and role == roleValue then
                             shouldInclude = true
@@ -36,7 +36,7 @@ local function GetFilteredUnits(groupConfig)
                     end
                 else -- member filter
                     local name = UnitName(unit)
-                    if name and groupConfig.members[name] then
+                    if name and not issecretvalue(name) and groupConfig.members[name] then
                         shouldInclude = true
                     end
                 end
@@ -58,7 +58,7 @@ local function GetFilteredUnits(groupConfig)
                 local shouldInclude = false
 
                 if groupConfig.filterType == "role" then
-                    local role = UnitGroupRolesAssigned(unit)
+                    local role = NivUI.Roster:GetRole(unit)
                     for roleKey, roleValue in pairs(ROLE_MAP) do
                         if groupConfig.roles[roleKey] and role == roleValue then
                             shouldInclude = true

@@ -273,12 +273,7 @@ function HealthUpdater.UpdateHealthBar(state)
 
     local r, g, b, a, bgR, bgG, bgB, bgA = ResolveHealthBarColors(config, unit)
     widget.bg:SetVertexColor(bgR, bgG, bgB, bgA)
-    local overlayColor = state.frameOverlayColors and state.frameOverlayColors.healthBar
-    if overlayColor then
-        widget:SetStatusBarColor(overlayColor.r, overlayColor.g, overlayColor.b, overlayColor.a or 1)
-    else
-        widget:SetStatusBarColor(r, g, b, a)
-    end
+    widget:SetStatusBarColor(r, g, b, a)
 
     PopulateHealthBarValue(widget, config, widget.calculator, unit, maxHealth)
 

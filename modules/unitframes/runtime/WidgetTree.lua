@@ -70,6 +70,38 @@ function WidgetTree.CreateWidgets(parent, style, unit, options)
     return widgets
 end
 
+local function AnchorFillTintContainer(widgets, widget)
+    local target = widgets[widget.fillTintTarget]
+    if not (target and target.GetStatusBarTexture) then
+        widget:Hide()
+        return
+    end
+
+    widget:ClearAllPoints()
+    widget:SetAllPoints(target)
+
+    local fill = target:GetStatusBarTexture()
+    for _, texture in ipairs(widget.fillTintTextures) do
+        texture:ClearAllPoints()
+        texture:SetAllPoints(fill)
+    end
+    widget:Show()
+end
+
+local function AnchorBorderContainer(parent, widgets, widget)
+    local target = widget.borderTarget == "frame" and parent or widgets[widget.borderTarget]
+    if not target then
+        widget:Hide()
+        return
+    end
+
+    local thickness = widget.borderThickness
+    widget:ClearAllPoints()
+    widget:SetPoint("TOPLEFT", target, "TOPLEFT", -thickness, thickness)
+    widget:SetPoint("BOTTOMRIGHT", target, "BOTTOMRIGHT", thickness, -thickness)
+    widget:Show()
+end
+
 --- Applies anchor positions to all widgets based on style configuration.
 --- Widgets anchored to missing/disabled widgets will be hidden.
 --- @param parent Frame The parent frame
@@ -77,12 +109,13 @@ end
 --- @param style table The style configuration table
 function WidgetTree.ApplyAnchors(parent, widgets, style)
     for widgetType, widget in pairs(widgets) do
-        -- Transformative overlays retain stale anchor data by design; the resolver
-        -- positions their holders, so ApplyAnchors must never apply their anchors
-        -- (nor let the anchor-missing Hide fallback fight the resolution pass).
-        if not widget.skipAnchor then
+        if widget.borderTarget then
+            AnchorBorderContainer(parent, widgets, widget)
+        elseif widget.fillTintTarget then
+            AnchorFillTintContainer(widgets, widget)
+        elseif not widget.skipAnchor then
             local config = style[widgetType] or widget.config
-            local anchor = config and config.anchor
+            local anchor = widget.anchorOverride or (config and config.anchor)
             if anchor then
                 widget:ClearAllPoints()
 

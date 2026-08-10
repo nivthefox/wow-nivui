@@ -1,8 +1,8 @@
 --- OverlayLogic: pure, WoW-free logic backing the Overlays system. Holds the
---- display-type classification, overlay normalization, config-condition
---- evaluation, and transformative conflict resolution. Loads with only the
---- NivUI namespace bootstrap and touches no WoW API at load or runtime, so it is
---- unit-testable in a headless Lua runner. Keep it that way.
+--- display-type classification, overlay normalization, container layout,
+--- filter translation, and config-condition evaluation. Loads with only the
+--- NivUI namespace bootstrap and touches no WoW API at load or runtime, so it
+--- is unit-testable in a headless Lua runner. Keep it that way.
 local _, NivUI = ...
 
 NivUI.OverlayLogic = NivUI.OverlayLogic or {}
@@ -25,8 +25,8 @@ local function DeepCopy(value)
     return copy
 end
 
---- The set of display types that are transformative (binary, resolved by
---- priority against a target widget) rather than additive (grid cells).
+--- The set of display types that are transformative (binary slots anchored to
+--- a target widget) rather than additive (flow-layout groups).
 local TRANSFORMATIVE = {
     FRAME = true,
     BORDER = true,
@@ -42,7 +42,7 @@ end
 
 --- Fills any missing keys on an overlay config from the defaults table,
 --- deep-copying table-valued defaults so overlays never share sub-tables.
---- Existing values are preserved. The legacy dispelIndicator key is deleted.
+--- Existing values are preserved. Legacy overlay keys are deleted.
 --- Mutates and returns the same config table.
 --- @param config table The overlay config to normalize (mutated in place)
 --- @param defaults table The Overlays.DEFAULTS table to fill from
@@ -61,6 +61,7 @@ function OverlayLogic.NormalizeOverlay(config, defaults)
         end
     end
     config.dispelIndicator = nil
+    config.priority = nil
     config.wrap = OverlayLogic.NormalizeWrap(config.growth, config.wrap)
     return config
 end
@@ -193,6 +194,114 @@ function OverlayLogic.ComputeGridLayout(params)
     return { width = iconSize, height = iconSize, anchor = anchor, icons = icons }
 end
 
+local FLOW_AXIS = {
+    RIGHT = "Horizontal",
+    LEFT = "Horizontal",
+    UP = "Vertical",
+    DOWN = "Vertical",
+}
+
+function OverlayLogic.ComputeContainerLayout(params)
+    local growth = params.growth
+    if not ORIGIN_CORNER[growth] then
+        growth = "RIGHT"
+    end
+    local wrap = OverlayLogic.NormalizeWrap(growth, params.wrap)
+    local vertical = OverlayLogic.IsVerticalGrowth(growth)
+
+    local horizontal
+    local verticalDirection
+    if vertical then
+        horizontal = wrap == "LEFT" and "Left" or "Right"
+        verticalDirection = growth == "UP" and "Up" or "Down"
+    else
+        horizontal = growth == "LEFT" and "Left" or "Right"
+        verticalDirection = wrap == "UP" and "Up" or "Down"
+    end
+
+    return {
+        axis = FLOW_AXIS[growth],
+        horizontal = horizontal,
+        vertical = verticalDirection,
+        anchorPoint = ORIGIN_CORNER[growth][wrap],
+        maximumLineSize = params.perLine * params.iconSize + (params.perLine - 1) * params.spacing,
+    }
+end
+
+local function PointOffset(point, firstDirection, secondDirection, size)
+    if point:find(firstDirection) then
+        return -size / 2
+    end
+    if point:find(secondDirection) then
+        return size / 2
+    end
+    return 0
+end
+
+function OverlayLogic.TranslateContainerAnchor(anchor, originCorner, iconSize)
+    local point = anchor.point or "CENTER"
+    local x = PointOffset(originCorner, "LEFT", "RIGHT", iconSize)
+        - PointOffset(point, "LEFT", "RIGHT", iconSize)
+    local y = PointOffset(originCorner, "BOTTOM", "TOP", iconSize)
+        - PointOffset(point, "BOTTOM", "TOP", iconSize)
+
+    return {
+        point = originCorner,
+        relativeTo = anchor.relativeTo,
+        relativePoint = anchor.relativePoint or point,
+        x = (anchor.x or 0) + x,
+        y = (anchor.y or 0) + y,
+    }
+end
+
+local function MergeSpellMaps(spellMaps)
+    if #spellMaps == 0 then
+        return nil
+    end
+
+    local merged = {}
+    for _, spells in ipairs(spellMaps) do
+        for spellID in pairs(spells) do
+            merged[spellID] = true
+        end
+    end
+    return merged
+end
+
+function OverlayLogic.BuildContainerGroupSpecs(inputs)
+    local base = inputs.prefix
+    for _, token in ipairs(inputs.blockTokens) do
+        base = base .. "|!" .. token
+    end
+
+    local excludeSpellIDs = MergeSpellMaps(inputs.blockSpellMaps)
+    local specs = {}
+    for _, token in ipairs(inputs.allowTokens) do
+        specs[#specs + 1] = {
+            filterString = base .. "|" .. token,
+            excludeSpellIDs = excludeSpellIDs,
+        }
+    end
+
+    local includeSpellIDs = MergeSpellMaps(inputs.allowSpellMaps)
+    if includeSpellIDs then
+        specs[#specs + 1] = {
+            filterString = base,
+            includeSpellIDs = includeSpellIDs,
+            excludeSpellIDs = excludeSpellIDs,
+        }
+    end
+
+    if #specs == 0 then
+        specs[1] = {
+            filterString = base,
+            excludeSpellIDs = excludeSpellIDs,
+        }
+    end
+
+    return specs
+end
+
 --- Evaluates a showIf/hideIf condition against a resolved value. A nil
 --- condition is always true. An anyOf condition is true when value is a member
 --- of the anyOf list; otherwise the condition is an equality check against
@@ -216,61 +325,4 @@ function OverlayLogic.EvaluateCondition(cond, value)
         return false
     end
     return value == cond.value
-end
-
---- Reports whether claim `a` outranks claim `b` for the same kind and target.
---- Higher priority wins; missing priority is treated as 1; ties break by
---- alphabetically earlier name (string < wins, missing name treated as "").
---- @param a table A transformative claim
---- @param b table Another transformative claim
---- @return boolean True when a should win over b
-local function ClaimOutranks(a, b)
-    local pa = a.priority or 1
-    local pb = b.priority or 1
-    if pa ~= pb then
-        return pa > pb
-    end
-    return (a.name or "") < (b.name or "")
-end
-
-local function ResolveClaim(result, claim)
-    if type(claim) ~= "table" then
-        return
-    end
-    if not claim.active or claim.targetWidget == nil then
-        return
-    end
-
-    local byTarget = result[claim.kind]
-    if not byTarget then
-        return
-    end
-
-    local current = byTarget[claim.targetWidget]
-    if current and not ClaimOutranks(claim, current) then
-        return
-    end
-
-    byTarget[claim.targetWidget] = claim
-end
-
---- Resolves transformative overlay claims into a single winner per (kind,
---- targetWidget). Only active claims with a targetWidget participate
---- (malformed claims are skipped, never errored on). FRAME and BORDER resolve
---- independently. Higher priority wins; missing priority counts as 1; ties
---- break alphabetically by claim name. The result is order-independent, and
---- each winner is the exact claim table that was passed in (passthrough fields
---- intact).
---- @param claims table Array of claims: { name, priority, targetWidget, kind, active, ... }
---- @return table { FRAME = { [targetWidget] = winnerClaim }, BORDER = { ... } }
-function OverlayLogic.ResolveTransformative(claims)
-    local result = { FRAME = {}, BORDER = {} }
-    if type(claims) ~= "table" then
-        return result
-    end
-
-    for _, claim in ipairs(claims) do
-        ResolveClaim(result, claim)
-    end
-    return result
 end
