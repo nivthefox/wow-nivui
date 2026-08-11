@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.1.2](https://github.com/nivthefox/wow-nivui/releases/tag/v2.1.2) - 2026-08-11
+
+### Changed
+
+- Updated unit-frame aura overlays for WoW 12.1 compatibility.
+
+### Fixed
+
+- Party and raid frames now preserve class, role, leader, and assistant displays when WoW protects roster identity information during combat.
+
+### Removed
+
+- Removed the unused overlay priority setting.
+
 ## [2.1.1](https://github.com/nivthefox/wow-nivui/releases/tag/v2.1.1) - 2026-08-08
 
 ### Changed
