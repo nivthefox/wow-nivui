@@ -404,12 +404,26 @@ function NivUI:CreateConfigFrame()
     unitFramesTab:SetScript("OnClick", function() SelectSidebarTab(2) end)
     table.insert(sidebarTabs, unitFramesTab)
 
+    local filtersIndex = 3
+    local filtersAnchor = unitFramesTab
+    if NivUI.Config.Nicknames then
+        local nicknamesContainer = NivUI.Config.Nicknames.SetupTab(ContentArea, Components)
+        table.insert(sidebarContainers, nicknamesContainer)
+
+        local nicknamesTab = Components.GetSidebarTab(Sidebar, "Nicknames")
+        nicknamesTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
+        nicknamesTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
+        table.insert(sidebarTabs, nicknamesTab)
+        filtersIndex = 4
+        filtersAnchor = nicknamesTab
+    end
+
     local filtersContainer = NivUI.Config.Filters.SetupTab(ContentArea, Components)
     table.insert(sidebarContainers, filtersContainer)
 
     local filtersTab = Components.GetSidebarTab(Sidebar, "Custom Filters")
-    filtersTab:SetPoint("TOPLEFT", unitFramesTab, "BOTTOMLEFT", 0, -2)
-    filtersTab:SetScript("OnClick", function() SelectSidebarTab(3) end)
+    filtersTab:SetPoint("TOPLEFT", filtersAnchor, "BOTTOMLEFT", 0, -2)
+    filtersTab:SetScript("OnClick", function() SelectSidebarTab(filtersIndex) end)
     table.insert(sidebarTabs, filtersTab)
 
     local overlaysContainer = NivUI.Config.Overlays.SetupTab(ContentArea, Components)
@@ -417,7 +431,7 @@ function NivUI:CreateConfigFrame()
 
     local overlaysTab = Components.GetSidebarTab(Sidebar, "Custom Overlays")
     overlaysTab:SetPoint("TOPLEFT", filtersTab, "BOTTOMLEFT", 0, -2)
-    overlaysTab:SetScript("OnClick", function() SelectSidebarTab(4) end)
+    overlaysTab:SetScript("OnClick", function() SelectSidebarTab(filtersIndex + 1) end)
     table.insert(sidebarTabs, overlaysTab)
 
     local profilesContainer = NivUI.Config.Profiles.SetupTab(ContentArea, Components)
@@ -425,7 +439,7 @@ function NivUI:CreateConfigFrame()
 
     local profilesTab = Components.GetSidebarTab(Sidebar, "Profiles")
     profilesTab:SetPoint("TOPLEFT", overlaysTab, "BOTTOMLEFT", 0, -2)
-    profilesTab:SetScript("OnClick", function() SelectSidebarTab(5) end)
+    profilesTab:SetScript("OnClick", function() SelectSidebarTab(filtersIndex + 2) end)
     table.insert(sidebarTabs, profilesTab)
 
     ConfigFrame:SetScript("OnShow", function(frame)

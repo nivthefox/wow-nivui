@@ -273,11 +273,17 @@ function ReferenceIntegrity.RepairProfile(profile, defaultStyle, builtinEntries)
 
     local fallbackStyle = ReferenceIntegrity.GetFallbackStyle(profile)
     local builtinFilters = BuildBuiltinFilterSet(builtinEntries)
+    local nicknameRepairs = 0
+    if NivUI.Nicknames then
+        nicknameRepairs = NivUI.Nicknames:RepairProfile(profile)
+    end
+
     return {
         fallbackStyle = fallbackStyle,
         styles = RepairStyleReferences(profile, fallbackStyle),
         filters = RepairFilterReferences(profile, builtinFilters),
         overlays = RepairOverlayReferences(profile),
+        nicknames = nicknameRepairs,
     }
 end
 

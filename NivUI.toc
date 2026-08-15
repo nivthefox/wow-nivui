@@ -14,6 +14,7 @@ modules/config/Deletion.lua
 modules/config/TabLayout.lua
 modules/config/SettingsPanel.lua
 modules/profiles/Profiles.lua
+modules/nicknames/Nicknames.lua
 modules/filters/SpellFilters.lua
 modules/overlays/OverlayLogic.lua
 modules/overlays/Overlays.lua
@@ -44,9 +45,10 @@ modules/unitframes/runtime/StandardWidgetUpdater.lua
 modules/unitframes/runtime/CastbarUpdater.lua
 modules/unitframes/runtime/WidgetTree.lua
 modules/unitframes/runtime/EventRouter.lua
-modules/unitframes/runtime/SecureFrame.lua
 modules/unitframes/runtime/NameRefresh.lua
+modules/unitframes/runtime/SecureFrame.lua
 modules/unitframes/UnitFrameBase.lua
+modules/nicknames/Runtime.lua
 modules/unitframes/MultiUnitFrameBase.lua
 modules/unitframes/EditModeSettingsDialog.lua
 modules/unitframes/EditModeSupport.lua
@@ -64,4 +66,5 @@ config/Bars.lua
 config/Profiles.lua
 config/Filters.lua
 config/Overlays.lua
+config/Nicknames.lua
 ConfigFrame.lua

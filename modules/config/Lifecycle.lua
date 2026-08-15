@@ -83,6 +83,10 @@ function NivUI:CloseConfigUI()
         end
     end
 
+    self:CloseConfigModals()
+end
+
+function NivUI:CloseConfigModals()
     CloseConfigPopups()
     CloseConfigColorPicker()
     CloseConfigMenus()
@@ -156,6 +160,10 @@ eventFrame:SetScript("OnEvent", function(_, event)
 
     pendingOpen = false
     NivUI:OpenConfigFrame()
+end)
+
+NivUI:RegisterCallback("ProfileSwitched", function()
+    NivUI:CloseConfigModals()
 end)
 
 SLASH_NIVUI1 = "/nivui"

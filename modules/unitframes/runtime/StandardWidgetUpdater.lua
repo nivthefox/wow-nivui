@@ -350,15 +350,18 @@ end
 --- Updates the name text widget for a unit frame.
 --- Supports truncation and class coloring.
 --- @param state table The unit frame state table
-function StandardWidgetUpdater.UpdateNameText(state)
+function StandardWidgetUpdater.UpdateNameText(state, resolverSnapshot)
     if not state.customFrame or not state.customFrame.widgets.nameText then return end
     local widget = state.customFrame.widgets.nameText
     local config = GetWidgetConfig(state, "nameText")
     local unit = state.unit
 
     local name = UnitName(unit) or state.defaultName or "Unit"
-    if not issecretvalue(name) and config.truncateLength and #name > config.truncateLength then
-        name = name:sub(1, config.truncateLength)
+    if not issecretvalue(name) then
+        name = NivUI.Nicknames:ResolveUnit(unit, name, resolverSnapshot)
+    end
+    if not issecretvalue(name) and config.truncateLength then
+        name = NivUI.Nicknames.TruncateText(name, config.truncateLength)
     end
     widget.text:SetText(name)
 

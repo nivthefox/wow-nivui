@@ -298,6 +298,7 @@ function SecureFrame.BuildCustomFrame(state)
     Facade.ApplyAnchors(customFrame, customFrame.widgets, style)
 
     state.customFrame = customFrame
+    NivUI.UnitFrames.Runtime.NameRefresh.RegisterState(state)
 
     if isNewFrame then
         ConfigureNewCustomFrame(customFrame, state)
@@ -367,6 +368,7 @@ end
 --- Destroys a custom unit frame, cleaning up events and scripts.
 --- @param state table The unit frame state table
 function SecureFrame.DestroyCustomFrame(state)
+    NivUI.UnitFrames.Runtime.NameRefresh.UnregisterState(state)
     if state.customFrame then
         state.customFrame:UnregisterAllEvents()
         state.customFrame:SetScript("OnUpdate", nil)

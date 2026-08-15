@@ -184,6 +184,7 @@ local modules = {
     addonRoot .. "/modules/overlays/OverlayLogic.lua",
     addonRoot .. "/modules/overlays/Overlays.lua",
     addonRoot .. "/modules/unitframes/Defaults.lua",
+    addonRoot .. "/modules/nicknames/Nicknames.lua",
 }
 
 for _, modulePath in ipairs(modules) do

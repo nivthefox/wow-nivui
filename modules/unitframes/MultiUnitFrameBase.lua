@@ -7,6 +7,10 @@ NivUI.UnitFrames.MultiUnitFrameBase = MultiUnitFrameBase
 
 local Base = NivUI.UnitFrames.Base
 local Lifecycle = NivUI.UnitFrames.Lifecycle
+local NameRefresh = NivUI.UnitFrames.Runtime and NivUI.UnitFrames.Runtime.NameRefresh or {
+    RegisterState = function() end,
+    UnregisterState = function() end,
+}
 
 --- Creates a multi-unit frame module from configuration.
 ---@param config table Module configuration
@@ -44,6 +48,7 @@ function MultiUnitFrameBase.CreateModule(config)
     end
 
     local function DestroyMemberFrame(unit)
+        NameRefresh.UnregisterState(state.memberStates[unit])
         local frame = state.memberFrames[unit]
         if frame then
             frame:UnregisterAllEvents()
@@ -212,6 +217,7 @@ function MultiUnitFrameBase.CreateModule(config)
         }
 
         state.memberStates[unit] = memberState
+        NameRefresh.RegisterState(memberState)
 
         Base.RegisterStandardEvents(frame, unit)
 

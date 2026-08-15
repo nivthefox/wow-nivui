@@ -60,6 +60,6 @@ end
 
 EventRouter.SetFacade(UnitFrameBase)
 SecureFrame.SetFacade(UnitFrameBase)
-NameRefresh.Start(function(state)
-    UnitFrameBase.UpdateNameText(state)
+NameRefresh.Start(function(state, resolverSnapshot)
+    UnitFrameBase.UpdateNameText(state, resolverSnapshot)
 end)
