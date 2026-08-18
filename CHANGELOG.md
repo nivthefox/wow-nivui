@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.2.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.2.0) - 2026-08-18
+
 ### Added
 
 - Unit frames can now display profile-specific nicknames for player characters, managed from the Nicknames settings tab or unit menus
