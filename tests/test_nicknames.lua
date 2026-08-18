@@ -123,7 +123,7 @@ return {
         assertEquals(Nicknames:Resolve("Alina-Realm", "Alina", nil, profile), "Profile")
     end,
 
-    ["unit resolution ignores non-player and incomplete identities"] = function()
+    ["unit resolution ignores non-player and identities without any realm"] = function()
         local profile = { nicknames = { ["alina-realm"] = "Profile" } }
         Reset(profile)
         local resolverCalls = 0
@@ -133,23 +133,44 @@ return {
         end)
 
         local player = false
-        local complete = false
         UnitIsPlayer = function()
             return player
         end
         UnitFullName = function()
-            if complete then
-                return "Alina", "Realm"
-            end
             return "Alina", nil
+        end
+        GetNormalizedRealmName = function()
+            return nil
         end
 
         assertEquals(Nicknames:ResolveUnit("target", "Normal", nil, profile), "Normal")
         player = true
         assertEquals(Nicknames:ResolveUnit("target", "Normal", nil, profile), "Normal")
-        complete = true
-        assertEquals(Nicknames:ResolveUnit("target", "Normal", nil, profile), "External")
-        assertEquals(resolverCalls, 1)
+        assertEquals(resolverCalls, 0)
+    end,
+
+    ["unit identity uses the current realm when UnitFullName omits it"] = function()
+        local profile = { nicknames = { ["alina-realm"] = "Profile" } }
+        Reset(profile)
+        local explicitRealm = false
+
+        UnitIsPlayer = function()
+            return true
+        end
+        UnitFullName = function()
+            if explicitRealm then
+                return "Alina", "OtherRealm"
+            end
+            return "Alina", nil
+        end
+        GetNormalizedRealmName = function()
+            return "Realm"
+        end
+
+        assertEquals(Nicknames.GetUnitIdentity("target"), "alina-realm")
+        assertEquals(Nicknames:ResolveUnit("target", "Normal", nil, profile), "Profile")
+        explicitRealm = true
+        assertEquals(Nicknames.GetUnitIdentity("target"), "alina-otherrealm")
     end,
 
     ["saving normalizes replaces and removes arbitrary identities"] = function()

@@ -166,7 +166,14 @@ function Nicknames.GetUnitIdentity(unit)
     end
 
     local character, realm = UnitFullName(unit)
-    if IsSecret(character) or IsSecret(realm) or type(character) ~= "string" or type(realm) ~= "string" then
+    if IsSecret(character) or IsSecret(realm) or type(character) ~= "string" then
+        return nil
+    end
+
+    if realm == nil and type(GetNormalizedRealmName) == "function" then
+        realm = GetNormalizedRealmName()
+    end
+    if IsSecret(realm) or type(realm) ~= "string" then
         return nil
     end
 
