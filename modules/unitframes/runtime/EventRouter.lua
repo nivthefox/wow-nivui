@@ -29,7 +29,11 @@ local CASTBAR_EVENTS = {
 --- @param state table The unit frame state table (or memberState for multi-unit frames)
 --- @param event string The event name
 function EventRouter.HandleEvent(state, event)
-    if event == "UNIT_MAXHEALTH"
+    if event == "UNIT_HEALTH" then
+        Facade.UpdateHealthBar(state)
+        Facade.UpdateHealthText(state)
+        Facade.UpdateStatusText(state)
+    elseif event == "UNIT_MAXHEALTH"
         or event == "UNIT_ABSORB_AMOUNT_CHANGED"
         or event == "UNIT_HEAL_ABSORB_AMOUNT_CHANGED"
         or event == "UNIT_HEAL_PREDICTION"
@@ -68,6 +72,7 @@ end
 --- @param frame Frame The frame to register events on
 --- @param unit string The unit token (e.g., "player", "party1")
 function EventRouter.RegisterStandardEvents(frame, unit)
+    frame:RegisterUnitEvent("UNIT_HEALTH", unit)
     frame:RegisterUnitEvent("UNIT_MAXHEALTH", unit)
     frame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", unit)
     frame:RegisterUnitEvent("UNIT_HEAL_ABSORB_AMOUNT_CHANGED", unit)

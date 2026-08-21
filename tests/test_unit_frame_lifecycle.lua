@@ -277,6 +277,29 @@ return {
         assertEquals(table.concat(calls, ","), table.concat(expected, ","), "event dispatch order")
     end,
 
+    ["unit health refreshes health widgets and status text"] = function()
+        local harness = createHarness()
+        local calls = {}
+
+        harness.Base.UpdateHealthBar = function()
+            calls[#calls + 1] = "UpdateHealthBar"
+        end
+        harness.Base.UpdateHealthText = function()
+            calls[#calls + 1] = "UpdateHealthText"
+        end
+        harness.Base.UpdateStatusText = function()
+            calls[#calls + 1] = "UpdateStatusText"
+        end
+
+        harness.Base.HandleEvent({}, "UNIT_HEALTH")
+
+        assertEquals(
+            table.concat(calls, ","),
+            "UpdateHealthBar,UpdateHealthText,UpdateStatusText",
+            "unit health dispatch"
+        )
+    end,
+
     ["the standard event contract remains stable"] = function()
         local harness = createHarness()
         local frame = createFrame()
@@ -284,6 +307,7 @@ return {
         harness.Base.RegisterStandardEvents(frame, "party1")
 
         local unitEvents = {
+            "UNIT_HEALTH",
             "UNIT_MAXHEALTH",
             "UNIT_ABSORB_AMOUNT_CHANGED",
             "UNIT_HEAL_ABSORB_AMOUNT_CHANGED",
