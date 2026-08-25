@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Unit frame death status text no longer remains after a unit returns to life
+- Custom raid group frames now refresh player names when roster slots are reassigned
+- Boss frames no longer trigger protected-action errors when encounter units appear during combat
+
 ## [2.2.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.2.0) - 2026-08-18
 
 ### Added
