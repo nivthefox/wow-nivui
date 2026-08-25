@@ -71,6 +71,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
     local function LayoutMemberFrames()
         if not state.container then return end
+        if InCombatLockdown and InCombatLockdown() then return end
 
         local orientation = config.getOrientation()
         local growth = config.getGrowthDirection()
@@ -103,7 +104,7 @@ function MultiUnitFrameBase.CreateModule(config)
         if config.memberVisibilityMode == "state_driver" then
             for _, unit in ipairs(units) do
                 local frame = state.memberFrames[unit]
-                if frame and frame:IsShown() then
+                if frame then
                     frame:ClearAllPoints()
                     frame:SetPoint("TOPLEFT", state.container, "TOPLEFT", xOffset, yOffset)
 

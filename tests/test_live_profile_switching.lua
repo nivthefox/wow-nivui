@@ -85,6 +85,10 @@ local function createRegion()
         self.dragButtons = { ... }
     end
 
+    function region:RegisterForClicks(...)
+        self.clickButtons = { ... }
+    end
+
     function region:StopMovingOrSizing()
         self.moving = false
     end
@@ -95,6 +99,19 @@ local function createRegion()
 
     function region:SetTitle(title)
         self.title = title
+    end
+
+    function region:SetAttribute(name, value)
+        self.attributes = self.attributes or {}
+        self.attributes[name] = value
+    end
+
+    function region:SetFrameStrata(strata)
+        self.frameStrata = strata
+    end
+
+    function region:SetFrameLevel(level)
+        self.frameLevel = level
     end
 
     function region:GetWidth()
@@ -110,6 +127,7 @@ local function createRegion()
     end
 
     function region:ClearAllPoints()
+        self.clearAllPointsCount = (self.clearAllPointsCount or 0) + 1
         self.point = nil
     end
 
@@ -399,6 +417,101 @@ local function unitFrameProfiles()
     }
 end
 
+local function createStateDrivenMultiUnitHarness()
+    local profiles = {
+        Alpha = {
+            unitFrameEnabled = { boss = true },
+            unitFrameAssignments = { boss = "Boss Style" },
+            unitFrameStyles = { ["Boss Style"] = {} },
+        },
+    }
+    local harness = createAddon(profiles)
+    local NivUI = harness.namespace
+
+    NivUI.UnitFrames = {
+        Base = {
+            ApplyAnchors = function() end,
+            CreateWidgets = function()
+                return {}
+            end,
+            HandleEvent = function() end,
+            RegisterStandardEvents = function() end,
+            SetSecureVisibility = function(frame, visible)
+                if visible then
+                    frame:Show()
+                else
+                    frame:Hide()
+                end
+            end,
+            UpdateAllWidgets = function() end,
+            UpdateCastbar = function() end,
+            UpdateHealthBar = function() end,
+            UpdateHealthText = function() end,
+            UpdatePowerBar = function() end,
+            UpdatePowerText = function() end,
+            UpdateRangeAlpha = function() end,
+            UpdateStatusIndicators = function() end,
+            UpdateStatusText = function() end,
+        },
+        Runtime = {
+            NameRefresh = {
+                RegisterState = function() end,
+                UnregisterState = function() end,
+            },
+        },
+    }
+
+    function NivUI:GetAssignment(frameType)
+        return self:GetActiveProfile().unitFrameAssignments[frameType]
+    end
+
+    function NivUI:GetStyleWithDefaults()
+        return { frame = { width = 200, height = 40 } }
+    end
+
+    function NivUI:GetVisibilityOverride()
+        return nil
+    end
+
+    function NivUI:IsFrameEnabled(frameType)
+        return self:GetActiveProfile().unitFrameEnabled[frameType] == true
+    end
+
+    function NivUI:IsRealTimeUpdates()
+        return false
+    end
+
+    harness:load("modules/unitframes/UnitFrameLifecycle.lua")
+    harness:load("modules/unitframes/MultiUnitFrameBase.lua")
+
+    local module = NivUI.UnitFrames.MultiUnitFrameBase.CreateModule({
+        frameType = "boss",
+        frameNamePrefix = "NivUITestBoss_",
+        containerName = "NivUITestBossContainer",
+        defaultContainerPosition = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 },
+        getUnits = function()
+            return { "boss1", "boss2" }
+        end,
+        getOrientation = function()
+            return "VERTICAL"
+        end,
+        getGrowthDirection = function()
+            return "DOWN"
+        end,
+        getSpacing = function()
+            return 2
+        end,
+        memberVisibilityMode = "state_driver",
+        hideBlizzardFrames = function() end,
+        restoreBlizzardFrames = function() end,
+        events = { "INSTANCE_ENCOUNTER_ENGAGE_UNIT" },
+        settingsChangedCallback = "TestBossSettingsChanged",
+        previewChangedCallback = "TestBossPreviewChanged",
+    })
+
+    return harness, module
+end
+
 local function createConfigHarness()
     local harness = createAddon(unitFrameProfiles())
     local NivUI = harness.namespace
@@ -516,6 +629,37 @@ local function assertStaggerBar(frame, expected, message)
 end
 
 return {
+    ["state-driven members receive stable anchors before their units exist"] = function()
+        local _, module = createStateDrivenMultiUnitHarness()
+
+        module.Enable()
+
+        local state = module.GetState()
+        assertNotNil(state.memberFrames.boss1.point, "boss1 anchor")
+        assertNotNil(state.memberFrames.boss2.point, "boss2 anchor")
+        assertEquals(state.container:GetWidth(), 200, "container width")
+        assertEquals(state.container:GetHeight(), 82, "container height")
+    end,
+
+    ["state-driven encounter events do not reposition secure members in combat"] = function()
+        local harness, module = createStateDrivenMultiUnitHarness()
+        module.Enable()
+
+        local state = module.GetState()
+        state.memberFrames.boss1:Show()
+        state.memberFrames.boss2:Show()
+        module.LayoutMemberFrames()
+
+        local boss1Layouts = state.memberFrames.boss1.clearAllPointsCount
+        local boss2Layouts = state.memberFrames.boss2.clearAllPointsCount
+
+        harness:setCombatLocked(true)
+        harness:fire("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+
+        assertEquals(state.memberFrames.boss1.clearAllPointsCount, boss1Layouts, "boss1 combat layouts")
+        assertEquals(state.memberFrames.boss2.clearAllPointsCount, boss2Layouts, "boss2 combat layouts")
+    end,
+
     ["resetting an inactive profile defers module defaults until activation"] = function()
         local profiles = unitFrameProfiles()
         profiles.Beta.testBar = { width = 999 }
