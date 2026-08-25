@@ -216,9 +216,8 @@ local function LayoutMemberFrames(groupId)
 
     local filteredUnits = GetFilteredUnits(groupConfig)
 
-    for unit, frame in pairs(state.memberFrames) do
+    for _, frame in pairs(state.memberFrames) do
         frame:Hide()
-        state.memberStates[unit] = nil
     end
 
     local yOffset = 0
