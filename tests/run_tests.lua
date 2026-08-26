@@ -181,6 +181,7 @@ local modules = {
     addonRoot .. "/modules/config/TabLayout.lua",
     addonRoot .. "/modules/config/SettingsPanel.lua",
     addonRoot .. "/modules/filters/SpellFilters.lua",
+    addonRoot .. "/modules/filters/MissingRaidBuffs.lua",
     addonRoot .. "/modules/overlays/OverlayLogic.lua",
     addonRoot .. "/modules/overlays/Overlays.lua",
     addonRoot .. "/modules/unitframes/Defaults.lua",

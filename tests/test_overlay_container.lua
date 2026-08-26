@@ -154,6 +154,19 @@ return {
         assertNil(groups[1].excludeSpellIDs)
     end,
 
+    ["a derived missing-buff allow does not create an unrestricted aura group"] = function()
+        local groups = OverlayLogic.BuildContainerGroupSpecs({
+            prefix = "HELPFUL",
+            allowTokens = {},
+            blockTokens = {},
+            allowSpellMaps = {},
+            blockSpellMaps = {},
+            allowMissingRaidBuffs = true,
+        })
+
+        assertEquals(#groups, 0)
+    end,
+
     ["built-in allow filters produce separate container groups"] = function()
         local groups = OverlayLogic.BuildContainerGroupSpecs({
             prefix = "HELPFUL",

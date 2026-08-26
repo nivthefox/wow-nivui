@@ -264,7 +264,11 @@ function SettingsPanel.Create(parent, opts)
         elseif entry.kind == "filterMatrix" then
             local rows = {}
             for _, builtin in ipairs(NivUI.Filters.BUILTIN) do
-                rows[#rows + 1] = { key = builtin.token, label = builtin.label }
+                rows[#rows + 1] = {
+                    key = builtin.token,
+                    label = builtin.label,
+                    allowOnly = builtin.allowOnly,
+                }
             end
             for _, name in ipairs(NivUI.Filters:GetCustomNames()) do
                 rows[#rows + 1] = { key = name, label = name }
@@ -304,7 +308,9 @@ function SettingsPanel.Create(parent, opts)
                 label:SetText(row.label)
 
                 CreateToggle(rowFrame, row.key, "allow", allowX)
-                CreateToggle(rowFrame, row.key, "block", blockX)
+                if not row.allowOnly then
+                    CreateToggle(rowFrame, row.key, "block", blockX)
+                end
             end
 
             holder:SetHeight(headerHeight + #rows * ROW_HEIGHT + 6)

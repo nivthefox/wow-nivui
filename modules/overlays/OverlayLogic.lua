@@ -292,7 +292,7 @@ function OverlayLogic.BuildContainerGroupSpecs(inputs)
         }
     end
 
-    if #specs == 0 then
+    if #specs == 0 and not inputs.allowMissingRaidBuffs then
         specs[1] = {
             filterString = base,
             excludeSpellIDs = excludeSpellIDs,

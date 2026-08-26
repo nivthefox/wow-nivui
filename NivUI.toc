@@ -16,6 +16,7 @@ modules/config/SettingsPanel.lua
 modules/profiles/Profiles.lua
 modules/nicknames/Nicknames.lua
 modules/filters/SpellFilters.lua
+modules/filters/MissingRaidBuffs.lua
 modules/overlays/OverlayLogic.lua
 modules/overlays/Overlays.lua
 modules/bars/BarBase.lua
@@ -32,6 +33,8 @@ modules/unitframes/RosterCache.lua
 modules/unitframes/Defaults.lua
 modules/unitframes/StyleManager.lua
 modules/unitframes/WidgetConfigs.lua
+modules/unitframes/runtime/MissingRaidBuffProvider.lua
+modules/unitframes/MissingRaidBuffOverlay.lua
 modules/unitframes/WidgetFactories.lua
 modules/unitframes/config/AssignmentsPanel.lua
 modules/unitframes/config/CustomRaidGroupPanel.lua

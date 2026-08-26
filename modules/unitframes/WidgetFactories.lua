@@ -828,10 +828,10 @@ end
 local function GetContainerGroupSpecs(config)
     local auraFilter = config.auraType == "HELPFUL" and "HELPFUL" or "HARMFUL"
     local inputs = NivUI.Filters:BuildContainerInputs(config, auraFilter)
-    return NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs)
+    return NivUI.OverlayLogic.BuildContainerGroupSpecs(inputs), inputs.allowMissingRaidBuffs
 end
 
-local function CreateAuraContainerWidget(parent, config, unit)
+local function CreateAuraContainerWidget(parent, config, unit, groupSpecs)
     local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
     if config.strata then container:SetFrameStrata(config.strata) end
     if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
@@ -916,7 +916,7 @@ local function CreateAuraContainerWidget(parent, config, unit)
         end
     end
 
-    for index, spec in ipairs(GetContainerGroupSpecs(config)) do
+    for index, spec in ipairs(groupSpecs or GetContainerGroupSpecs(config)) do
         container:AddAuraGroup("nivui" .. index, spec.filterString, {
             maxFrameCount = config.maxIcons,
             candidateFilters = BuildCandidateFilters(spec),
@@ -965,7 +965,7 @@ local function CreateBorderEdges(frame, thickness, color)
     right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 end
 
-local function CreateBorderContainerWidget(parent, config, unit)
+local function CreateBorderContainerWidget(parent, config, unit, groupSpecs)
     local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
     if config.strata then container:SetFrameStrata(config.strata) end
     if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
@@ -981,7 +981,7 @@ local function CreateBorderContainerWidget(parent, config, unit)
         CreateBorderEdges(button, wrapper.borderThickness, config.color)
     end
 
-    for index, spec in ipairs(GetContainerGroupSpecs(config)) do
+    for index, spec in ipairs(groupSpecs or GetContainerGroupSpecs(config)) do
         container:AddAuraSlot("nivborder" .. index, spec.filterString, {
             candidateFilters = BuildCandidateFilters(spec),
             initializeFrame = InitializeBorderButton,
@@ -991,7 +991,7 @@ local function CreateBorderContainerWidget(parent, config, unit)
     return wrapper
 end
 
-local function CreateFrameContainerWidget(parent, config, unit)
+local function CreateFrameContainerWidget(parent, config, unit, groupSpecs)
     local container = CreateFrame("AuraContainer", nil, parent, "CustomAuraContainerTemplate")
     if config.strata then container:SetFrameStrata(config.strata) end
     if config.frameLevel then container:SetFrameLevel(config.frameLevel) end
@@ -1010,7 +1010,7 @@ local function CreateFrameContainerWidget(parent, config, unit)
         wrapper.fillTintTextures[#wrapper.fillTintTextures + 1] = texture
     end
 
-    for index, spec in ipairs(GetContainerGroupSpecs(config)) do
+    for index, spec in ipairs(groupSpecs or GetContainerGroupSpecs(config)) do
         container:AddAuraSlot("nivframe" .. index, spec.filterString, {
             candidateFilters = BuildCandidateFilters(spec),
             initializeFrame = InitializeTintButton,
@@ -1018,6 +1018,19 @@ local function CreateFrameContainerWidget(parent, config, unit)
     end
 
     return wrapper
+end
+
+local function CreateNormalOverlayWidget(parent, config, unit, groupSpecs)
+    if #groupSpecs == 0 then
+        return nil
+    end
+    if config.displayType == "BORDER" then
+        return CreateBorderContainerWidget(parent, config, unit, groupSpecs)
+    end
+    if config.displayType == "FRAME" then
+        return CreateFrameContainerWidget(parent, config, unit, groupSpecs)
+    end
+    return CreateAuraContainerWidget(parent, config, unit, groupSpecs)
 end
 
 local TEST_BUFFS = {
@@ -1032,7 +1045,15 @@ local TEST_DEBUFFS = {
     "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
 }
 
-local function PopulateTestAuras(frame, testAuras)
+local function GetMissingRaidBuffTestAuras()
+    local textures = {}
+    for _, definition in ipairs(NivUI.Filters.MissingRaidBuffs.DEFINITIONS) do
+        textures[#textures + 1] = C_Spell.GetSpellTexture(definition.iconSpellID)
+    end
+    return textures
+end
+
+local function PopulateTestAuras(frame, testAuras, suppressAuraDetails)
     local config = frame.config
     local isColor = config.displayType == "COLOR"
     for i, icon in ipairs(frame.icons) do
@@ -1043,7 +1064,9 @@ local function PopulateTestAuras(frame, testAuras)
             else
                 icon.texture:SetTexture(testAuras[i])
             end
-            if (config.showDuration or config.showSwipe) and icon.cooldown then
+            if not suppressAuraDetails
+                and (config.showDuration or config.showSwipe)
+                and icon.cooldown then
                 local fakeDuration = math.random(10, 60)
                 icon.cooldown:SetCooldown(GetTime(), fakeDuration)
                 icon.cooldown:SetDrawSwipe(config.showSwipe and true or false)
@@ -1054,7 +1077,7 @@ local function PopulateTestAuras(frame, testAuras)
             elseif icon.cooldown then
                 icon.cooldown:SetCooldown(0, 0)
             end
-            if config.showStacks and math.random() > 0.5 then
+            if not suppressAuraDetails and config.showStacks and math.random() > 0.5 then
                 icon.stacks:SetText(math.random(2, 5))
             else
                 icon.stacks:SetText("")
@@ -1083,25 +1106,39 @@ local function CreateTransformativeOverlayWidget(parent, config, unit)
     return frame
 end
 
-function WF.overlay(parent, config, _style, unit, options)
+function WF.overlay(parent, config, style, unit, options)
     local forPreview = options and options.forPreview
+    local groupSpecs, allowMissingRaidBuffs = GetContainerGroupSpecs(config)
 
     if NivUI.OverlayLogic.IsTransformative(config.displayType) then
         if forPreview then
             return CreateTransformativeOverlayWidget(parent, config, unit)
         end
-        if config.displayType == "BORDER" then
-            return CreateBorderContainerWidget(parent, config, unit)
+        if allowMissingRaidBuffs then
+            return NivUI.UnitFrames.MissingRaidBuffOverlay.Create(
+                parent, config, style, unit, groupSpecs, CreateNormalOverlayWidget)
         end
-        return CreateFrameContainerWidget(parent, config, unit)
+        if config.displayType == "BORDER" then
+            return CreateBorderContainerWidget(parent, config, unit, groupSpecs)
+        end
+        return CreateFrameContainerWidget(parent, config, unit, groupSpecs)
     end
 
     if forPreview then
         local frame = CreateAuraWidget(parent, config, unit)
-        local testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
-        PopulateTestAuras(frame, testAuras)
+        local testAuras
+        if allowMissingRaidBuffs then
+            testAuras = GetMissingRaidBuffTestAuras()
+        else
+            testAuras = (config.auraType == "HELPFUL") and TEST_BUFFS or TEST_DEBUFFS
+        end
+        PopulateTestAuras(frame, testAuras, allowMissingRaidBuffs)
         return frame
     end
 
-    return CreateAuraContainerWidget(parent, config, unit)
+    if allowMissingRaidBuffs then
+        return NivUI.UnitFrames.MissingRaidBuffOverlay.Create(
+            parent, config, style, unit, groupSpecs, CreateNormalOverlayWidget)
+    end
+    return CreateAuraContainerWidget(parent, config, unit, groupSpecs)
 end

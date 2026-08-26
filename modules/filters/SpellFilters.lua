@@ -18,6 +18,12 @@ Filters.BUILTIN = {
     { token = "CROWD_CONTROL", label = "Crowd Control" },
     { token = "CANCELABLE", label = "Cancelable" },
     { token = "NOT_CANCELABLE", label = "Not Cancelable" },
+    {
+        token = "MISSING_RAID_BUFFS",
+        label = "Missing Raid Buffs",
+        allowOnly = true,
+        derived = true,
+    },
 }
 
 local BUILTIN_TOKENS = {}
@@ -164,6 +170,7 @@ function Filters:BuildContainerInputs(config, prefix)
         blockTokens = {},
         allowSpellMaps = {},
         blockSpellMaps = {},
+        allowMissingRaidBuffs = false,
     }
     if type(config) ~= "table" or type(prefix) ~= "string" then
         return inputs
@@ -171,10 +178,12 @@ function Filters:BuildContainerInputs(config, prefix)
 
     local allow, block = config.allow, config.block
     for _, entry in ipairs(self.BUILTIN) do
-        if allow and allow[entry.token] then
+        if entry.token == "MISSING_RAID_BUFFS" then
+            inputs.allowMissingRaidBuffs = allow and allow[entry.token] and true or false
+        elseif allow and allow[entry.token] then
             inputs.allowTokens[#inputs.allowTokens + 1] = entry.token
         end
-        if block and block[entry.token] then
+        if not entry.allowOnly and block and block[entry.token] then
             inputs.blockTokens[#inputs.blockTokens + 1] = entry.token
         end
     end

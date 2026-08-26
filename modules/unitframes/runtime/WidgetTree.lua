@@ -138,6 +138,9 @@ function WidgetTree.ApplyAnchors(parent, widgets, style)
                 widget:SetPoint("CENTER", parent, "CENTER", 0, 0)
             end
         end
+        if widget.UpdateMissingRaidBuffSize then
+            widget:UpdateMissingRaidBuffSize()
+        end
     end
 end
 
