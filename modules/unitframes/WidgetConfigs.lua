@@ -265,6 +265,38 @@ NivUI.UnitFrames.WidgetConfigs = {
         },
     },
 
+    threatText = {
+        {
+            label = "General",
+            entries = {
+                { kind = "checkbox", key = "enabled", label = "Enabled" },
+                { kind = "slider", key = "width", label = "Width", min = 24, max = 200, step = 1 },
+                { kind = "fontDropdown", key = "font", label = "Font" },
+                { kind = "slider", key = "fontSize", label = "Size", min = 8, max = 24, step = 1 },
+                { kind = "dropdown", key = "fontOutline", label = "Outline", options = "FONT_OUTLINES" },
+                { kind = "dropdown", key = "alignment", label = "Alignment", options = "TEXT_ALIGNMENTS" },
+                { kind = "dropdown", key = "anchor.relativeTo", label = "Anchored To", options = "WIDGET_PARENTS" },
+                { kind = "dropdown", key = "anchor.point", label = "Point", options = "ANCHOR_POINTS" },
+                { kind = "dropdown", key = "anchor.relativePoint", label = "Attach To", options = "ANCHOR_POINTS" },
+                { kind = "slider", key = "anchor.x", label = "X Offset", min = -200, max = 200, step = 1 },
+                { kind = "slider", key = "anchor.y", label = "Y Offset", min = -200, max = 200, step = 1 },
+                { kind = "dropdown", key = "strata", label = "Frame Strata", options = "FRAME_STRATA" },
+                { kind = "slider", key = "frameLevel", label = "Frame Level", min = 1, max = 100, step = 1 },
+            },
+        },
+        {
+            label = "Display",
+            entries = {
+                { kind = "dropdown", key = "colorMode", label = "Color Mode", options = "THREAT_TEXT_COLOR_MODES" },
+                { kind = "colorPicker", key = "color", label = "Color", hasAlpha = true, showIf = { key = "colorMode", value = "static" } },
+                { kind = "checkbox", key = "invertForTanks", label = "Invert for Tanks", showIf = { key = "colorMode", value = "threat" } },
+                { kind = "colorPicker", key = "safeColor", label = "Safe", hasAlpha = true, showIf = { key = "colorMode", value = "threat" } },
+                { kind = "colorPicker", key = "warningColor", label = "Warning", hasAlpha = true, showIf = { key = "colorMode", value = "threat" } },
+                { kind = "colorPicker", key = "dangerColor", label = "Danger", hasAlpha = true, showIf = { key = "colorMode", value = "threat" } },
+            },
+        },
+    },
+
     statusIndicators = {
         {
             label = "General",
@@ -436,6 +468,7 @@ function NivUI.UnitFrames:GetOptionList(optionName, context)
     local lists = {
         HEALTH_COLOR_MODES = self.HEALTH_COLOR_MODES,
         POWER_COLOR_MODES = self.POWER_COLOR_MODES,
+        THREAT_TEXT_COLOR_MODES = self.THREAT_TEXT_COLOR_MODES,
         POWER_VISIBILITY = self.POWER_VISIBILITY,
         PORTRAIT_MODES = self.PORTRAIT_MODES,
         PORTRAIT_SHAPES = self.PORTRAIT_SHAPES,

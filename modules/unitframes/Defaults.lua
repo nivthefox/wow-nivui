@@ -64,6 +64,11 @@ NivUI.UnitFrames.POWER_COLOR_MODES = {
     { value = "custom", name = "Custom" },
 }
 
+NivUI.UnitFrames.THREAT_TEXT_COLOR_MODES = {
+    { value = "static", name = "Single Color" },
+    { value = "threat", name = "Threat Status" },
+}
+
 NivUI.UnitFrames.POWER_VISIBILITY = {
     { value = "everyone", name = "Everyone" },
     { value = "healers", name = "Healers" },
@@ -300,6 +305,24 @@ NivUI.UnitFrames.DEFAULT_STYLE = {
         color = { r = 1, g = 1, b = 1 },
     },
 
+    threatText = {
+        enabled = false,
+        anchor = DefaultAnchor("LEFT", "healthBar", "RIGHT", 4, 0),
+        width = 60,
+        strata = "MEDIUM",
+        frameLevel = 10,
+        font = "Friz Quadrata",
+        fontSize = 11,
+        fontOutline = "OUTLINE",
+        alignment = "LEFT",
+        colorMode = "threat",
+        invertForTanks = true,
+        color = { r = 1, g = 1, b = 1 },
+        safeColor = { r = 1, g = 1, b = 1 },
+        warningColor = { r = 1, g = 0.5, b = 0 },
+        dangerColor = { r = 1, g = 0, b = 0 },
+    },
+
     statusIndicators = {
         enabled = true,
         strata = "MEDIUM",
@@ -384,6 +407,7 @@ NivUI.UnitFrames.WIDGET_ORDER = {
     "levelText",
     "healthText",
     "powerText",
+    "threatText",
     "statusIndicators",
     "statusText",
     "leaderIcon",
@@ -401,6 +425,7 @@ NivUI.UnitFrames.WIDGET_NAMES = {
     levelText = "Level Text",
     healthText = "Health Text",
     powerText = "Power Text",
+    threatText = "Threat Lead",
     statusIndicators = "Status Indicators",
     statusText = "Status Text",
     leaderIcon = "Leader Icon",

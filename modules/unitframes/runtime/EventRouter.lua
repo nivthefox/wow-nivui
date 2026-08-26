@@ -59,6 +59,8 @@ function EventRouter.HandleEvent(state, event)
         Facade.UpdateStatusText(state)
     elseif event == "RAID_TARGET_UPDATE" then
         Facade.UpdateRaidMarker(state)
+    elseif event == "UNIT_THREAT_LIST_UPDATE" or event == "UNIT_THREAT_SITUATION_UPDATE" then
+        Facade.UpdateThreatText(state)
     elseif CASTBAR_EVENTS[event] then
         Facade.UpdateCastbar(state)
     end

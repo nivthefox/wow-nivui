@@ -32,6 +32,8 @@ NivUI.UnitFrames.TargetFrame = Base.CreateModule({
         frame:RegisterEvent("PLAYER_TARGET_CHANGED")
         frame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
         frame:RegisterEvent("PLAYER_SOFT_FRIEND_CHANGED")
+        frame:RegisterEvent("UNIT_THREAT_LIST_UPDATE")
+        frame:RegisterEvent("UNIT_THREAT_SITUATION_UPDATE")
 
         RegisterAttributeDriver(frame, "unit", "[@target,exists] target; [@softenemy,exists] softenemy; [@softfriend,exists] softfriend; target")
     end,

@@ -171,6 +171,7 @@ local function HandleCustomFrameEvent(state, frame, event, eventUnit)
         Facade.UpdateLeaderIcon(state)
     elseif event == "PLAYER_ROLES_ASSIGNED" then
         Facade.UpdateRoleIcon(state)
+        Facade.UpdateThreatText(state)
     elseif event == "PLAYER_ENTERING_WORLD"
         or event == "ZONE_CHANGED_NEW_AREA"
         or event == "ENCOUNTER_START"

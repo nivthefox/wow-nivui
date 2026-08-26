@@ -204,6 +204,7 @@ return {
             "UpdateHealthText",
             "UpdatePowerBar",
             "UpdatePowerText",
+            "UpdateThreatText",
             "UpdatePortrait",
             "UpdateNameText",
             "UpdateLevelText",
@@ -242,6 +243,7 @@ return {
             "UpdateStatusText",
             "UpdateRaidMarker",
             "UpdateCastbar",
+            "UpdateThreatText",
         }
 
         for _, updaterName in ipairs(updaterNames) do
@@ -259,6 +261,8 @@ return {
         harness.Base.HandleEvent({}, "UNIT_FLAGS")
         harness.Base.HandleEvent({}, "RAID_TARGET_UPDATE")
         harness.Base.HandleEvent({}, "UNIT_SPELLCAST_START")
+        harness.Base.HandleEvent({}, "UNIT_THREAT_LIST_UPDATE")
+        harness.Base.HandleEvent({}, "UNIT_THREAT_SITUATION_UPDATE")
 
         local expected = {
             "UpdateHealthBar",
@@ -273,6 +277,8 @@ return {
             "UpdateStatusText",
             "UpdateRaidMarker",
             "UpdateCastbar",
+            "UpdateThreatText",
+            "UpdateThreatText",
         }
         assertEquals(table.concat(calls, ","), table.concat(expected, ","), "event dispatch order")
     end,

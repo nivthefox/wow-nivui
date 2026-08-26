@@ -19,6 +19,8 @@ NivUI.UnitFrames.FocusFrame = Base.CreateModule({
 
     registerEvents = function(frame)
         frame:RegisterEvent("PLAYER_FOCUS_CHANGED")
+        frame:RegisterEvent("UNIT_THREAT_LIST_UPDATE")
+        frame:RegisterEvent("UNIT_THREAT_SITUATION_UPDATE")
     end,
 
     onEvent = function(_frame, event, _unit)

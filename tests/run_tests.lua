@@ -185,6 +185,7 @@ local modules = {
     addonRoot .. "/modules/overlays/OverlayLogic.lua",
     addonRoot .. "/modules/overlays/Overlays.lua",
     addonRoot .. "/modules/unitframes/Defaults.lua",
+    addonRoot .. "/modules/unitframes/WidgetConfigs.lua",
     addonRoot .. "/modules/nicknames/Nicknames.lua",
 }
 

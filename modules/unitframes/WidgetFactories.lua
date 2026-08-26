@@ -423,6 +423,20 @@ function WF.powerText(parent, config, _style, unit)
     return CreateTextWidget(parent, config, text, "powerText", unit)
 end
 
+function WF.threatText(parent, config, _style, unit)
+    local frame = CreateTextWidget(parent, config, "200%", "threatText", unit)
+    frame:SetWidth(config.width or 60)
+
+    if config.colorMode == "threat" then
+        local previewColor = config.invertForTanks and config.safeColor or config.dangerColor
+        if previewColor then
+            frame.text:SetTextColor(previewColor.r, previewColor.g, previewColor.b, previewColor.a or 1)
+        end
+    end
+
+    return frame
+end
+
 function WF.statusIndicators(parent, config, _style, _unit, options)
     options = options or {}
     local frame = CreateFrame("Frame", nil, parent)

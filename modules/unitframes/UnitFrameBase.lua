@@ -20,6 +20,7 @@ UnitFrameBase.UpdateHealthBar = HealthUpdater.UpdateHealthBar
 UnitFrameBase.UpdatePowerBar = StandardWidgetUpdater.UpdatePowerBar
 UnitFrameBase.UpdateHealthText = StandardWidgetUpdater.UpdateHealthText
 UnitFrameBase.UpdatePowerText = StandardWidgetUpdater.UpdatePowerText
+UnitFrameBase.UpdateThreatText = StandardWidgetUpdater.UpdateThreatText
 UnitFrameBase.UpdatePortrait = StandardWidgetUpdater.UpdatePortrait
 UnitFrameBase.UpdateStatusIndicators = StandardWidgetUpdater.UpdateStatusIndicators
 UnitFrameBase.UpdateStatusText = StandardWidgetUpdater.UpdateStatusText
@@ -45,6 +46,7 @@ function UnitFrameBase.UpdateAllWidgets(state)
     UnitFrameBase.UpdateHealthText(state)
     UnitFrameBase.UpdatePowerBar(state)
     UnitFrameBase.UpdatePowerText(state)
+    UnitFrameBase.UpdateThreatText(state)
     UnitFrameBase.UpdatePortrait(state)
     UnitFrameBase.UpdateNameText(state)
     UnitFrameBase.UpdateLevelText(state)

@@ -186,6 +186,64 @@ function StandardWidgetUpdater.UpdatePowerText(state)
     end
 end
 
+local function HideThreatText(widget)
+    widget.text:SetText("")
+    widget:Hide()
+end
+
+local function GetThreatTextColor(config, status)
+    if config.colorMode ~= "threat" then
+        return config.color
+    end
+
+    local invertForPlayer = config.invertForTanks and NivUI.Roster:GetRole("player") == "TANK"
+    if invertForPlayer then
+        if status == 3 then
+            return config.safeColor
+        end
+        if status == 2 then
+            return config.warningColor
+        end
+        return config.dangerColor
+    end
+
+    if status == 1 then
+        return config.warningColor
+    end
+    if status == 2 or status == 3 then
+        return config.dangerColor
+    end
+    return config.safeColor
+end
+
+function StandardWidgetUpdater.UpdateThreatText(state)
+    if not state.customFrame or not state.customFrame.widgets.threatText then return end
+    local widget = state.customFrame.widgets.threatText
+    local config = GetWidgetConfig(state, "threatText")
+
+    if state.frameType ~= "target" and state.frameType ~= "focus" then
+        HideThreatText(widget)
+        return
+    end
+
+    local leadPercentage = UnitThreatPercentageOfLead("player", state.unit)
+    if issecretvalue(leadPercentage) or leadPercentage == nil then
+        HideThreatText(widget)
+        return
+    end
+
+    widget.text:SetFormattedText("%.0f%%", leadPercentage)
+    local _, status = UnitDetailedThreatSituation("player", state.unit)
+    if issecretvalue(status) then
+        status = nil
+    end
+    local color = GetThreatTextColor(config, status)
+    if color then
+        widget.text:SetTextColor(color.r, color.g, color.b, color.a or 1)
+    end
+    widget:Show()
+end
+
 --- Updates the portrait widget for a unit frame.
 --- Supports modes: 3D (model), 2D (texture), class (class icon).
 --- @param state table The unit frame state table
