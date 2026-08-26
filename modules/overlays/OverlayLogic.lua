@@ -62,6 +62,12 @@ function OverlayLogic.NormalizeOverlay(config, defaults)
     end
     config.dispelIndicator = nil
     config.priority = nil
+    if type(config.allow) == "table" then
+        config.allow.PLAYER = nil
+    end
+    if type(config.block) == "table" then
+        config.block.PLAYER = nil
+    end
     config.wrap = OverlayLogic.NormalizeWrap(config.growth, config.wrap)
     return config
 end
@@ -270,6 +276,9 @@ end
 
 function OverlayLogic.BuildContainerGroupSpecs(inputs)
     local base = inputs.prefix
+    if inputs.mineOnly then
+        base = base .. "|PLAYER"
+    end
     for _, token in ipairs(inputs.blockTokens) do
         base = base .. "|!" .. token
     end

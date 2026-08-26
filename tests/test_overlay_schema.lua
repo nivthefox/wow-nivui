@@ -85,7 +85,7 @@ local function ExpectedSet(list)
 end
 
 local ICON_KEYS = {
-    "auraType", "displayType",
+    "auraType", "displayType", "mineOnly",
     "iconSize", "spacing",
     "anchor.point", "anchor.relativeTo", "anchor.relativePoint", "anchor.x", "anchor.y",
     "strata", "frameLevel",
@@ -107,11 +107,11 @@ end
 local COLOR_KEYS = WithColor(ICON_KEYS)
 
 local FRAME_KEYS = {
-    "displayType", "auraType", "color", "targetWidget",
+    "displayType", "auraType", "color", "targetWidget", "mineOnly",
 }
 
 local BORDER_KEYS = {
-    "displayType", "auraType", "color", "targetWidget",
+    "displayType", "auraType", "color", "targetWidget", "mineOnly",
     "borderThickness", "strata", "frameLevel",
 }
 
@@ -141,6 +141,7 @@ return {
 
     ["DEFAULTS has the new fields with exact values"] = function()
         assertEquals(Overlays.DEFAULTS.displayType, "ICON", "displayType default")
+        assertEquals(Overlays.DEFAULTS.mineOnly, false, "mineOnly default")
         assertNil(Overlays.DEFAULTS.priority, "priority removed from DEFAULTS")
         assertTableEquals(Overlays.DEFAULTS.color, { r = 1, g = 0, b = 0, a = 1 }, "color default")
         assertEquals(Overlays.DEFAULTS.targetWidget, "healthBar", "targetWidget default")
@@ -179,6 +180,19 @@ return {
             local _, filterVisible = CollectVisibleKeys(displayType)
             assertTrue(filterVisible, "Filter tab must be visible for " .. displayType)
         end
+    end,
+
+    ["Filter tab exposes Mine Only before the matrix"] = function()
+        for _, tab in ipairs(Overlays.CONFIG) do
+            if tab.label == "Filter" then
+                assertEquals(tab.entries[1].kind, "checkbox")
+                assertEquals(tab.entries[1].key, "mineOnly")
+                assertEquals(tab.entries[1].label, "Mine Only")
+                assertEquals(tab.entries[2].kind, "filterMatrix")
+                return
+            end
+        end
+        error("Filter tab not found")
     end,
 
     ["ICON visible key set matches the spec matrix"] = function()

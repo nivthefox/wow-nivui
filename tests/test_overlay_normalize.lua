@@ -30,6 +30,7 @@ return {
     ["empty table gains all defaults"] = function()
         local config = Normalize({})
         assertEquals(config.displayType, "ICON", "displayType default")
+        assertEquals(config.mineOnly, false, "mineOnly default")
         assertNil(config.priority, "priority removed")
         assertTableEquals(config.color, { r = 1, g = 0, b = 0, a = 1 }, "color default")
         assertEquals(config.targetWidget, "healthBar", "targetWidget default")
@@ -43,9 +44,18 @@ return {
     end,
 
     ["legacy keys are removed if present"] = function()
-        local config = Normalize({ dispelIndicator = "healthTint", priority = 7 })
+        local config = Normalize({
+            dispelIndicator = "healthTint",
+            priority = 7,
+            allow = { PLAYER = true, RAID = true },
+            block = { PLAYER = true, CANCELABLE = true },
+        })
         assertNil(config.dispelIndicator, "legacy dispelIndicator must be removed")
         assertNil(config.priority, "legacy priority must be removed")
+        assertNil(config.allow.PLAYER, "legacy Player allow must be removed")
+        assertNil(config.block.PLAYER, "legacy Player block must be removed")
+        assertEquals(config.allow.RAID, true, "other allows must be preserved")
+        assertEquals(config.block.CANCELABLE, true, "other blocks must be preserved")
     end,
 
     ["mutates and returns the same table"] = function()

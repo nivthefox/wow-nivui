@@ -14,29 +14,46 @@ return {
             allowSpellMaps = {},
             blockSpellMaps = {},
             allowMissingRaidBuffs = false,
+            mineOnly = false,
         })
     end,
 
     ["nil prefix yields empty container inputs"] = function()
-        assertTableEquals(Filters:BuildContainerInputs({ allow = { PLAYER = true } }, nil), {
+        assertTableEquals(Filters:BuildContainerInputs({ mineOnly = true }, nil), {
             prefix = nil,
             allowTokens = {},
             blockTokens = {},
             allowSpellMaps = {},
             blockSpellMaps = {},
             allowMissingRaidBuffs = false,
+            mineOnly = false,
         })
     end,
 
-    ["built-in filters remain unprefixed container tokens"] = function()
+    ["Mine Only is separated from built-in container tokens"] = function()
         local inputs = Filters:BuildContainerInputs({
-            allow = { PLAYER = true },
+            mineOnly = true,
+            allow = { RAID = true },
             block = { RAID = true },
         }, "HELPFUL")
 
-        assertTableEquals(inputs.allowTokens, { "PLAYER" })
+        assertTableEquals(inputs.allowTokens, { "RAID" })
         assertTableEquals(inputs.blockTokens, { "RAID" })
         assertTrue(inputs.prefix == "HELPFUL")
+        assertTrue(inputs.mineOnly)
+    end,
+
+    ["Player is no longer a built-in matrix filter"] = function()
+        for _, entry in ipairs(Filters.BUILTIN) do
+            assertTrue(entry.token ~= "PLAYER")
+        end
+    end,
+
+    ["Player remains reserved as a custom filter name"] = function()
+        local success, message = Filters:CreateCustom("PLAYER")
+
+        assertEquals(success, false)
+        assertEquals(message, "That name is reserved")
     end,
 
     ["Missing Raid Buffs is an Allow-only derived standard filter"] = function()
@@ -50,12 +67,14 @@ return {
 
     ["Missing Raid Buffs is separated from Blizzard filter tokens"] = function()
         local inputs = Filters:BuildContainerInputs({
-            allow = { MISSING_RAID_BUFFS = true, PLAYER = true },
+            mineOnly = true,
+            allow = { MISSING_RAID_BUFFS = true },
             block = { MISSING_RAID_BUFFS = true, RAID = true },
         }, "HELPFUL")
 
-        assertTableEquals(inputs.allowTokens, { "PLAYER" })
+        assertTableEquals(inputs.allowTokens, {})
         assertTableEquals(inputs.blockTokens, { "RAID" })
         assertTrue(inputs.allowMissingRaidBuffs)
+        assertTrue(inputs.mineOnly)
     end,
 }

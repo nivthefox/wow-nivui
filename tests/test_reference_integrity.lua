@@ -148,7 +148,7 @@ local function styleProfile()
         },
         overlays = {
             Glow = {
-                allow = { Important = true, PLAYER = true, Other = true },
+                allow = { Important = true, RAID = true, Other = true },
                 block = { Important = true, RAID = true },
             },
             Other = {
@@ -265,7 +265,7 @@ return {
         assertNil(profile.overlays.Glow.allow.Important)
         assertNil(profile.overlays.Glow.block.Important)
         assertNil(profile.overlays.Other.allow.Important)
-        assertEquals(profile.overlays.Glow.allow.PLAYER, true)
+        assertEquals(profile.overlays.Glow.allow.RAID, true)
         assertEquals(profile.overlays.Glow.block.RAID, true)
         assertEquals(profile.overlays.Glow.allow.Other, true)
         assertTableEquals(harness.events[#harness.events].data.overlays, {
@@ -334,7 +334,7 @@ return {
         assertNil(profile.overlays.Present.allow.MissingFilter)
         assertNil(profile.overlays.Present.block.MissingFilter)
         assertEquals(profile.overlays.Present.allow.PresentFilter, true)
-        assertEquals(profile.overlays.Present.allow.PLAYER, true)
+        assertNil(profile.overlays.Present.allow.PLAYER)
         assertEquals(profile.overlays.Present.block.RAID, true)
         assertNil(database.charMeta["One-Realm"].specProfileMap[71])
         assertEquals(database.charMeta["One-Realm"].specProfileMap[72], "Default")

@@ -162,6 +162,7 @@ return {
             allowSpellMaps = {},
             blockSpellMaps = {},
             allowMissingRaidBuffs = true,
+            mineOnly = true,
         })
 
         assertEquals(#groups, 0)
@@ -170,7 +171,7 @@ return {
     ["built-in allow filters produce separate container groups"] = function()
         local groups = OverlayLogic.BuildContainerGroupSpecs({
             prefix = "HELPFUL",
-            allowTokens = { "RAID", "PLAYER" },
+            allowTokens = { "RAID", "BIG_DEFENSIVE" },
             blockTokens = { "CANCELABLE" },
             allowSpellMaps = {},
             blockSpellMaps = {},
@@ -178,7 +179,25 @@ return {
 
         assertEquals(#groups, 2)
         assertEquals(groups[1].filterString, "HELPFUL|!CANCELABLE|RAID")
-        assertEquals(groups[2].filterString, "HELPFUL|!CANCELABLE|PLAYER")
+        assertEquals(groups[2].filterString, "HELPFUL|!CANCELABLE|BIG_DEFENSIVE")
+    end,
+
+    ["Mine Only constrains every allowed aura group"] = function()
+        local groups = OverlayLogic.BuildContainerGroupSpecs({
+            prefix = "HELPFUL",
+            mineOnly = true,
+            allowTokens = { "RAID" },
+            blockTokens = { "CANCELABLE" },
+            allowSpellMaps = {
+                { [774] = true },
+            },
+            blockSpellMaps = {},
+        })
+
+        assertEquals(#groups, 2)
+        assertEquals(groups[1].filterString, "HELPFUL|PLAYER|!CANCELABLE|RAID")
+        assertEquals(groups[2].filterString, "HELPFUL|PLAYER|!CANCELABLE")
+        assertTrue(groups[2].includeSpellIDs[774])
     end,
 
     ["spell filters merge into container include and exclude maps"] = function()
@@ -205,7 +224,7 @@ return {
     ["built-in and spell allows produce independent container groups"] = function()
         local groups = OverlayLogic.BuildContainerGroupSpecs({
             prefix = "HARMFUL",
-            allowTokens = { "RAID", "PLAYER" },
+            allowTokens = { "RAID", "CROWD_CONTROL" },
             blockTokens = {},
             allowSpellMaps = {
                 { [774] = true },

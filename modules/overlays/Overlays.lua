@@ -13,6 +13,7 @@ local Overlays = NivUI.Overlays
 
 Overlays.DEFAULTS = {
     auraType = "HELPFUL",
+    mineOnly = false,
     iconSize = 20,
     spacing = 2,
     perRow = 8,
@@ -95,6 +96,7 @@ Overlays.CONFIG = {
     {
         label = "Filter",
         entries = {
+            { kind = "checkbox", key = "mineOnly", label = "Mine Only" },
             { kind = "filterMatrix" },
         },
     },

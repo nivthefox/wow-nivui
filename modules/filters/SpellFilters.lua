@@ -9,7 +9,6 @@ local Filters = NivUI.Filters
 
 --- Built-in Blizzard aura filter modifiers (12.x), in display order.
 Filters.BUILTIN = {
-    { token = "PLAYER", label = "Player" },
     { token = "RAID", label = "Raid" },
     { token = "RAID_IN_COMBAT", label = "Raid In Combat" },
     { token = "RAID_PLAYER_DISPELLABLE", label = "Raid Player Dispellable" },
@@ -26,9 +25,9 @@ Filters.BUILTIN = {
     },
 }
 
-local BUILTIN_TOKENS = {}
+local RESERVED_TOKENS = { PLAYER = true }
 for _, entry in ipairs(Filters.BUILTIN) do
-    BUILTIN_TOKENS[entry.token] = true
+    RESERVED_TOKENS[entry.token] = true
 end
 
 local function GetStore()
@@ -59,7 +58,7 @@ function Filters:CreateCustom(name)
     if name == "" then
         return false, "Name cannot be empty"
     end
-    if BUILTIN_TOKENS[name] then
+    if RESERVED_TOKENS[name] then
         return false, "That name is reserved"
     end
     local store = GetStore()
@@ -171,10 +170,13 @@ function Filters:BuildContainerInputs(config, prefix)
         allowSpellMaps = {},
         blockSpellMaps = {},
         allowMissingRaidBuffs = false,
+        mineOnly = false,
     }
     if type(config) ~= "table" or type(prefix) ~= "string" then
         return inputs
     end
+
+    inputs.mineOnly = config.mineOnly == true
 
     local allow, block = config.allow, config.block
     for _, entry in ipairs(self.BUILTIN) do

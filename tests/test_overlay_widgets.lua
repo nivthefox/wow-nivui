@@ -448,14 +448,15 @@ return {
         local harness = CreateHarness()
         local config = OverlayConfig("ICON")
         config.allow.MISSING_RAID_BUFFS = true
-        config.allow.PLAYER = true
+        config.mineOnly = true
+        config.allow.RAID = true
 
         local widget = harness.NivUI.WidgetFactories.overlay(
             CreateFrameObject("Parent"), config, nil, "party1")
 
         assertNotNil(widget.normalInner)
         assertEquals(#widget.normalInner.groups, 1)
-        assertEquals(widget.normalInner.groups[1].filter, "HELPFUL|PLAYER")
+        assertEquals(widget.normalInner.groups[1].filter, "HELPFUL|PLAYER|RAID")
         assertEquals(#widget.missingRaidBuffCells, 6)
     end,
 
@@ -463,8 +464,9 @@ return {
         local harness = CreateHarness()
         local config = OverlayConfig("ICON")
         config.allow.MISSING_RAID_BUFFS = true
-        config.allow.PLAYER = true
+        config.mineOnly = true
         config.allow.RAID = true
+        config.allow.BIG_DEFENSIVE = true
 
         local widget = harness.NivUI.WidgetFactories.overlay(
             CreateFrameObject("Parent"), config, nil, "party1")
@@ -490,7 +492,8 @@ return {
         local harness = CreateHarness()
         local config = OverlayConfig("ICON")
         config.allow.MISSING_RAID_BUFFS = true
-        config.allow.PLAYER = true
+        config.mineOnly = true
+        config.allow.RAID = true
 
         local widget = harness.NivUI.WidgetFactories.overlay(
             CreateFrameObject("Parent"), config, nil, "party1")
