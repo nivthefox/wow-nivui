@@ -146,6 +146,7 @@ NivUI.UnitFrames.PartyFrame = MultiUnitFrameBase.CreateModule({
     getSpacing = function() return NivUI:GetPartySpacing() end,
 
     memberVisibilityMode = "manual",
+    isActive = ShouldShowPartyFrames,
     shouldShowContainer = ShouldShowPartyFrames,
     shouldShowUnit = ShouldShowPartyUnit,
 

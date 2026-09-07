@@ -22,6 +22,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
     local state = {
         enabled = false,
+        active = false,
         previewMode = false,
         container = nil,
         memberFrames = {},
@@ -31,6 +32,10 @@ function MultiUnitFrameBase.CreateModule(config)
         blizzardHidden = false,
         pendingHide = false,
     }
+
+    local function IsLayoutActive()
+        return not config.isActive or config.isActive(state)
+    end
 
     local function ClearFrameWidgets(frame)
         if frame.widgets then
@@ -287,6 +292,17 @@ function MultiUnitFrameBase.CreateModule(config)
 
         LayoutMemberFrames()
         UpdateAllMemberFrames()
+        state.active = IsLayoutActive()
+    end
+
+    local function UpdateActivation()
+        if not IsLayoutActive() then
+            state.active = false
+            return
+        end
+        if state.active or (InCombatLockdown and InCombatLockdown()) then return end
+
+        BuildFrames()
     end
 
     local function DestroyFrames()
@@ -312,6 +328,11 @@ function MultiUnitFrameBase.CreateModule(config)
 
     local function OnContainerEventTriggered()
         if not state.enabled then return end
+
+        if config.isActive then
+            UpdateActivation()
+            if InCombatLockdown and InCombatLockdown() then return end
+        end
 
         local editModeActive = NivUI.EditMode and NivUI.EditMode:IsActive()
 
@@ -362,6 +383,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
     function module.Disable()
         state.enabled = false
+        state.active = false
         DestroyFrames()
         if config.restoreBlizzardFrames then
             config.restoreBlizzardFrames(state)
@@ -369,6 +391,10 @@ function MultiUnitFrameBase.CreateModule(config)
     end
 
     function module.Refresh()
+        if not IsLayoutActive() then
+            state.active = false
+            return
+        end
         if state.enabled then
             BuildFrames()
             if config.memberVisibilityMode == "manual" and not state.hasVisibilityDriver then
@@ -381,6 +407,10 @@ function MultiUnitFrameBase.CreateModule(config)
     function module.SetPreviewMode(enabled)
         state.previewMode = enabled
         if state.enabled then
+            if config.isActive then
+                UpdateActivation()
+                if InCombatLockdown and InCombatLockdown() then return end
+            end
             if config.memberVisibilityMode == "state_driver" then
                 for _, frame in pairs(state.memberFrames) do
                     if enabled then
@@ -425,6 +455,9 @@ function MultiUnitFrameBase.CreateModule(config)
                 module.Enable()
             end
         elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+            if event == "PLAYER_REGEN_ENABLED" and config.isActive then
+                OnContainerEventTriggered()
+            end
             if event == "PLAYER_REGEN_ENABLED" and state.pendingHide then
                 config.hideBlizzardFrames(state)
             end
@@ -463,7 +496,7 @@ function MultiUnitFrameBase.CreateModule(config)
 
     Lifecycle.Register({
         isEnabled = function()
-            return NivUI:IsFrameEnabled(config.frameType)
+            return NivUI:IsFrameEnabled(config.frameType) and IsLayoutActive()
         end,
         refresh = function()
             module.Refresh()
@@ -510,6 +543,9 @@ function MultiUnitFrameBase.CreateModule(config)
 
     NivUI:RegisterCallback(config.settingsChangedCallback, function(data)
         if state.enabled then
+            if config.isActive then
+                UpdateActivation()
+            end
             if config.onSettingsChanged then
                 config.onSettingsChanged(state, data)
             else

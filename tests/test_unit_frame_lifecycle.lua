@@ -48,6 +48,8 @@ local function createHarness()
         group = {
             enabled = true,
             styleName = "Shared Style",
+            filterType = "role",
+            roles = { healer = true },
         },
     }
     local NivUI = {
@@ -55,6 +57,9 @@ local function createHarness()
         WidgetFactories = {},
         eventCallbacks = {},
         profileApplyCallbacks = {},
+        Roster = {
+            GetRole = function() return "HEALER" end,
+        },
         EditMode = {
             IsActive = function()
                 return false
@@ -107,6 +112,11 @@ local function createHarness()
         InCombatLockdown = function()
             return combatLocked
         end,
+        IsInRaid = function() return true end,
+        GetInstanceInfo = function() return nil, nil, 0 end,
+        GetNumGroupMembers = function() return 1 end,
+        GetRaidRosterInfo = function() return "Healer", nil, 1 end,
+        UnitExists = function() return true end,
         UIParent = createFrame(),
         wipe = function(target)
             for key in pairs(target) do
@@ -351,7 +361,7 @@ return {
         assertRefreshCounts(harness, 0, "unassigned style refresh count")
     end,
 
-    ["all unit frame families refresh for each structural invalidation"] = function()
+    ["active unit frame families refresh for each structural invalidation"] = function()
         local harness = createHarness()
 
         harness.NivUI:TriggerEvent("CustomFiltersChanged", { name = "Test Filter" })

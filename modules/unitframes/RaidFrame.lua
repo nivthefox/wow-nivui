@@ -8,6 +8,7 @@ local Lifecycle = NivUI.UnitFrames.Lifecycle
 local states = {
     raid10 = {
         enabled = false,
+        active = false,
         previewMode = false,
         hasVisibilityDriver = false,
         visibilityDriverString = nil,
@@ -20,6 +21,7 @@ local states = {
     },
     raid20 = {
         enabled = false,
+        active = false,
         previewMode = false,
         hasVisibilityDriver = false,
         visibilityDriverString = nil,
@@ -32,6 +34,7 @@ local states = {
     },
     raid40 = {
         enabled = false,
+        active = false,
         previewMode = false,
         hasVisibilityDriver = false,
         visibilityDriverString = nil,
@@ -479,6 +482,7 @@ local function BuildRaidFrames(raidSize)
 
     LayoutGroupFrames(raidSize)
     UpdateAllRaidMembers(raidSize)
+    state.active = ShouldShowRaidFrames(raidSize)
 end
 
 function UpdateAllRaidMembers(raidSize)
@@ -512,36 +516,48 @@ local function DestroyRaidFrames(raidSize)
     end
 end
 
+local function UpdateRaidLayout(raidSize, activeSize)
+    local state = states[raidSize]
+    local isActive = raidSize == activeSize
+    local layoutActive = state.previewMode or isActive
+    if not layoutActive then
+        state.active = false
+    end
+    if InCombatLockdown and InCombatLockdown() then return end
+
+    if layoutActive and not state.active then
+        BuildRaidFrames(raidSize)
+    end
+
+    if state.visibilityDriverString and state.container then
+        if isActive and not state.hasVisibilityDriver then
+            RegisterStateDriver(state.container, "visibility", state.visibilityDriverString)
+            NivUI.EditMode:RegisterVisibilityDriver(raidSize, state.container, state.visibilityDriverString)
+            state.hasVisibilityDriver = true
+        elseif not isActive and state.hasVisibilityDriver then
+            UnregisterStateDriver(state.container, "visibility")
+            NivUI.EditMode:UnregisterVisibilityDriver(raidSize)
+            state.hasVisibilityDriver = false
+            SetRaidContainerVisibility(raidSize, false)
+        end
+    end
+
+    if not layoutActive then
+        SetRaidContainerVisibility(raidSize, false)
+        return
+    end
+    if not state.hasVisibilityDriver then
+        SetRaidContainerVisibility(raidSize, true)
+    end
+    LayoutGroupFrames(raidSize)
+    UpdateAllRaidMembers(raidSize)
+end
+
 local function OnGroupRosterUpdate()
     local activeSize = GetActiveRaidSize()
-
     for raidSize, state in pairs(states) do
         if state.enabled then
-            local isActive = (raidSize == activeSize)
-
-            if state.visibilityDriverString and state.container then
-                if isActive and not state.hasVisibilityDriver then
-                    RegisterStateDriver(state.container, "visibility", state.visibilityDriverString)
-                    NivUI.EditMode:RegisterVisibilityDriver(raidSize, state.container, state.visibilityDriverString)
-                    state.hasVisibilityDriver = true
-                elseif not isActive and state.hasVisibilityDriver then
-                    UnregisterStateDriver(state.container, "visibility")
-                    NivUI.EditMode:UnregisterVisibilityDriver(raidSize)
-                    state.hasVisibilityDriver = false
-                    SetRaidContainerVisibility(raidSize, false)
-                end
-            end
-
-            if state.hasVisibilityDriver then
-                LayoutGroupFrames(raidSize)
-                UpdateAllRaidMembers(raidSize)
-            elseif state.previewMode or isActive then
-                SetRaidContainerVisibility(raidSize, true)
-                LayoutGroupFrames(raidSize)
-                UpdateAllRaidMembers(raidSize)
-            else
-                SetRaidContainerVisibility(raidSize, false)
-            end
+            UpdateRaidLayout(raidSize, activeSize)
         end
     end
 end
@@ -602,6 +618,7 @@ function RaidFrame.Disable(raidSize, skipRestore)
     if not state then return end
 
     state.enabled = false
+    state.active = false
     DestroyRaidFrames(raidSize)
     if not skipRestore and not HasEnabledRaidFrame() then
         RestoreBlizzardRaidFrames()
@@ -611,6 +628,10 @@ end
 function RaidFrame.Refresh(raidSize)
     local state = states[raidSize]
     if not state or not state.enabled then return end
+    if not ShouldShowRaidFrames(raidSize) then
+        state.active = false
+        return
+    end
 
     BuildRaidFrames(raidSize)
     if not state.hasVisibilityDriver then
@@ -624,12 +645,7 @@ function RaidFrame.SetPreviewMode(raidSize, enabled)
 
     state.previewMode = enabled
     if state.enabled then
-        LayoutGroupFrames(raidSize)
-        UpdateAllRaidMembers(raidSize)
-
-        if not state.hasVisibilityDriver then
-            SetRaidContainerVisibility(raidSize, enabled or ShouldShowRaidFrames(raidSize))
-        end
+        UpdateRaidLayout(raidSize, GetActiveRaidSize())
     end
 end
 
@@ -659,6 +675,7 @@ eventFrame:SetScript("OnEvent", function(self, event)
     elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
         if event == "PLAYER_REGEN_ENABLED" and HasEnabledRaidFrame() then
             HideBlizzardRaidFrames()
+            OnGroupRosterUpdate()
         end
         for _, state in pairs(states) do
             if state.enabled and state.memberStates then
@@ -701,14 +718,15 @@ Lifecycle.Register({
     end,
     refresh = function()
         for raidSize in pairs(states) do
-            if NivUI:IsFrameEnabled(raidSize) then
+            if NivUI:IsFrameEnabled(raidSize) and ShouldShowRaidFrames(raidSize) then
                 RaidFrame.Refresh(raidSize)
             end
         end
     end,
     usesStyle = function(styleName)
         for raidSize in pairs(states) do
-            if NivUI:IsFrameEnabled(raidSize) and NivUI:GetAssignment(raidSize) == styleName then
+            if NivUI:IsFrameEnabled(raidSize) and ShouldShowRaidFrames(raidSize)
+                and NivUI:GetAssignment(raidSize) == styleName then
                 return true
             end
         end

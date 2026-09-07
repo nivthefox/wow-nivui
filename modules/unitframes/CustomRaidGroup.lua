@@ -257,6 +257,7 @@ local function BuildCustomGroupFrames(groupId)
     if not state then
         state = {
             enabled = false,
+            active = false,
             previewMode = false,
             container = nil,
             memberFrames = {},
@@ -289,6 +290,7 @@ local function BuildCustomGroupFrames(groupId)
 
     state.enabled = groupConfig.enabled
     LayoutMemberFrames(groupId)
+    state.active = #GetFilteredUnits(groupConfig) > 0
 
     Base.SetSecureVisibility(state.container, state.enabled)
 end
@@ -310,11 +312,24 @@ local function DestroyCustomGroupFrames(groupId)
     groupStates[groupId] = nil
 end
 
+local function UpdateCustomGroupLayout(groupId, state)
+    local groupConfig = NivUI:GetCustomRaidGroup(groupId)
+    if not state.enabled or not groupConfig then return end
+
+    local active = #GetFilteredUnits(groupConfig) > 0
+    if not active then state.active = false end
+    if InCombatLockdown and InCombatLockdown() then return end
+
+    if active and not state.active then
+        BuildCustomGroupFrames(groupId)
+        return
+    end
+    LayoutMemberFrames(groupId)
+end
+
 local function OnGroupRosterUpdate()
     for groupId, state in pairs(groupStates) do
-        if state.enabled then
-            LayoutMemberFrames(groupId)
-        end
+        UpdateCustomGroupLayout(groupId, state)
     end
 end
 
@@ -332,6 +347,7 @@ function CustomRaidGroup.Disable(groupId)
     local state = groupStates[groupId]
     if state then
         state.enabled = false
+        state.active = false
         Base.SetSecureVisibility(state.container, false)
     end
 end
@@ -339,6 +355,13 @@ end
 function CustomRaidGroup.Refresh(groupId)
     local state = groupStates[groupId]
     if not state then return end
+    local groupConfig = NivUI:GetCustomRaidGroup(groupId)
+    if not groupConfig then return end
+    if #GetFilteredUnits(groupConfig) == 0 then
+        state.enabled = groupConfig.enabled
+        state.active = false
+        return
+    end
 
     BuildCustomGroupFrames(groupId)
 end
@@ -369,6 +392,9 @@ eventFrame:SetScript("OnEvent", function(_self, event)
     elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
         OnGroupRosterUpdate()
     elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_REGEN_DISABLED" then
+        if event == "PLAYER_REGEN_ENABLED" then
+            OnGroupRosterUpdate()
+        end
         for _, state in pairs(groupStates) do
             if state.enabled and state.memberStates then
                 for _, memberState in pairs(state.memberStates) do
@@ -447,7 +473,7 @@ Lifecycle.Register({
     end,
     refresh = function()
         for groupId, groupConfig in pairs(NivUI:GetCustomRaidGroups()) do
-            if groupConfig.enabled then
+            if groupConfig.enabled and #GetFilteredUnits(groupConfig) > 0 then
                 CustomRaidGroup.Refresh(groupId)
             end
         end
