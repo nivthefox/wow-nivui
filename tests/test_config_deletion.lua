@@ -2,6 +2,7 @@ local _, assertions = ...
 local assertEquals = assertions.equals
 local assertTrue = assertions.isTrue
 local assertNil = assertions.isNil
+local assertTableEquals = assertions.tablesEqual
 
 local scriptPath = arg[0] or "tests/run_tests.lua"
 local testsDir = scriptPath:match("^(.*)[/\\][^/\\]+$") or "."
@@ -113,7 +114,7 @@ local function createHarness()
 end
 
 return {
-    ["canceling a deletion leaves the object and its references untouched"] = function()
+    ["filter deletion preserves references on cancel and clears them on confirmation"] = function()
         local harness = createHarness()
         local profile = harness.profile
         local shown = harness.NivUI.Config.Filters.RequestDelete("Important")
@@ -126,6 +127,14 @@ return {
 
         local request = harness.getShownPopup()
         local popup = harness.environment.StaticPopupDialogs[request.name]
+        if popup.OnCancel then
+            popup.OnCancel(nil, request.data, "clicked")
+        end
+        assertTableEquals(profile, createProfile(), "cancel preserves the entire profile")
+
+        assertTrue(harness.NivUI.Config.Filters.RequestDelete("Important"))
+        request = harness.getShownPopup()
+        popup = harness.environment.StaticPopupDialogs[request.name]
         popup.OnAccept(nil, request.data)
 
         assertNil(profile.customFilters.Important)
@@ -134,7 +143,7 @@ return {
         assertNil(profile.overlays.Other.allow.Important)
     end,
 
-    ["overlay deletion waits for confirmation before changing style references"] = function()
+    ["overlay deletion preserves references on cancel and clears them on confirmation"] = function()
         local harness = createHarness()
         local profile = harness.profile
 
@@ -147,6 +156,14 @@ return {
 
         local request = harness.getShownPopup()
         local popup = harness.environment.StaticPopupDialogs[request.name]
+        if popup.OnCancel then
+            popup.OnCancel(nil, request.data, "clicked")
+        end
+        assertTableEquals(profile, createProfile(), "cancel preserves the entire profile")
+
+        assertTrue(harness.NivUI.Config.Overlays.RequestDelete("Glow"))
+        request = harness.getShownPopup()
+        popup = harness.environment.StaticPopupDialogs[request.name]
         popup.OnAccept(nil, request.data)
 
         assertNil(profile.overlays.Glow)

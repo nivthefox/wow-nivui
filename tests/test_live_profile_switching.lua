@@ -817,6 +817,46 @@ return {
             "second slash command should not reconstruct UI")
     end,
 
+    ["the Nicknames sidebar tab opens its panel and yields to the next tab"] = function()
+        local harness, NivUI, environment = createConfigHarness()
+        local nicknamePanel = createRegion()
+        local filterPanel = createRegion()
+        NivUI.Config.Nicknames = {
+            SetupTab = function(parent)
+                nicknamePanel:SetParent(parent)
+                return nicknamePanel
+            end,
+        }
+        NivUI.Config.Filters.SetupTab = function(parent)
+            filterPanel:SetParent(parent)
+            return filterPanel
+        end
+
+        harness:initialize()
+        environment.SlashCmdList.NIVUI("")
+        assertNotNil(nicknamePanel.parent, "nickname panel was constructed")
+        assertFalse(nicknamePanel:IsShown(), "nickname panel starts unselected")
+
+        local function clickSidebarTab(label)
+            local matches = {}
+            for _, frame in ipairs(harness.frames) do
+                if type(frame.text) == "table" and frame.text.text == label then
+                    matches[#matches + 1] = frame
+                end
+            end
+            assertEquals(#matches, 1, "one sidebar tab for " .. label)
+            matches[1]:GetScript("OnClick")(matches[1])
+        end
+
+        clickSidebarTab("Nicknames")
+        assertTrue(nicknamePanel:IsShown(), "nickname tab shows its panel")
+        assertFalse(filterPanel:IsShown(), "nickname tab hides the filter panel")
+
+        clickSidebarTab("Custom Filters")
+        assertFalse(nicknamePanel:IsShown(), "switching tabs hides nicknames")
+        assertTrue(filterPanel:IsShown(), "the next tab shows its own panel")
+    end,
+
     ["a config open requested during combat waits without constructing UI"] = function()
         local harness, NivUI, environment, frameCountBeforeConfigLoad = createConfigHarness()
         harness:initialize()

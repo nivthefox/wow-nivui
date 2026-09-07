@@ -36,7 +36,7 @@ local function CreateButton(width)
 end
 
 return {
-    ["twenty long tabs and the add control remain within the panel width"] = function()
+    ["twenty long tabs and the add control fit without overlapping"] = function()
         local containerWidth = 525
         local buttons = {}
         for _ = 1, 20 do
@@ -48,12 +48,22 @@ return {
         local rows = NivUI.TabLayout.LayoutRows(CreateContainer(containerWidth), buttons, {
             startX = 4,
             rightInset = 4,
+            rowHeight = 28,
         })
 
         assertEquals(rows, 11, "row count")
         for index, button in ipairs(buttons) do
             assertTrue(button.point.x + button:GetWidth() <= containerWidth - 4,
                 "button " .. index .. " stays within the panel")
+            assertTrue(button.point.x >= 4, "button " .. index .. " stays within the left edge")
+            for previousIndex = 1, index - 1 do
+                local previous = buttons[previousIndex]
+                local separateColumns = button.point.x >= previous.point.x + previous:GetWidth()
+                    or previous.point.x >= button.point.x + button:GetWidth()
+                local separateRows = math.abs(button.point.y - previous.point.y) >= 28
+                assertTrue(separateColumns or separateRows,
+                    "buttons " .. previousIndex .. " and " .. index .. " do not overlap")
+            end
         end
         assertTrue(addButton.point ~= nil, "add control is positioned")
     end,

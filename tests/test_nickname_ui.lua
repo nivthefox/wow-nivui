@@ -317,13 +317,4 @@ return {
         assertEquals(harness.saves[#harness.saves].nickname, "Other")
     end,
 
-    ["the main configuration frame includes a top-level Nicknames tab"] = function()
-        local file = io.open(addonRoot .. "/ConfigFrame.lua", "r")
-        assertTrue(file ~= nil)
-        local source = file:read("*a")
-        file:close()
-
-        assertTrue(source:find("NivUI.Config.Nicknames.SetupTab", 1, true) ~= nil)
-        assertTrue(source:find('GetSidebarTab(Sidebar, "Nicknames")', 1, true) ~= nil)
-    end,
 }

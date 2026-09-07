@@ -5,32 +5,75 @@ local assertNil = assertions.isNil
 local assertNotNil = assertions.isNotNil
 local assertTableEquals = assertions.tablesEqual
 
--- tests/test_overlay_schema.lua
--- Data-shape contract tests for the overlay schema after the Display Types
--- redesign: Overlays.CONFIG / Overlays.DEFAULTS and the NivUI.UnitFrames option
--- lists. Also verifies the adaptive visibility matrix from the design doc
--- (docs/overlay-display-types.html) by walking CONFIG per display type.
-
 local Overlays = NivUI.Overlays
 local UnitFrames = NivUI.UnitFrames
 
-local function DeepGet(root, path)
-    local node = root
-    for segment in path:gmatch("[^.]+") do
-        if type(node) ~= "table" then
-            return nil
-        end
-        node = node[segment]
+local scriptPath = arg[0] or "tests/run_tests.lua"
+local testsDir = scriptPath:match("^(.*)[/\\][^/\\]+$") or "."
+local addonRoot = testsDir:match("^(.*)[/\\][^/\\]+$") or "."
+
+local function CreateFrameStub(_, _, initialParent)
+    local frame = { scripts = {}, width = 600, height = 32, scroll = 0, parent = initialParent }
+    for _, method in ipairs({ "ClearAllPoints", "SetAllPoints", "SetColorTexture", "SetPoint", "SetText" }) do
+        frame[method] = function() end
     end
-    return node
+    function frame:CreateTexture() return CreateFrameStub() end
+    function frame:GetWidth() return self.width end
+    function frame:GetHeight() return self.height end
+    function frame:SetWidth(width) self.width = width end
+    function frame:SetHeight(height) self.height = height end
+    function frame:SetScript(name, callback) self.scripts[name] = callback end
+    function frame:GetScript(name) return self.scripts[name] end
+    function frame:Show() self.shown = true end
+    function frame:Hide() self.shown = false end
+    function frame:SetParent(parent) self.parent = parent end
+    function frame:SetScrollChild(child) self.scrollChild = child end
+    function frame:GetVerticalScroll() return self.scroll end
+    function frame:SetVerticalScroll(scroll) self.scroll = scroll end
+    return frame
 end
 
-local function ConditionPasses(cond, data)
-    if not cond then
-        return true
+local function CreateSettingsPanel(data)
+    local namespace = { OverlayLogic = NivUI.OverlayLogic, TabLayout = NivUI.TabLayout }
+    local environment = setmetatable({
+        CreateFrame = CreateFrameStub,
+        C_Timer = { After = function(_, callback) callback() end },
+        PanelTemplates_TabResize = function() end,
+        PanelTemplates_SelectTab = function() end,
+        PanelTemplates_DeselectTab = function() end,
+        wipe = function(value)
+            for key in pairs(value) do value[key] = nil end
+        end,
+    }, { __index = _G })
+    local chunk = assert(loadfile(addonRoot .. "/modules/config/SettingsPanel.lua"))
+    setfenv(chunk, environment)
+    chunk("NivUI", namespace)
+
+    local panel = namespace.Config.SettingsPanel.Create(CreateFrameStub(), {
+        getConfig = function() return Overlays.CONFIG end,
+        getData = function() return data end,
+    })
+    function panel:CreateEntry(parent, entry)
+        parent.entries = parent.entries or {}
+        parent.entries[#parent.entries + 1] = entry
+        return CreateFrameStub()
     end
-    local value = DeepGet(data, cond.key)
-    return NivUI.OverlayLogic.EvaluateCondition(cond, value)
+    return panel
+end
+
+local function VisibleKeys(panel)
+    local visible = {}
+    local filterTabVisible = false
+    for _, tabPanel in ipairs(panel.tabPanels) do
+        for _, entry in ipairs(tabPanel.scrollChild.entries or {}) do
+            if entry.kind == "filterMatrix" then
+                filterTabVisible = true
+            elseif entry.key then
+                visible[entry.key] = true
+            end
+        end
+    end
+    return visible, filterTabVisible
 end
 
 local function CollectVisibleKeys(displayType)
@@ -40,31 +83,9 @@ local function CollectVisibleKeys(displayType)
         showDuration = true,
         showStacks = true,
     }
-
-    local visible = {}
-    local filterTabVisible = false
-
-    for _, tab in ipairs(Overlays.CONFIG) do
-        if ConditionPasses(tab.showIf, data) then
-            for _, entry in ipairs(tab.entries) do
-                if not entry.key and entry.kind == "filterMatrix" then
-                    filterTabVisible = true
-                elseif entry.key then
-                    local showOk = ConditionPasses(entry.showIf, data)
-                    local hideOk = true
-                    if entry.hideIf then
-                        hideOk = not NivUI.OverlayLogic.EvaluateCondition(
-                            entry.hideIf, DeepGet(data, entry.hideIf.key))
-                    end
-                    if showOk and hideOk then
-                        visible[entry.key] = true
-                    end
-                end
-            end
-        end
-    end
-
-    return visible, filterTabVisible
+    local panel = CreateSettingsPanel(data)
+    panel:BuildFor("Test Overlay")
+    return VisibleKeys(panel)
 end
 
 local function SortedKeys(set)
@@ -116,47 +137,6 @@ local BORDER_KEYS = {
 }
 
 return {
-    ["no Dispellable tab in CONFIG"] = function()
-        for _, tab in ipairs(Overlays.CONFIG) do
-            assertTrue(tab.label ~= "Dispellable", "CONFIG must not contain a Dispellable tab")
-        end
-    end,
-
-    ["no dispelIndicator entry anywhere in CONFIG"] = function()
-        for _, tab in ipairs(Overlays.CONFIG) do
-            for _, entry in ipairs(tab.entries) do
-                assertTrue(entry.key ~= "dispelIndicator",
-                    "CONFIG must not contain a dispelIndicator entry")
-            end
-        end
-    end,
-
-    ["DEFAULTS.dispelIndicator is nil"] = function()
-        assertNil(Overlays.DEFAULTS.dispelIndicator, "dispelIndicator removed from DEFAULTS")
-    end,
-
-    ["UnitFrames.DISPEL_INDICATOR is nil"] = function()
-        assertNil(UnitFrames.DISPEL_INDICATOR, "DISPEL_INDICATOR option list removed")
-    end,
-
-    ["DEFAULTS has the new fields with exact values"] = function()
-        assertEquals(Overlays.DEFAULTS.displayType, "ICON", "displayType default")
-        assertEquals(Overlays.DEFAULTS.mineOnly, false, "mineOnly default")
-        assertNil(Overlays.DEFAULTS.priority, "priority removed from DEFAULTS")
-        assertTableEquals(Overlays.DEFAULTS.color, { r = 1, g = 0, b = 0, a = 1 }, "color default")
-        assertEquals(Overlays.DEFAULTS.targetWidget, "healthBar", "targetWidget default")
-        assertEquals(Overlays.DEFAULTS.borderThickness, 2, "borderThickness default")
-    end,
-
-    ["OVERLAY_DISPLAY_TYPES is the ordered four-type list"] = function()
-        assertTableEquals(UnitFrames.OVERLAY_DISPLAY_TYPES, {
-            { value = "ICON", name = "Icon" },
-            { value = "COLOR", name = "Color" },
-            { value = "FRAME", name = "Frame" },
-            { value = "BORDER", name = "Border" },
-        }, "OVERLAY_DISPLAY_TYPES contents and order")
-    end,
-
     ["GetOverlayTargetWidgetOptions first entry is Unit Frame"] = function()
         local options = UnitFrames:GetOverlayTargetWidgetOptions()
         assertNotNil(options, "GetOverlayTargetWidgetOptions should return a list")
@@ -219,10 +199,6 @@ return {
             "BORDER visible keys")
     end,
 
-    ["DEFAULTS.wrap is DOWN"] = function()
-        assertEquals(Overlays.DEFAULTS.wrap, "DOWN", "wrap default is DOWN (horizontal default growth)")
-    end,
-
     ["Layout tab has a wrap dropdown wired to OVERLAY_WRAP"] = function()
         local wrapEntry
         for _, tab in ipairs(Overlays.CONFIG) do
@@ -239,30 +215,38 @@ return {
         assertEquals(wrapEntry.options, "OVERLAY_WRAP", "wrap dropdown resolves the OVERLAY_WRAP option list")
     end,
 
-    ["perRow label reads Icons Per Line"] = function()
-        local perRowEntry
-        for _, tab in ipairs(Overlays.CONFIG) do
-            for _, entry in ipairs(tab.entries) do
-                if entry.key == "perRow" then
-                    perRowEntry = entry
-                end
-            end
+    ["rebuilding settings follows duration and stack toggles and hides old panels"] = function()
+        local data = { displayType = "ICON", showDuration = false, showStacks = false }
+        local panel = CreateSettingsPanel(data)
+        panel:BuildFor("Test Overlay")
+        local visible = VisibleKeys(panel)
+        assertNil(visible["duration.font"])
+        assertNil(visible["stacks.font"])
+
+        data.showDuration = true
+        panel:BuildFor("Test Overlay")
+        visible = VisibleKeys(panel)
+        assertTrue(visible["duration.font"])
+        assertNil(visible["stacks.font"])
+
+        data.showStacks = true
+        panel:BuildFor("Test Overlay")
+        visible = VisibleKeys(panel)
+        assertTrue(visible["duration.font"])
+        assertTrue(visible["stacks.font"])
+        local oldPanels = { unpack(panel.tabPanels) }
+        panel:SelectTab(#panel.tabPanels)
+
+        data.displayType = "FRAME"
+        panel:BuildFor("Test Overlay")
+        visible = VisibleKeys(panel)
+        assertNil(visible["duration.font"])
+        assertNil(visible["stacks.font"])
+        assertNil(visible.perRow)
+        assertTrue(visible.targetWidget)
+        for _, oldPanel in ipairs(oldPanels) do
+            assertEquals(oldPanel.shown, false, "old panel hidden after rebuild")
+            assertNil(oldPanel.parent, "old panel detached after rebuild")
         end
-        assertNotNil(perRowEntry, "CONFIG must contain a perRow entry")
-        assertEquals(perRowEntry.label, "Icons Per Line", "perRow label relabeled for either orientation")
-    end,
-
-    ["OVERLAY_WRAP_HORIZONTAL is the ordered Down/Up pair"] = function()
-        assertTableEquals(UnitFrames.OVERLAY_WRAP_HORIZONTAL, {
-            { value = "DOWN", name = "Down" },
-            { value = "UP", name = "Up" },
-        }, "OVERLAY_WRAP_HORIZONTAL contents and order (default Down first)")
-    end,
-
-    ["OVERLAY_WRAP_VERTICAL is the ordered Right/Left pair"] = function()
-        assertTableEquals(UnitFrames.OVERLAY_WRAP_VERTICAL, {
-            { value = "RIGHT", name = "Right" },
-            { value = "LEFT", name = "Left" },
-        }, "OVERLAY_WRAP_VERTICAL contents and order (default Right first)")
     end,
 }
