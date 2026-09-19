@@ -594,6 +594,9 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
 
     local allTabs = {}
     local currentSubTab = 1
+    local emptyMessage = Components.GetDescription(container, "No class bars are available for your current specialization.")
+    emptyMessage:SetPoint("TOP", container, "TOP", 0, -10)
+    emptyMessage:Hide()
 
     local function SelectSubTab(index)
         for i, tabData in ipairs(allTabs) do
@@ -611,7 +614,9 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
     local function LayoutTabs()
         local tabButtons = {}
         for _, tabData in ipairs(allTabs) do
-            tabButtons[#tabButtons + 1] = tabData.tab
+            if tabData.available then
+                tabButtons[#tabButtons + 1] = tabData.tab
+            end
         end
         local numRows = NivUI.TabLayout.LayoutRows(container, tabButtons)
 
@@ -656,16 +661,50 @@ function NivUI.Config.Bars.SetupTab(ContentArea, Components)
         table.insert(allTabs, {
             tab = tab,
             container = barContainer,
+            barType = regConfig.barType,
         })
+    end
+
+    local function RefreshTabs()
+        local firstAvailable
+        local selectedAvailable
+        for i, tabData in ipairs(allTabs) do
+            tabData.available = NivUI:IsClassBarAvailable(tabData.barType)
+            if tabData.available then
+                tabData.tab:Show()
+                firstAvailable = firstAvailable or i
+                if i == currentSubTab then
+                    selectedAvailable = i
+                end
+            else
+                tabData.tab:Hide()
+            end
+        end
+
+        if firstAvailable then
+            emptyMessage:Hide()
+        else
+            emptyMessage:Show()
+        end
+        LayoutTabs()
+        SelectSubTab(selectedAvailable or firstAvailable)
     end
 
     container:SetScript("OnSizeChanged", function()
         LayoutTabs()
     end)
 
-    container:SetScript("OnShow", function()
-        LayoutTabs()
-        SelectSubTab(currentSubTab)
+    container:SetScript("OnShow", RefreshTabs)
+    container:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+    container:RegisterEvent("PLAYER_ENTERING_WORLD")
+    container:RegisterUnitEvent("UNIT_MAXPOWER", "player")
+    container:SetScript("OnEvent", function(_, event, unit)
+        if event ~= "PLAYER_ENTERING_WORLD" and unit and unit ~= "player" then
+            return
+        end
+        if container:IsShown() then
+            RefreshTabs()
+        end
     end)
 
     return container

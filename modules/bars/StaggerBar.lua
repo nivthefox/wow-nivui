@@ -14,6 +14,11 @@ local lastUpdate = 0
 local isBrewmaster = false
 local inCombat = false
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    return class == "MONK" and GetSpecialization() == 1
+end
+
 local function GetSetting(key)
     local db = NivUI:GetActiveProfile() and NivUI:GetActiveProfile().staggerBar
     if db and db[key] ~= nil then
@@ -74,6 +79,8 @@ local UpdateVisibility
 local UpdateBar
 
 local function ShouldShow()
+    if not isBrewmaster then return false end
+
     if NivUI.EditMode and NivUI.EditMode:IsActive() then
         return true
     end
@@ -81,7 +88,6 @@ local function ShouldShow()
     local visibility = GetSetting("visibility")
 
     if visibility == "never" then return false end
-    if not isBrewmaster then return false end
     if visibility == "always" then return true end
 
     if inCombat then return true end
@@ -145,14 +151,7 @@ UpdateBar = function()
 end
 
 local function CheckSpec()
-    local _, class = UnitClass("player")
-    if class ~= "MONK" then
-        isBrewmaster = false
-        return
-    end
-
-    local spec = GetSpecialization()
-    isBrewmaster = (spec == 1)
+    isBrewmaster = IsAvailable()
     UpdateVisibility()
 end
 
@@ -368,6 +367,7 @@ NivUI:RegisterClassBar("stagger", {
     tabName = "Stagger",
     sortOrder = 1,
     globalRef = "StaggerBar",
+    isAvailable = IsAvailable,
     contentHeight = 900,
 
     defaults = {
@@ -436,3 +436,4 @@ NivUI:RegisterClassBar("stagger", {
 })
 
 NivUI.UpdateVisibility = UpdateVisibility
+NivUI.StaggerBar_UpdateVisibility = UpdateVisibility

@@ -6,6 +6,11 @@ local lastUpdate = 0
 local isDeathKnight = false
 local inCombat = false
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    return class == "DEATHKNIGHT"
+end
+
 local function GetSetting(key)
     local db = NivUI:GetActiveProfile() and NivUI:GetActiveProfile().runeBar
     if db and db[key] ~= nil then
@@ -18,6 +23,10 @@ local UpdateVisibility
 local UpdateRunes
 
 local function ShouldShow()
+    if not isDeathKnight then
+        return false
+    end
+
     if NivUI.EditMode and NivUI.EditMode:IsActive() then
         return true
     end
@@ -25,10 +34,6 @@ local function ShouldShow()
     local visibility = GetSetting("visibility")
 
     if visibility == "never" then
-        return false
-    end
-
-    if not isDeathKnight then
         return false
     end
 
@@ -97,8 +102,7 @@ UpdateRunes = function()
 end
 
 local function CheckClass()
-    local _, class = UnitClass("player")
-    isDeathKnight = (class == "DEATHKNIGHT")
+    isDeathKnight = IsAvailable()
     UpdateVisibility()
 
     if isDeathKnight and NivUI.RuneBar then
@@ -298,6 +302,7 @@ NivUI:RegisterClassBar("rune", {
     tabName = "Runes",
     sortOrder = 8,
     globalRef = "RuneBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",

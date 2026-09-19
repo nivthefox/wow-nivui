@@ -55,6 +55,10 @@ function NivUI.SegmentedBarBase.CreateModule(config)
     local UpdateVisibility
 
     local function ShouldShow()
+        if not hasResource then
+            return false
+        end
+
         if NivUI.EditMode and NivUI.EditMode:IsActive() then
             return true
         end
@@ -64,10 +68,6 @@ function NivUI.SegmentedBarBase.CreateModule(config)
         if visibility == "never" then
             return false
         end
-        if not hasResource then
-            return false
-        end
-
         if visibility == "always" then
             return true
         end

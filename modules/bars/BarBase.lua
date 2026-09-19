@@ -25,11 +25,7 @@ function NivUI.BarBase.CreateModule(config)
         NivUI.EditMode:CreateSelectionFrame(frameType, frame)
 
         if NivUI.EditMode:IsActive() then
-            if not frame:IsShown() then
-                frame:Show()
-            end
-            NivUI.EditMode:ShowHighlighted(frameType)
-            NivUI.EditMode:RegisterFrameForMagnetism(frame)
+            NivUI.EditMode:RefreshClassBars()
         end
     end
 

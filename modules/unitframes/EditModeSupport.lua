@@ -283,6 +283,7 @@ function NivUI.EditMode:CreateSelectionFrame(frameType, customFrame)
         selectionFrames[frameType]:SetParent(customFrame)
         selectionFrames[frameType]:SetAllPoints(customFrame)
         selectionFrames[frameType].customFrame = customFrame
+        customFrame.Selection = selectionFrames[frameType]
         SetupMagnetismMethods(customFrame, selectionFrames[frameType])
         return selectionFrames[frameType]
     end
@@ -557,6 +558,37 @@ function NivUI.EditMode:UpdateContainerSizes()
     end
 end
 
+function NivUI.EditMode:RefreshClassBars()
+    if not editModeActive then return end
+
+    for barType in pairs(NivUI.classBarRegistry) do
+        local frameType = "classBar_" .. barType
+        local selection = selectionFrames[frameType]
+        local frame = selection and selection.customFrame
+        if frame then
+            if NivUI:IsClassBarEnabled(barType) and NivUI:IsClassBarAvailable(barType) then
+                if not frame:IsShown() then
+                    frame:Show()
+                    forceShownFrames[frameType] = true
+                end
+                if selectedFrame ~= frameType then
+                    self:ShowHighlighted(frameType)
+                end
+                self:RegisterFrameForMagnetism(frame)
+            else
+                if selectedFrame == frameType then
+                    selectedFrame = nil
+                    self:HideSettingsDialog()
+                end
+                self:HideSelection(frameType)
+                frame:Hide()
+                forceShownFrames[frameType] = nil
+                self:UnregisterFrameFromMagnetism(frame)
+            end
+        end
+    end
+end
+
 function NivUI.EditMode:ShowAllSelections()
     if EditModeMagnetismManager and EditModeMagnetismManager.UpdateUIParentPoints then
         EditModeMagnetismManager:UpdateUIParentPoints()
@@ -570,7 +602,7 @@ function NivUI.EditMode:ShowAllSelections()
     end
 
     for frameType, selection in pairs(selectionFrames) do
-        if selection.customFrame then
+        if selection.customFrame and not frameType:match("^classBar_") then
             if not selection.customFrame:IsShown() then
                 selection.customFrame:Show()
                 forceShownFrames[frameType] = true
@@ -580,6 +612,8 @@ function NivUI.EditMode:ShowAllSelections()
             self:RegisterFrameForMagnetism(selection.customFrame)
         end
     end
+
+    self:RefreshClassBars()
 end
 
 function NivUI.EditMode:HideAllSelections()
@@ -640,6 +674,17 @@ end
 
 EventRegistry:RegisterCallback("EditMode.Enter", OnEditModeEnter, NivUI.EditMode)
 EventRegistry:RegisterCallback("EditMode.Exit", OnEditModeExit, NivUI.EditMode)
+
+local specEventFrame = CreateFrame("Frame")
+specEventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+specEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+specEventFrame:RegisterUnitEvent("UNIT_MAXPOWER", "player")
+specEventFrame:SetScript("OnEvent", function(_, event, unit)
+    if event ~= "PLAYER_ENTERING_WORLD" and unit and unit ~= "player" then
+        return
+    end
+    NivUI.EditMode:RefreshClassBars()
+end)
 
 if EditModeManagerFrame and EditModeManagerFrame:IsEditModeActive() then
     OnEditModeEnter()

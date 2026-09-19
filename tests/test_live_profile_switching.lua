@@ -65,6 +65,10 @@ local function createRegion()
         self.height = height
     end
 
+    function region:SetAlpha(alpha)
+        self.alpha = alpha
+    end
+
     function region:SetToplevel(value)
         self.toplevel = value
     end
@@ -383,6 +387,87 @@ local function createAddon(profileData)
     return harness
 end
 
+local function createClassBarHarness()
+    local harness = createAddon({ Alpha = {
+        classBarEnabled = {
+            stagger = true, chi = true, essence = true, comboPoints = true,
+            holyPower = true, soulShards = true, arcaneCharges = true, rune = true,
+        },
+        staggerBar = { width = 321, x = 17, visibility = "combat" },
+        chiBar = { width = 234, x = 28, visibility = "never" },
+        runeBar = { width = 345, x = 39 },
+    } })
+    local NivUI = harness.namespace
+    local environment = harness.environment
+    harness.playerClass = "MONK"
+    harness.specIndex = 1
+    environment.UnitClass = function() return "Tester", harness.playerClass end
+    environment.GetSpecialization = function() return harness.specIndex end
+    environment.UnitStagger = function() return 0 end
+    environment.UnitPowerMax = function(_, powerType)
+        if powerType == 19 and harness.playerClass ~= "EVOKER" then return 0 end
+        return 5
+    end
+    environment.Enum = { PowerType = {
+        Chi = 12, Essence = 19, ComboPoints = 4, HolyPower = 9, SoulShards = 7, ArcaneCharges = 16,
+    } }
+    environment.NineSliceUtil = { ApplyLayout = function() end }
+    environment.EventRegistry = {
+        RegisterCallback = function(_, event, callback)
+            harness[event] = callback
+        end,
+    }
+    harness.magnets = {}
+    environment.EditModeMagnetismManager = {
+        RegisterFrame = function(_, frame) harness.magnets[frame] = true end,
+        UnregisterFrame = function(_, frame) harness.magnets[frame] = nil end,
+    }
+    environment.PanelTemplates_SelectTab = function(tab) tab.selected = true end
+    environment.PanelTemplates_DeselectTab = function(tab) tab.selected = false end
+
+    harness:load("modules/bars/BarBase.lua")
+    harness:load("modules/bars/SegmentedBarBase.lua")
+    for _, name in ipairs({ "Stagger", "Chi", "Essence", "ComboPoints", "HolyPower", "SoulShards", "ArcaneCharges", "Rune" }) do
+        harness:load("modules/bars/" .. name .. "Bar.lua")
+    end
+    harness:load("modules/unitframes/EditModeSupport.lua")
+    NivUI.EditMode.UpdateContainerSizes = function() end
+    NivUI.EditMode.HideBlizzardSelections = function() end
+    NivUI.EditMode.HideSettingsDialog = function() end
+    NivUI.EditMode.HasSettings = function() return false end
+    harness:initialize()
+
+    function harness:setupBarConfig()
+        self:load("modules/config/TabLayout.lua")
+        self:load("config/Bars.lua")
+        self.panels = {}
+        self.tabs = {}
+        NivUI.Config.Bars.BuildClassBarConfig = function(_, config)
+            local panel = createRegion()
+            self.panels[config.barType] = panel
+            return panel
+        end
+        local components = {
+            GetTab = function(_, text)
+                local tab = createRegion()
+                tab:SetWidth(100)
+                self.tabs[text] = tab
+                return tab
+            end,
+            GetDescription = function(_, text)
+                self.description = createRegion()
+                self.description:SetText(text)
+                return self.description
+            end,
+        }
+        self.config = NivUI.Config.Bars.SetupTab(createRegion(), components)
+        self.config:SetWidth(525)
+        self.config:Show()
+    end
+
+    return harness
+end
+
 local function assertColor(actual, expected, message)
     assertEquals(actual[1], expected.r, message .. " red")
     assertEquals(actual[2], expected.g, message .. " green")
@@ -629,6 +714,139 @@ local function assertStaggerBar(frame, expected, message)
 end
 
 return {
+    ["class bar settings follow specialization and preserve every saved configuration"] = function()
+        local harness = createClassBarHarness()
+        local NivUI = harness.namespace
+        local saved = copy(harness.environment.NivUI_DB)
+        harness:setupBarConfig()
+
+        assertTrue(harness.tabs.Stagger:IsShown(), "Brewmaster tab")
+        assertTrue(harness.panels.stagger:IsShown(), "Brewmaster settings")
+        assertFalse(harness.tabs.Runes:IsShown(), "Death Knight tab")
+        assertFalse(harness.tabs.Chi:IsShown(), "Windwalker tab")
+        assertEquals(harness.tabs.Stagger.point[4], 0, "visible tabs start at the left")
+
+        harness.specIndex = 3
+        harness:fire("PLAYER_SPECIALIZATION_CHANGED", "party1")
+        assertTrue(harness.tabs.Stagger:IsShown(), "other players do not change the tabs")
+        harness:fire("PLAYER_SPECIALIZATION_CHANGED", "player")
+        assertFalse(harness.tabs.Stagger:IsShown(), "old tab is hidden")
+        assertFalse(harness.panels.stagger:IsShown(), "old panel is hidden")
+        assertTrue(harness.tabs.Chi.selected, "new tab is selected")
+        assertTrue(harness.panels.chi:IsShown(), "new panel is shown")
+        assertEquals(harness.tabs.Chi.point[4], 0, "hidden tabs leave no gaps")
+
+        harness.specIndex = 2
+        harness:fire("PLAYER_SPECIALIZATION_CHANGED", "player")
+        assertFalse(harness.tabs.Chi:IsShown(), "Mistweaver hides Chi")
+        assertTrue(harness.description:IsShown(), "a spec without bars gets an explanation")
+
+        harness.config:Hide()
+        harness.specIndex = nil
+        harness.config:Show()
+        assertTrue(harness.description:IsShown(), "unavailable specialization does not expose other bars")
+        harness.specIndex = 1
+        harness:fire("PLAYER_ENTERING_WORLD")
+        assertTrue(harness.panels.stagger:IsShown(), "world entry refreshes specialization")
+        assertFalse(harness.description:IsShown(), "explanation hides when bars are available")
+        assertions.tablesEqual(harness.environment.NivUI_DB, saved, "all saved configurations are unchanged")
+        assertEquals(#NivUI:GetRegisteredClassBars(), 8, "every bar remains registered")
+    end,
+
+    ["class bar availability includes shared resources and excludes unrelated specs"] = function()
+        local harness = createClassBarHarness()
+        local NivUI = harness.namespace
+        for _, case in ipairs({
+            { "MONK", 1, "stagger" }, { "MONK", 2 }, { "MONK", 3, "chi" },
+            { "DRUID", 1 }, { "DRUID", 2, "comboPoints" }, { "DRUID", 3 }, { "DRUID", 4 },
+            { "MAGE", 1, "arcaneCharges" }, { "MAGE", 2 }, { "MAGE", 3 },
+            { "WARRIOR", 1 }, { "PRIEST", 2 }, { "HUNTER", 3 }, { "SHAMAN", 1 },
+        }) do
+            harness.playerClass, harness.specIndex = case[1], case[2]
+            for _, config in ipairs(NivUI:GetRegisteredClassBars()) do
+                assertEquals(not not NivUI:IsClassBarAvailable(config.barType), config.barType == case[3],
+                    case[1] .. " spec " .. case[2] .. " bar " .. config.barType)
+            end
+        end
+        for class, barType in pairs({
+            ROGUE = "comboPoints", PALADIN = "holyPower", WARLOCK = "soulShards",
+            DEATHKNIGHT = "rune", EVOKER = "essence",
+        }) do
+            harness.playerClass = class
+            for spec = 1, 3 do
+                harness.specIndex = spec
+                for _, config in ipairs(NivUI:GetRegisteredClassBars()) do
+                    assertEquals(not not NivUI:IsClassBarAvailable(config.barType), config.barType == barType,
+                        class .. " spec " .. spec .. " bar " .. config.barType)
+                end
+            end
+        end
+    end,
+
+    ["Edit Mode filters bars selections and snapping through specialization changes"] = function()
+        local harness = createClassBarHarness()
+        local NivUI = harness.namespace
+        harness:fire("PLAYER_LOGIN")
+        local saved = copy(harness.environment.NivUI_DB)
+        harness["EditMode.Enter"]()
+
+        assertTrue(NivUI.StaggerBar:IsShown(), "Brewmaster preview")
+        assertTrue(NivUI.StaggerBar.Selection:IsShown(), "Brewmaster outline")
+        assertTrue(harness.magnets[NivUI.StaggerBar], "Brewmaster snapping")
+        assertFalse(NivUI.RuneBar:IsShown(), "Death Knight bar")
+        assertFalse(NivUI.ChiBar:IsShown(), "Windwalker bar")
+        assertFalse(NivUI.ChiBar.Selection:IsShown(), "Windwalker outline")
+        NivUI.EditMode:SelectFrame("classBar_stagger", NivUI.StaggerBar)
+
+        harness.specIndex = 3
+        harness:fire("PLAYER_SPECIALIZATION_CHANGED", "player")
+        assertFalse(NivUI.StaggerBar:IsShown(), "old preview")
+        assertFalse(NivUI.StaggerBar.Selection:IsShown(), "old selection")
+        assertFalse(harness.magnets[NivUI.StaggerBar], "old snapping target")
+        assertTrue(NivUI.ChiBar:IsShown(), "new preview even with visibility set to never")
+        assertTrue(NivUI.ChiBar.Selection:IsShown(), "new outline")
+        assertTrue(harness.magnets[NivUI.ChiBar], "new snapping target")
+        NivUI.EditMode:ClearSelection()
+        assertFalse(NivUI.StaggerBar.Selection:IsShown(), "clearing selection does not revive the old outline")
+
+        NivUI.UpdateVisibility()
+        NivUI.RuneBar_UpdateVisibility()
+        NivUI.ArcaneChargesBar_UpdateVisibility()
+        assertFalse(NivUI.StaggerBar:IsShown(), "Stagger updates respect the spec filter")
+        assertFalse(NivUI.RuneBar:IsShown(), "Rune updates respect the class filter")
+        assertFalse(NivUI.ArcaneChargesBar:IsShown(), "segmented updates respect the spec filter")
+
+        harness.specIndex = 1
+        harness:fire("PLAYER_SPECIALIZATION_CHANGED", "player")
+        assertEquals(NivUI.StaggerBar:GetWidth(), 321, "saved width is restored")
+        assertEquals(NivUI.StaggerBar.point[4], 17, "saved position is restored")
+        harness["EditMode.Exit"]()
+        assertFalse(NivUI.StaggerBar:IsShown(), "normal visibility returns after Edit Mode")
+        assertions.tablesEqual(harness.environment.NivUI_DB, saved, "Edit Mode filtering preserves settings")
+    end,
+
+    ["enabling and disabling bars during Edit Mode respects availability"] = function()
+        local harness = createClassBarHarness()
+        local NivUI = harness.namespace
+        harness:fire("PLAYER_LOGIN")
+        NivUI:SetClassBarEnabled("chi", false)
+        harness["EditMode.Enter"]()
+        NivUI:SetClassBarEnabled("chi", true)
+        assertFalse(NivUI.ChiBar:IsShown(), "enabling another spec's bar keeps it hidden")
+        assertFalse(NivUI.ChiBar.Selection:IsShown(), "enabling another spec's bar keeps its outline hidden")
+        NivUI:SetClassBarEnabled("chi", false)
+        harness.specIndex = 3
+        harness:fire("PLAYER_SPECIALIZATION_CHANGED", "player")
+        NivUI:SetClassBarEnabled("chi", true)
+        assertTrue(NivUI.ChiBar:IsShown(), "enabling the current spec's bar shows it")
+        assertTrue(NivUI.ChiBar.Selection:IsShown(), "re-enabled bar has its selection")
+        local frame = NivUI.ChiBar
+        NivUI:SetClassBarEnabled("chi", false)
+        NivUI.EditMode:ShowAllSelections()
+        assertFalse(frame:IsShown(), "a disabled bar is not revived")
+        assertFalse(frame.Selection:IsShown(), "a disabled bar has no outline")
+    end,
+
     ["state-driven members receive stable anchors before their units exist"] = function()
         local _, module = createStateDrivenMultiUnitHarness()
 

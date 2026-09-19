@@ -1,10 +1,16 @@
 local _, NivUI = ...
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    return class == "MAGE" and GetSpecialization() == 1
+end
+
 NivUI:RegisterClassBar("arcaneCharges", {
     displayName = "Arcane Charges Bar",
     tabName = "Arcane",
     sortOrder = 7,
     globalRef = "ArcaneChargesBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",
@@ -42,13 +48,7 @@ NivUI:RegisterClassBar("arcaneCharges", {
             frameName = "NivUIArcaneChargesBar",
             globalRef = "ArcaneChargesBar",
             defaultY = -400,
-            checkResourceAvailable = function()
-                local _, class = UnitClass("player")
-                if class ~= "MAGE" then
-                    return false
-                end
-                return GetSpecialization() == 1
-            end,
+            checkResourceAvailable = IsAvailable,
             supportsPartialFill = false,
         })
     end,

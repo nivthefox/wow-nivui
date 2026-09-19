@@ -1,10 +1,16 @@
 local _, NivUI = ...
 
+local function IsAvailable()
+    local ok, maxPower = pcall(UnitPowerMax, "player", Enum.PowerType.Essence)
+    return ok and maxPower and maxPower > 0
+end
+
 NivUI:RegisterClassBar("essence", {
     displayName = "Essence Bar",
     tabName = "Essence",
     sortOrder = 3,
     globalRef = "EssenceBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",
@@ -42,10 +48,7 @@ NivUI:RegisterClassBar("essence", {
             frameName = "NivUIEssenceBar",
             globalRef = "EssenceBar",
             defaultY = -280,
-            checkResourceAvailable = function()
-                local ok, maxPower = pcall(UnitPowerMax, "player", Enum.PowerType.Essence)
-                return ok and maxPower and maxPower > 0
-            end,
+            checkResourceAvailable = IsAvailable,
             supportsPartialFill = true,
         })
     end,

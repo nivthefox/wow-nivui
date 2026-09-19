@@ -38,6 +38,14 @@ function NivUI:GetRegisteredClassBars()
     return ordered
 end
 
+function NivUI:IsClassBarAvailable(barType)
+    local config = self.classBarRegistry[barType]
+    if not config then
+        return false
+    end
+    return not config.isAvailable or config.isAvailable()
+end
+
 local BUILTIN_TEXTURES = {
     { value = "Default", name = "Default", path = "Interface\\TargetingFrame\\UI-StatusBar" },
     { value = "Target Frame", name = "Target Frame", path = "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill" },

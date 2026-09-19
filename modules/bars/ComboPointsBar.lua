@@ -1,10 +1,19 @@
 local _, NivUI = ...
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    if class == "ROGUE" then
+        return true
+    end
+    return class == "DRUID" and GetSpecialization() == 2
+end
+
 NivUI:RegisterClassBar("comboPoints", {
     displayName = "Combo Points Bar",
     tabName = "Combo",
     sortOrder = 4,
     globalRef = "ComboPointsBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",
@@ -42,16 +51,7 @@ NivUI:RegisterClassBar("comboPoints", {
             frameName = "NivUIComboPointsBar",
             globalRef = "ComboPointsBar",
             defaultY = -310,
-            checkResourceAvailable = function()
-                local _, class = UnitClass("player")
-                if class == "ROGUE" then
-                    return true
-                end
-                if class == "DRUID" then
-                    return GetSpecialization() == 2
-                end
-                return false
-            end,
+            checkResourceAvailable = IsAvailable,
             supportsPartialFill = false,
         })
     end,

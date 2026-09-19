@@ -1,10 +1,16 @@
 local _, NivUI = ...
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    return class == "WARLOCK"
+end
+
 NivUI:RegisterClassBar("soulShards", {
     displayName = "Soul Shards Bar",
     tabName = "Shards",
     sortOrder = 6,
     globalRef = "SoulShardsBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",
@@ -42,10 +48,7 @@ NivUI:RegisterClassBar("soulShards", {
             frameName = "NivUISoulShardsBar",
             globalRef = "SoulShardsBar",
             defaultY = -370,
-            checkResourceAvailable = function()
-                local _, class = UnitClass("player")
-                return class == "WARLOCK"
-            end,
+            checkResourceAvailable = IsAvailable,
             supportsPartialFill = true,
         })
     end,

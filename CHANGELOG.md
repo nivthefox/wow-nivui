@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Class-bar settings and Edit Mode previews now show only bars available to the current class and specialization, refreshing automatically when the specialization changes while preserving every bar's saved settings and enabled state.
+
 ## [2.3.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.3.0) - 2026-08-26
 
 ### Added

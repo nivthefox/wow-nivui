@@ -1,10 +1,16 @@
 local _, NivUI = ...
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    return class == "PALADIN"
+end
+
 NivUI:RegisterClassBar("holyPower", {
     displayName = "Holy Power Bar",
     tabName = "Holy",
     sortOrder = 5,
     globalRef = "HolyPowerBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",
@@ -42,10 +48,7 @@ NivUI:RegisterClassBar("holyPower", {
             frameName = "NivUIHolyPowerBar",
             globalRef = "HolyPowerBar",
             defaultY = -340,
-            checkResourceAvailable = function()
-                local _, class = UnitClass("player")
-                return class == "PALADIN"
-            end,
+            checkResourceAvailable = IsAvailable,
             supportsPartialFill = false,
         })
     end,

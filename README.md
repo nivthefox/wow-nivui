@@ -39,6 +39,8 @@ World of Warcraft/_retail_/Interface/AddOns/NivUI
 
 Type `/nivui` to open the configuration panel. From there you can enable modules and customize their appearance.
 
+Class-bar settings and Edit Mode previews only show bars available to your current class and specialization. Switching specializations refreshes the visible bars while preserving every bar's saved settings and enabled state.
+
 Blizzard Edit Mode owns the screen position of NivUI unit frames and class bars. It also provides contextual layout and visibility settings for selected unit frames. The `/nivui` panel owns module enablement, class-bar size and appearance, reusable unit-frame styles, assignments, filters, overlays, and profiles.
 
 ## License

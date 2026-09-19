@@ -1,10 +1,16 @@
 local _, NivUI = ...
 
+local function IsAvailable()
+    local _, class = UnitClass("player")
+    return class == "MONK" and GetSpecialization() == 3
+end
+
 NivUI:RegisterClassBar("chi", {
     displayName = "Chi Bar",
     tabName = "Chi",
     sortOrder = 2,
     globalRef = "ChiBar",
+    isAvailable = IsAvailable,
 
     defaults = {
         point = "CENTER",
@@ -42,13 +48,7 @@ NivUI:RegisterClassBar("chi", {
             frameName = "NivUIChiBar",
             globalRef = "ChiBar",
             defaultY = -250,
-            checkResourceAvailable = function()
-                local _, class = UnitClass("player")
-                if class ~= "MONK" then
-                    return false
-                end
-                return GetSpecialization() == 3
-            end,
+            checkResourceAvailable = IsAvailable,
             supportsPartialFill = false,
         })
     end,
