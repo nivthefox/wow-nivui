@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.1](https://github.com/nivthefox/wow-nivui/releases/tag/v2.3.1) - 2026-10-13
+
 ### Changed
 
+- Updated compatibility metadata for WoW 12.1.5.
 - Class-bar settings and Edit Mode previews now show only bars available to the current class and specialization, refreshing automatically when the specialization changes while preserving every bar's saved settings and enabled state.
+
+### Fixed
+
+- Party, raid, and custom raid group frames now refresh their layouts and styles when they become active, including after combat ends.
 
 ## [2.3.0](https://github.com/nivthefox/wow-nivui/releases/tag/v2.3.0) - 2026-08-26
 
