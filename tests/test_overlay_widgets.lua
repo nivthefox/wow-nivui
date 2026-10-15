@@ -8,6 +8,32 @@ local scriptPath = arg[0] or "tests/run_tests.lua"
 local testsDir = scriptPath:match("^(.*)[/\\][^/\\]+$") or "."
 local addonRoot = testsDir:match("^(.*)[/\\][^/\\]+$") or "."
 
+-- Blizzard 12.1.5 (70391): https://github.com/Gethe/wow-ui-source/blob/18c6d677b605b312f3d813d498404631fb941977/Interface/AddOns/Blizzard_FrameXMLUtil/AuraUtil.lua#L270
+local BLIZZARD_AURA_FILTERS = {
+    HELPFUL = true,
+    HARMFUL = true,
+    PLAYER = true,
+    RAID = true,
+    CANCELABLE = true,
+    INCLUDE_NAME_PLATE_ONLY = true,
+    MAW = true,
+    EXTERNAL_DEFENSIVE = true,
+    CROWD_CONTROL = true,
+    RAID_IN_COMBAT = true,
+    RAID_PLAYER_DISPELLABLE = true,
+    BIG_DEFENSIVE = true,
+    IMPORTANT = true,
+    DISPELLABLE = true,
+}
+
+local function ValidateAuraFilter(filter)
+    for component in filter:gmatch("[^| ]+") do
+        component = component:gsub("^!", "")
+        assert(BLIZZARD_AURA_FILTERS[component],
+            string.format("Unknown aura filter component: '%s'", component))
+    end
+end
+
 local function CreateFrameObject(frameType, parent)
     local frame = {
         frameType = frameType,
@@ -22,10 +48,12 @@ local function CreateFrameObject(frameType, parent)
     }
 
     function frame:AddAuraGroup(name, filter, options)
+        ValidateAuraFilter(filter)
         self.groups[#self.groups + 1] = { name = name, filter = filter, options = options }
     end
 
     function frame:AddAuraSlot(name, filter, options)
+        ValidateAuraFilter(filter)
         self.slots[#self.slots + 1] = { name = name, filter = filter, options = options }
     end
 
@@ -359,6 +387,30 @@ local function OverlayConfig(displayType)
 end
 
 return {
+    ["every standard allow and block filter creates each live overlay type"] = function()
+        local harness = CreateHarness()
+        for _, entry in ipairs(LoadedNivUI.Filters.BUILTIN) do
+            if not entry.derived then
+                for _, auraType in ipairs({ "HELPFUL", "HARMFUL" }) do
+                    for _, displayType in ipairs({ "ICON", "COLOR", "BORDER", "FRAME" }) do
+                        for _, mode in ipairs({ "allow", "block" }) do
+                            for _, mineOnly in ipairs({ false, true }) do
+                                local config = OverlayConfig(displayType)
+                                config.auraType = auraType
+                                config.mineOnly = mineOnly
+                                config[mode][entry.token] = true
+                                local widget = harness.NivUI.WidgetFactories.overlay(
+                                    CreateFrameObject("Parent"), config, nil, "raid1")
+                                assertNotNil(widget)
+                                assertEquals(#widget.inner.groups + #widget.inner.slots, 1)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end,
+
     ["live icon overlays use AuraContainer groups"] = function()
         local harness = CreateHarness()
         local widget = harness.NivUI.WidgetFactories.overlay(

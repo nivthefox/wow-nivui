@@ -274,20 +274,35 @@ local function MergeSpellMaps(spellMaps)
     return merged
 end
 
+local function GetAuraFilter(token)
+    if token == "NOT_CANCELABLE" then
+        return "!CANCELABLE"
+    end
+    return token
+end
+
+local function NegateAuraFilter(token)
+    local filter = GetAuraFilter(token)
+    if filter:sub(1, 1) == "!" then
+        return filter:sub(2)
+    end
+    return "!" .. filter
+end
+
 function OverlayLogic.BuildContainerGroupSpecs(inputs)
     local base = inputs.prefix
     if inputs.mineOnly then
         base = base .. "|PLAYER"
     end
     for _, token in ipairs(inputs.blockTokens) do
-        base = base .. "|!" .. token
+        base = base .. "|" .. NegateAuraFilter(token)
     end
 
     local excludeSpellIDs = MergeSpellMaps(inputs.blockSpellMaps)
     local specs = {}
     for _, token in ipairs(inputs.allowTokens) do
         specs[#specs + 1] = {
-            filterString = base .. "|" .. token,
+            filterString = base .. "|" .. GetAuraFilter(token),
             excludeSpellIDs = excludeSpellIDs,
         }
     end

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Aura overlays no longer fail to load when Not Cancelable is selected in Allow or Block.
+
 ## [2.3.1](https://github.com/nivthefox/wow-nivui/releases/tag/v2.3.1) - 2026-10-13
 
 ### Changed

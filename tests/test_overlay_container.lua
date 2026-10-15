@@ -182,6 +182,49 @@ return {
         assertEquals(groups[2].filterString, "HELPFUL|!CANCELABLE|BIG_DEFENSIVE")
     end,
 
+    ["allowing Not Cancelable uses the supported negated filter"] = function()
+        local inputs = NivUI.Filters:BuildContainerInputs({
+            allow = { NOT_CANCELABLE = true },
+        }, "HARMFUL")
+        local groups = OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+        assertEquals(#groups, 1)
+        assertEquals(groups[1].filterString, "HARMFUL|!CANCELABLE")
+    end,
+
+    ["blocking Not Cancelable cancels the negation"] = function()
+        local inputs = NivUI.Filters:BuildContainerInputs({
+            block = { NOT_CANCELABLE = true },
+        }, "HARMFUL")
+        local groups = OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+        assertEquals(#groups, 1)
+        assertEquals(groups[1].filterString, "HARMFUL|CANCELABLE")
+    end,
+
+    ["Raid Debuffs legacy blocks preserve custom spell and Mine Only constraints"] = function()
+        local config = {
+            mineOnly = true,
+            block = {
+                RAID = true,
+                NOT_CANCELABLE = true,
+                RAID_IN_COMBAT = true,
+                RAID_PLAYER_DISPELLABLE = true,
+            },
+        }
+        local inputs = NivUI.Filters:BuildContainerInputs(config, "HARMFUL")
+        inputs.allowSpellMaps = { { [12345] = true } }
+        inputs.blockSpellMaps = { { [67890] = true } }
+        local groups = OverlayLogic.BuildContainerGroupSpecs(inputs)
+
+        assertEquals(#groups, 1)
+        assertEquals(groups[1].filterString,
+            "HARMFUL|PLAYER|!RAID|!RAID_IN_COMBAT|!RAID_PLAYER_DISPELLABLE|CANCELABLE")
+        assertTrue(groups[1].includeSpellIDs[12345])
+        assertTrue(groups[1].excludeSpellIDs[67890])
+        assertTrue(config.block.NOT_CANCELABLE)
+    end,
+
     ["Mine Only constrains every allowed aura group"] = function()
         local groups = OverlayLogic.BuildContainerGroupSpecs({
             prefix = "HELPFUL",
